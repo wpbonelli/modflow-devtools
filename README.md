@@ -1,6 +1,6 @@
 # MODFLOW developer tools
 
-### Version 0.0.5 &mdash; release candidate
+### Version 0.0.6 &mdash; release candidate
 [![GitHub tag](https://img.shields.io/github/tag/modflowpy/install-intelfortran-action.svg)](https://github.com/MODFLOW-USGS/modflow-devtools/tags/latest)
 [![CI](https://github.com/MODFLOW-USGS/modflow-devtools/actions/workflows/ci.yml/badge.svg)](https://github.com/MODFLOW-USGS/modflow-devtools/actions/workflows/ci.yml)
 [![Project Status: WIP – Initial development is in progress, but there has not yet been a stable, usable release suitable for the public.](https://www.repostatus.org/badges/latest/wip.svg)](https://www.repostatus.org/#wip)
