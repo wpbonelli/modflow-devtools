@@ -1,7 +1,13 @@
 # MODFLOW developer tools
 
-[![Project Status: WIP – Initial development is in progress, but there has not yet been a stable, usable release suitable for the public.](https://www.repostatus.org/badges/latest/wip.svg)](https://www.repostatus.org/#wip)
+### Version 0.0.5 &mdash; release candidate
+[![GitHub tag](https://img.shields.io/github/tag/modflowpy/install-intelfortran-action.svg)](https://github.com/MODFLOW-USGS/modflow-devtools/tags/latest)
 [![CI](https://github.com/MODFLOW-USGS/modflow-devtools/actions/workflows/ci.yml/badge.svg)](https://github.com/MODFLOW-USGS/modflow-devtools/actions/workflows/ci.yml)
+[![Project Status: WIP – Initial development is in progress, but there has not yet been a stable, usable release suitable for the public.](https://www.repostatus.org/badges/latest/wip.svg)](https://www.repostatus.org/#wip)
+
+[![PyPI Version](https://img.shields.io/pypi/v/modflow-devtools.png)](https://pypi.python.org/pypi/modflow-devtools)
+[![PyPI Status](https://img.shields.io/pypi/status/modflow-devtools.png)](https://pypi.python.org/pypi/modflow-devtools)
+[![PyPI Versions](https://img.shields.io/pypi/pyversions/modflow-devtools.png)](https://pypi.python.org/pypi/modflow-devtools)
 
 Python tools for MODFLOW development and testing.
 
@@ -38,7 +44,7 @@ This package is not yet published to PyPI or a Conda channel. To install it plea
 
 ## Included
 
-This package contains shared tools for developing and testing MODFLOW 6 and FloPy, including standalone utilities as well as `pytest` fixtures, CLI options, and test parametrizations:
+This package contains shared tools for developing and testing MODFLOW 6 and FloPy, including standalone utilities as well as `pytest` fixtures, CLI options, and test cases:
 
 - a `ZipFile` subclass preserving file attributes
 - variably-scoped `pytest` temporary directory fixtures
