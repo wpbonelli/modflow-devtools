@@ -1,3 +1,59 @@
+### Version 1.5.0
+
+#### New features
+
+* [feat(fixtures)](https://github.com/MODFLOW-USGS/modflow-devtools/commit/3bf76d587a04954cc68a07d38e48876d42f06b58): Discover external model repo dirs with .git suffix (#80). Committed by w-bonelli on 2023-04-21.
+* [feat(set_env)](https://github.com/MODFLOW-USGS/modflow-devtools/commit/53b31cce34d221bade4c842efe3b5ed3034b2742): Add set_env contextmanager utility (#87). Committed by w-bonelli on 2023-07-26.
+* [feat(ostags)](https://github.com/MODFLOW-USGS/modflow-devtools/commit/33ab22a5f7e1c88258038e9881f22c6cd537965c): Add OS tag conversion utilities (#99). Committed by w-bonelli on 2023-08-05.
+* [feat(fixtures)](https://github.com/MODFLOW-USGS/modflow-devtools/commit/a41caa75f8519780c7ee60daf61d8225b4380dd5): Add use_pandas pytest fixture and --pandas CLI arg (#112). Committed by wpbonelli on 2023-09-12.
+* [feat(fixtures)](https://github.com/MODFLOW-USGS/modflow-devtools/commit/0ce571411b6b35bc62d4f333d1a961bd2f202784): Add --tabular pytest CLI arg and corresponding fixture (#116). Committed by wpbonelli on 2023-09-12.
+* [feat(timeit)](https://github.com/MODFLOW-USGS/modflow-devtools/commit/506a238f6f31d827015a6c6f5ba1867ee55948a7): Add function timing decorator (#118). Committed by wpbonelli on 2023-09-12.
+* [feat(executables)](https://github.com/MODFLOW-USGS/modflow-devtools/commit/5b61a4b393b0bcd40aafeb87d1e80b3e557e0f05): Support .get(key, default) like dict (#125). Committed by wpbonelli on 2023-11-21.
+* [feat(Executables)](https://github.com/MODFLOW-USGS/modflow-devtools/commit/3129417dae2de3aece80c8056a2ac50eede56b91): Support collection-style membership test (#131). Committed by wpbonelli on 2023-12-18.
+* [feat](https://github.com/MODFLOW-USGS/modflow-devtools/commit/6728859a984a3080f8fd4f1135de36bc17454098): Add latex and plot style utilities (#132). Committed by wpbonelli on 2024-01-09.
+* [feat(misc)](https://github.com/MODFLOW-USGS/modflow-devtools/commit/a9b801932866a26a996ed3a45f16048b15246472): Parse literals from environment variables (#135). Committed by wpbonelli on 2024-01-21.
+* [feat(ostags)](https://github.com/MODFLOW-USGS/modflow-devtools/commit/0ad10751ea6ce752e59d83e8cd6275906d73fa70): Apple silicon (#139). Committed by wpbonelli on 2024-02-18.
+* [feat(markers)](https://github.com/MODFLOW-USGS/modflow-devtools/commit/1f358de2bc721c1000c3d0823b9440776432e3b0): Add no_parallel marker, support differing pkg/module names (#148). Committed by wpbonelli on 2024-04-12.
+* [feat(snapshots)](https://github.com/MODFLOW-USGS/modflow-devtools/commit/c9e445dd1544413f3729c7a78c2a77038db80050): Add snapshot fixtures, remove pandas fixture (#151). Committed by wpbonelli on 2024-05-13.
+
+#### Bug fixes
+
+* [fix(release)](https://github.com/MODFLOW-USGS/modflow-devtools/commit/b62547bd607f9a0d3a78be61d16976bf406151f5): Exclude intermediate changelog (#28). Committed by w-bonelli on 2022-12-28.
+* [fix(fixtures)](https://github.com/MODFLOW-USGS/modflow-devtools/commit/a2d4b9210db532f12cf87ae5d26582d1ed446463): Fix example_scenario fixture loading (#30). Committed by w-bonelli on 2022-12-29.
+* [fix(release)](https://github.com/MODFLOW-USGS/modflow-devtools/commit/b8255caaeb3a7c7d140aecbf590237e4b0d8ec1d): Fix conf.py version fmt, fix update_version.py. Committed by w-bonelli on 2022-12-29.
+* [fix(release)](https://github.com/MODFLOW-USGS/modflow-devtools/commit/373d4f4fab212ea0a25b3b805a8fd363cbf50f7b): Fix changelog commit links (#38). Committed by w-bonelli on 2022-12-29.
+* [fix(license)](https://github.com/MODFLOW-USGS/modflow-devtools/commit/18417f0ca5daddde6379ec9cd28a52f0567b4f63): Remove extra LICENSE file, fix link in LICENSE.md (#39). Committed by w-bonelli on 2022-12-30.
+* [fix(fixtures)](https://github.com/MODFLOW-USGS/modflow-devtools/commit/aeccdb3d66f5f927ae9b7b4c66bf6d4d0610e379): Fix model filtering by package (#44). Committed by w-bonelli on 2023-01-04.
+* [fix(fixtures)](https://github.com/MODFLOW-USGS/modflow-devtools/commit/32e227bd2a6db39d3dada29ceb4ea6279f215f94): Fix test_model_mf6 fixture node id (#49). Committed by w-bonelli on 2023-01-07.
+* [fix(fixtures)](https://github.com/MODFLOW-USGS/modflow-devtools/commit/8b9aeec73885c3aa2f8bbcfa84c99824fe703cbb): Fix package detection/selection (#60). Committed by w-bonelli on 2023-01-18.
+* [fix(multiple)](https://github.com/MODFLOW-USGS/modflow-devtools/commit/2307add30eb3134a786f7c722656b4d99a0fe91a): Fix some CI and fixture issues (#81). Committed by w-bonelli on 2023-04-21.
+* [fix](https://github.com/MODFLOW-USGS/modflow-devtools/commit/fd215000c6215b0891e78ee621e40abb2a20b28a): Drop plot styles (already in flopy) (#133). Committed by wpbonelli on 2024-01-09.
+
+#### Refactoring
+
+* [refactor(executables)](https://github.com/MODFLOW-USGS/modflow-devtools/commit/58c3642d0e6d20d5e34783b5b61e8238058e102f): Simplify exes container, allow dict access (#24). Committed by w-bonelli on 2022-12-28.
+* [refactor](https://github.com/MODFLOW-USGS/modflow-devtools/commit/50c83a9eaed532722549a2d9da1eb79ed8cf01be): Drop Python 3.7, add Python 3.11 (#25). Committed by w-bonelli on 2022-12-28.
+* [refactor(fixtures)](https://github.com/MODFLOW-USGS/modflow-devtools/commit/23593df7fb427d6de1d33f9aa408697d2536e473): Fix/refactor model-loading fixtures (#33). Committed by w-bonelli on 2022-12-29.
+* [refactor(utilities)](https://github.com/MODFLOW-USGS/modflow-devtools/commit/5a1c49bef57eacb49114976f336823ab9fb8964b): Restore get_model_paths function name (#41). Committed by w-bonelli on 2022-12-30.
+* [refactor(fixtures)](https://github.com/MODFLOW-USGS/modflow-devtools/commit/9987209620bf6b0422079d605c996c868116d725): Update defaults for model-finding fixtures (#48). Committed by w-bonelli on 2023-01-07.
+* [refactor(has_pkg)](https://github.com/MODFLOW-USGS/modflow-devtools/commit/861fa80f236bb9fcfcf4cfb1e9a391ad33076060): Use import.metadata instead of pkg_resources (#54). Committed by Mike Taves on 2023-01-09.
+* [refactor(metadata)](https://github.com/MODFLOW-USGS/modflow-devtools/commit/2edeacfd8cb10081c22d1ab0799aba1fa7522c0d): Use pyproject.toml, retire setup.cfg (#63). Committed by w-bonelli on 2023-01-19.
+* [refactor(fixtures)](https://github.com/MODFLOW-USGS/modflow-devtools/commit/a9570097d640a4c071dd1bee2d09ea99cac8ffa1): Overwrite keepable temp dirs by default (#67). Committed by w-bonelli on 2023-01-20.
+* [refactor(download)](https://github.com/MODFLOW-USGS/modflow-devtools/commit/1ced91dc3a0619016728358d69e7563e175e6fac): Refactor GH API utils, add tests, update docs (#68). Committed by w-bonelli on 2023-02-03.
+* [refactor(fixtures)](https://github.com/MODFLOW-USGS/modflow-devtools/commit/2bbe35f3a4b63d9c6d558d7669c986a6fb7056de): Add entries to default exe name/path mapping (#75). Committed by w-bonelli on 2023-03-01.
+* [refactor(versioning)](https://github.com/MODFLOW-USGS/modflow-devtools/commit/5fbc6b98e34afe9e43cc1d8c1b26f87e64f00699): Don't track version explicitly in readme (#76). Committed by w-bonelli on 2023-04-06.
+* [refactor(dependencies)](https://github.com/MODFLOW-USGS/modflow-devtools/commit/72e29e14e74c2b874cba89b1eb1563e1b4e6d0a0): Remove them, update readme (#95). Committed by w-bonelli on 2023-08-04.
+* [refactor(download_and_unzip)](https://github.com/MODFLOW-USGS/modflow-devtools/commit/c1bdb3cf7cdd988df9f3ae8d67de7496f1603c38): Return path to extract locn (#96). Committed by w-bonelli on 2023-08-04.
+* [refactor](https://github.com/MODFLOW-USGS/modflow-devtools/commit/07bd60fff92a0dab08721c167293344a827d6345): Multiple (#100). Committed by w-bonelli on 2023-08-05.
+* [refactor](https://github.com/MODFLOW-USGS/modflow-devtools/commit/582d48a4d72f18a787216ada5befb7543cebdfcf): Deprecate misc functions, add ostags alternatives (#105). Committed by w-bonelli on 2023-08-08.
+* [refactor(has_pkg)](https://github.com/MODFLOW-USGS/modflow-devtools/commit/03ea04157190480b455e174de64c692ff3bb86a3): Introduce strict flag (#106). Committed by w-bonelli on 2023-08-12.
+* [refactor](https://github.com/MODFLOW-USGS/modflow-devtools/commit/cd644fa90885cde04f36f24e44cfe922b2a38897): Support python 3.12, various updates (#124). Committed by wpbonelli on 2023-11-11.
+* [refactor](https://github.com/MODFLOW-USGS/modflow-devtools/commit/ec3859af81e103f307586eec82e86cf63ee1e41c): Re-export get_suffixes from executables module (#128). Committed by wpbonelli on 2023-11-21.
+* [refactor](https://github.com/MODFLOW-USGS/modflow-devtools/commit/9356e067ea813aeeeda2582cf7ec174c11d80159): Remove executables module/class (#136). Committed by wpbonelli on 2024-01-25.
+* [refactor(fixtures)](https://github.com/MODFLOW-USGS/modflow-devtools/commit/613ad010ff6fc782f231b7fa21d1cc660732e7be): Support pytest>=8, drop pytest-cases dependency (#137). Committed by wpbonelli on 2024-01-31.
+* [refactor(latex)](https://github.com/MODFLOW-USGS/modflow-devtools/commit/827b5ec63ebe0b9ea833957637d6b60fdc2f3198): Support path-like, add docstrings (#142). Committed by wpbonelli on 2024-02-25.
+* [refactor(snapshots)](https://github.com/MODFLOW-USGS/modflow-devtools/commit/d96089e512fbb79408e4fb58c89ee63da60dc727): Move to separate module (#152). Committed by wpbonelli on 2024-05-13.
+
 ### Version 1.4.0
 
 #### New features
