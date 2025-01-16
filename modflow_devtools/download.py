@@ -391,10 +391,10 @@ def download_artifact(
 
     req_url = f"https://api.github.com/repos/{repo}/actions/artifacts/{id}/zip"
     request = urllib.request.Request(req_url)
-    if "github.com" in req_url:
-        github_token = os.environ.get("GITHUB_TOKEN", None)
-        if github_token:
-            request.add_header("Authorization", f"Bearer {github_token}")
+    request.add_header("X-GitHub-Api-Version", "2022-11-28")
+    github_token = os.environ.get("GITHUB_TOKEN", None)
+    if github_token:
+        request.add_header("Authorization", f"Bearer {github_token}")
 
     zip_path = Path(path).expanduser().absolute() / f"{uuid4()!s}.zip"
     tries = 0
