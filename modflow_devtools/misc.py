@@ -4,6 +4,7 @@ import sys
 import traceback
 from _warnings import warn
 from ast import literal_eval
+from collections.abc import Mapping
 from contextlib import contextmanager
 from functools import wraps
 from importlib import metadata
@@ -12,7 +13,7 @@ from pathlib import Path, PurePosixPath
 from shutil import which
 from subprocess import run
 from timeit import timeit
-from typing import Optional
+from typing import Any, Callable, Optional
 from urllib import request
 from urllib.error import URLError
 
@@ -549,3 +550,15 @@ def set_env(*remove, **update):
     finally:
         env.update(update_after)
         [env.pop(k) for k in remove_after]
+
+
+def filter_recursive(d: Any, pred: Callable) -> Any:
+    """
+    If the object is a mapping, recursively apply
+    the predicate, keeping passing entries. Return
+    other objects unchanged.
+    """
+    if isinstance(d, Mapping):
+        return {k: filter_recursive(v, pred) for k, v in d.items() if pred(v)}
+    else:
+        return d

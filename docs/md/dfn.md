@@ -16,13 +16,7 @@ We envision MODFLOW 6 and FloPy will use these for a short period while migratio
 
 The TOML format is structurally different from, but visually similar to, the original DFN format.
 
-Where legacy DFNs are flat lists of variables, with comments demarcating blocks, a TOML input definition is a tree of blocks, each of which contains child variables, each of which can be a scalar or a composite &mdash; composites contain their own child variables.
-
-Block variables are not explicitly marked as such &mdash; rather they are attached directly to the parent and must be identified by their type (i.e., dictionary not scalar). Likewise for a composite variable's children.
-
-A definition may contain other top-level attributes besides blocks, so long as they do not conflict with block names.
-
-Similarly, variables may contain arbitrary attributes so long as these do not conflict with child variable names.
+Where legacy DFNs are flat lists of variables, with comments demarcating blocks, a TOML input definition is a tree of blocks, each of which contains variables. Variables may be scalar or composite &mdash; composites contain fields (if records), choices (if unions), or items (if lists).
 
 ### Conversion script
 

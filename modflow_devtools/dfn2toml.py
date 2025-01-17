@@ -1,35 +1,13 @@
+"""Convert DFNs to TOML."""
+
 import argparse
-from collections.abc import Mapping
 from os import PathLike
 from pathlib import Path
-from typing import Any
 
 import tomli_w as tomli
 
 from modflow_devtools.dfn import Dfn
-
-
-class Shim:
-    @staticmethod
-    def _attach_children(d: Any):
-        if isinstance(d, Mapping):
-            if "children" in d:
-                for n, c in d["children"].items():
-                    d[n] = c
-                del d["children"]
-            d = {k: Shim._attach_children(v) for k, v in d.items()}
-        return d
-
-    @staticmethod
-    def _drop_none(d: Any):
-        if isinstance(d, Mapping):
-            return {k: Shim._drop_none(v) for k, v in d.items() if v is not None}
-        else:
-            return d
-
-    @staticmethod
-    def apply(d: dict) -> dict:
-        return Shim._attach_children(Shim._drop_none(d))
+from modflow_devtools.misc import filter_recursive
 
 
 def convert(indir: PathLike, outdir: PathLike):
@@ -38,7 +16,14 @@ def convert(indir: PathLike, outdir: PathLike):
     outdir.mkdir(exist_ok=True, parents=True)
     for dfn in Dfn.load_all(indir).values():
         with Path.open(outdir / f"{dfn['name']}.toml", "wb") as f:
-            tomli.dump(Shim.apply(dfn), f)
+            tomli.dump(
+                filter_recursive(
+                    dfn,
+                    lambda v: v is not None
+                    and not (isinstance(v, dict) and not any(v)),
+                ),
+                f,
+            )
 
 
 if __name__ == "__main__":

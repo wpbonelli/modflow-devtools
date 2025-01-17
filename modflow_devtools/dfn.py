@@ -1,3 +1,8 @@
+"""
+DFN tools. Includes a legacy parser as well as TOML,
+and a utility to fetch DFNs from the MF6 repository.
+"""
+
 import shutil
 import tempfile
 from ast import literal_eval
@@ -18,9 +23,6 @@ import tomli
 from boltons.dictutils import OMD
 
 from modflow_devtools.download import download_and_unzip
-
-# DFN representation with a
-# parser for the DFN format
 
 
 def _try_literal_eval(value: str) -> Any:
@@ -58,13 +60,12 @@ DfnFmtVersion = Literal[1, 2]
 """DFN format version number."""
 
 
-Vars = dict[str, "Var"]
-Refs = dict[str, "Ref"]
 Dfns = dict[str, "Dfn"]
+Vars = dict[str, "Var"]
 
 
 class Var(TypedDict):
-    """An input variable specification."""
+    """A variable specification."""
 
     name: str
     type: str
@@ -75,15 +76,19 @@ class Var(TypedDict):
     description: Optional[str] = None
 
 
-class Ref(TypedDict):
+class Sub(TypedDict):
     """
-    This class is used to represent subpackage references:
-    a foreign-key-like reference between a file input variable
-    and another input definition. This allows an input context
-    to refer to another input context by including a filepath
-    variable as a foreign key. The former's `__init__` method
-    is modified such that the variable named `val` replaces
-    the `key` variable.
+    A subpackage specification.
+
+    A foreign-key-like reference between a file input variable
+    in a referring input component and another input component.
+
+    A `Dfn` which declares itself a subpackage can be referred
+    to by other definitions, via a filepath variable acting as
+    a foreign key. The referring component's `__init__` method
+    is modified, the subpackage variable named `val` replacing
+    the `key` parameter, such that the referring component can
+    accept data for the subpackage directly instead of by file.
     """
 
     key: str
@@ -95,6 +100,10 @@ class Ref(TypedDict):
 
 
 class Sln(TypedDict):
+    """
+    A solution package specification.
+    """
+
     abbr: str
     pattern: str
 
@@ -102,9 +111,17 @@ class Sln(TypedDict):
 class Dfn(TypedDict):
     """
     MODFLOW 6 input definition. An input definition
-    file specifies a component of an MF6 simulation,
-    e.g. a model or package.
+    specifies a component in an MF6 simulation, e.g.
+    a model or package, containing input variables.
     """
+
+    name: str
+    advanced: bool = False
+    multi: bool = False
+    sub: Optional[Sub] = None
+    sln: Optional[Sln] = None
+    blocks: Optional[dict[str, Vars]] = None
+    fkeys: Optional[Dfns] = None
 
     @staticmethod
     def _load_v1_flat(f, common: Optional[dict] = None) -> tuple[Mapping, list[str]]:
@@ -223,7 +240,6 @@ class Dfn(TypedDict):
             shape = var.get("shape", None)
             shape = None if shape == "" else shape
             block = var.get("block", None)
-            children = {}
             default = var.get("default", None)
             default = _try_literal_eval(default) if _type != "string" else default
             description = var.get("description", "")
@@ -234,7 +250,7 @@ class Dfn(TypedDict):
                 fkeys[_name] = ref
 
             def _items() -> Vars:
-                """Load a list's children (items: record or union of records)."""
+                """Load a list's items."""
 
                 names = _type.split()[1:]
                 types = [
@@ -268,7 +284,7 @@ class Dfn(TypedDict):
                             name=_name,
                             type="record",
                             block=block,
-                            children=fields,
+                            fields=fields,
                             description=description.replace(
                                 "is the list of", "is the record of"
                             ),
@@ -292,7 +308,7 @@ class Dfn(TypedDict):
                             name=name_,
                             type=child_type,
                             block=block,
-                            children=first["children"] if single else fields,
+                            fields=first["fields"] if single else fields,
                             description=description.replace(
                                 "is the list of", f"is the {child_type} of"
                             ),
@@ -300,7 +316,7 @@ class Dfn(TypedDict):
                     }
 
             def _choices() -> Vars:
-                """Load a union's children (choices)."""
+                """Load a union's choices."""
                 names = _type.split()[1:]
                 return {
                     v["name"]: _load_variable(v)
@@ -309,7 +325,7 @@ class Dfn(TypedDict):
                 }
 
             def _fields() -> Vars:
-                """Load a record's children (fields)."""
+                """Load a record's fields."""
                 names = _type.split()[1:]
                 fields = {}
                 for name in names:
@@ -323,23 +339,34 @@ class Dfn(TypedDict):
                     fields[name] = v
                 return fields
 
+            var_ = Var(
+                name=_name,
+                shape=shape,
+                block=block,
+                description=description,
+                default=default,
+            )
+
             if _type.startswith("recarray"):
-                children = _items()
-                _type = "list"
+                var_["items"] = _items()
+                var_["type"] = "list"
 
             elif _type.startswith("keystring"):
-                children = _choices()
-                _type = "union"
+                var_["choices"] = _choices()
+                var_["type"] = "union"
 
             elif _type.startswith("record"):
-                children = _fields()
-                _type = "record"
+                var_["fields"] = _fields()
+                var_["type"] = "record"
 
             # for now, we can tell a var is an array if its type
             # is scalar and it has a shape. once we have proper
             # typing, this can be read off the type itself.
             elif shape is not None and _type not in _MF6_SCALARS:
                 raise TypeError(f"Unsupported array type: {_type}")
+
+            else:
+                var_["type"] = _type
 
             # if var is a foreign key, return subpkg var instead
             if ref:
@@ -348,7 +375,6 @@ class Dfn(TypedDict):
                     type=_type,
                     shape=shape,
                     block=block,
-                    children=None,
                     description=(
                         f"Contains data for the {ref['abbr']} package. Data can be "
                         f"stored in a dictionary containing data for the {ref['abbr']} "
@@ -361,15 +387,7 @@ class Dfn(TypedDict):
                     subpackage=ref,
                 )
 
-            return Var(
-                name=_name,
-                type=_type,
-                shape=shape,
-                block=block,
-                children=children,
-                description=description,
-                default=default,
-            )
+            return var_
 
         # load top-level variables. any nested
         # variables will be loaded recursively
@@ -385,18 +403,27 @@ class Dfn(TypedDict):
             for name, block in groupby(vars_.values(), lambda v: v["block"])
         }
 
-        def _package_type() -> Optional[str]:
-            line = next(
+        def _advanced() -> Optional[bool]:
+            return any("package-type advanced" in m for m in meta)
+
+        def _multi() -> bool:
+            return any("multi-package" in m for m in meta)
+
+        def _sln() -> Optional[Sln]:
+            sln = next(
                 iter(
                     m
                     for m in meta
-                    if isinstance(m, str) and m.startswith("package-type")
+                    if isinstance(m, str) and m.startswith("solution_package")
                 ),
                 None,
             )
-            return line.split()[-1] if line else None
+            if sln:
+                abbr, pattern = sln.split()[1:]
+                return Sln(abbr=abbr, pattern=pattern)
+            return None
 
-        def _subpackage() -> Optional["Ref"]:
+        def _sub() -> Optional[Sub]:
             def _parent():
                 line = next(
                     iter(
@@ -439,45 +466,24 @@ class Dfn(TypedDict):
             parent = _parent()
             rest = _rest()
             if parent and rest:
-                return Ref(parent=parent, **rest)
+                return Sub(parent=parent, **rest)
             return None
-
-        def _solution() -> Optional[Sln]:
-            sln = next(
-                iter(
-                    m
-                    for m in meta
-                    if isinstance(m, str) and m.startswith("solution_package")
-                ),
-                None,
-            )
-            if sln:
-                abbr, pattern = sln.split()[1:]
-                return Sln(abbr=abbr, pattern=pattern)
-            return None
-
-        def _multi() -> bool:
-            return any("multi-package" in m for m in meta)
 
         return cls(
             name=name,
-            foreign_keys=fkeys,
-            package_type=_package_type(),
-            subpackage=_subpackage(),
-            solution=_solution(),
+            fkeys=fkeys,
+            advanced=_advanced(),
             multi=_multi(),
-            **blocks,
+            sln=_sln(),
+            sub=_sub(),
+            blocks=blocks,
         )
 
     @classmethod
     def _load_v2(cls, f, name) -> "Dfn":
-        # load data
         data = tomli.load(f)
-
-        # if name provided, make sure it matches
         if name and name != data.get("name", None):
             raise ValueError(f"Name mismatch, expected {name}")
-
         return cls(**data)
 
     @classmethod
@@ -489,7 +495,7 @@ class Dfn(TypedDict):
         **kwargs,
     ) -> "Dfn":
         """
-        Load an input definition from a DFN file.
+        Load a component definition from a DFN file.
         """
 
         if version == 1:
@@ -506,7 +512,7 @@ class Dfn(TypedDict):
             p for p in dfndir.glob("*.dfn") if p.stem not in ["common", "flopy"]
         ]
 
-        # try to load common variables
+        # load common variables
         common_path: Optional[Path] = dfndir / "common.dfn"
         if not common_path.is_file:
             common = None
@@ -514,8 +520,8 @@ class Dfn(TypedDict):
             with common_path.open() as f:
                 common, _ = Dfn._load_v1_flat(f)
 
-        # load subpackage references first
-        refs: Refs = {}
+        # load subpackages
+        refs = {}
         for path in paths:
             with path.open() as f:
                 dfn = Dfn.load(f, name=path.stem, common=common)
@@ -523,7 +529,7 @@ class Dfn(TypedDict):
                 if subpkg:
                     refs[subpkg["key"]] = subpkg
 
-        # load all the input definitions
+        # load definitions
         dfns: Dfns = {}
         for path in paths:
             with path.open() as f:
@@ -539,7 +545,7 @@ class Dfn(TypedDict):
             p for p in dfndir.glob("*.toml") if p.stem not in ["common", "flopy"]
         ]
 
-        # load all the input definitions
+        # load definitions
         dfns: Dfns = {}
         for path in paths:
             with path.open(mode="rb") as f:
@@ -550,8 +556,7 @@ class Dfn(TypedDict):
 
     @staticmethod
     def load_all(dfndir: PathLike, version: DfnFmtVersion = 1) -> Dfns:
-        """Load all input definitions from the given directory."""
-
+        """Load all component definitions from the given directory."""
         if version == 1:
             return Dfn._load_all_v1(dfndir)
         elif version == 2:
@@ -560,12 +565,10 @@ class Dfn(TypedDict):
             raise ValueError(f"Unsupported version, expected one of {version.__args__}")
 
 
-# download utilities
-
-
 def get_dfns(
     owner: str, repo: str, ref: str, outdir: Union[str, PathLike], verbose: bool = False
 ):
+    """Fetch definition files from the MODFLOW 6 repository."""
     url = f"https://github.com/{owner}/{repo}/archive/{ref}.zip"
     if verbose:
         print(f"Downloading MODFLOW 6 repository from {url}")
