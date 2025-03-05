@@ -74,7 +74,12 @@ dfn = [
     "tomli",
     "tomli-w"
 ]
-dev = ["modflow-devtools[lint,test,docs,dfn]"]
+models = [
+    "pooch",
+    "tomli",
+    "tomli-w"
+]
+dev = ["modflow-devtools[lint,test,docs,dfn,models]"]
 
 [dependency-groups]
 build = [
@@ -111,12 +116,18 @@ dfn = [
     "tomli",
     "tomli-w"
 ]
+models = [
+    "pooch",
+    "tomli",
+    "tomli-w"
+]
 dev = [
     {include-group = "build"},
     {include-group = "lint"},
     {include-group = "test"},
     {include-group = "docs"},
-    {include-group = "dfn"}
+    {include-group = "dfn"},
+    {include-group = "models"},
 ]
 
 [project.urls]
