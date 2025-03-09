@@ -188,11 +188,11 @@ class Dfn(TypedDict):
     """
 
     name: str
-    advanced: bool = False
-    multi: bool = False
-    ref: Ref | None = None
-    sln: Sln | None = None
-    fkeys: Dfns | None = None
+    advanced: bool
+    multi: bool
+    ref: Optional[Ref]
+    sln: Optional[Sln]
+    fkeys: Optional[Dfns]
 
     @staticmethod
     def _load_v1_flat(f, common: dict | None = None) -> tuple[Mapping, list[str]]:
