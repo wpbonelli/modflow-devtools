@@ -75,6 +75,7 @@ dfn = [
     "tomli-w"
 ]
 models = [
+    "boltons",
     "pooch",
     "tomli",
     "tomli-w"
@@ -118,6 +119,7 @@ dfn = [
     "tomli-w"
 ]
 models = [
+    "boltons",
     "pooch",
     "tomli",
     "tomli-w"
@@ -144,14 +146,14 @@ packages = ["modflow_devtools"]
 
 [tool.hatch.build]
 include = [
-    "modflow_devtools/data/*"
+    "modflow_devtools/registry/*"
 ]
 
 [tool.hatch.version]
 path = "modflow_devtools/__init__.py"
 
 [tool.codespell]
-skip = "cliff.toml"
+skip = "cliff.toml,./modflow_devtools/registry/**,./docs/_build/**,./autotest/temp/**,./build/**"
 ignore-words-list = [
     "nam",
     "wel",

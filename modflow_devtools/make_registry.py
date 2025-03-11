@@ -1,13 +1,15 @@
 import argparse
 import hashlib
+from os import PathLike
 from pathlib import Path
 
 import tomli_w as tomli
+from boltons.iterutils import remap
 
 from modflow_devtools.misc import get_model_paths
-from modflow_devtools.models import BASE_URL, DATA_PATH
+from modflow_devtools.models import BASE_URL
 
-REGISTRY_PATH = DATA_PATH / "registry.txt"
+REGISTRY_PATH = Path(__file__).parent / "registry" / "registry.toml"
 
 
 def _sha256(path: Path) -> str:
@@ -25,58 +27,90 @@ def _sha256(path: Path) -> str:
 
 
 def write_registry(
-    path: Path, registry_path: Path, base_url: str, append: bool = False
+    path: str | PathLike,
+    registry_path: str | PathLike,
+    url: str,
+    append: bool = False,
 ):
+    path = Path(path).expanduser().absolute()
+    registry_path = Path(registry_path).expanduser().absolute()
+    modelmap_path = registry_path.parent / "models.toml"
+
+    if not path.is_dir():
+        raise NotADirectoryError(f"Path {path} is not a directory.")
     if not registry_path.exists():
         registry_path.parent.mkdir(parents=True, exist_ok=True)
 
-    models: dict[str, list[str]] = {}
-    exclude = [".DS_Store"]
-    with registry_path.open("a+" if append else "w") as f:
-        if not path.is_dir():
-            raise NotADirectoryError(f"Path {path} is not a directory.")
-        for mp in get_model_paths(path):
-            for p in mp.rglob("*"):
-                if "compare" in str(p):
-                    continue
-                if p.is_file() and not any(e in p.name for e in exclude):
-                    relpath = p.relative_to(path)
-                    name = str(relpath).replace("/", "_").replace("-", "_")
-                    hash = _sha256(p)
-                    url = f"{base_url}/{relpath!s}"
-                    line = f"{name} {hash} {url}"
-                    f.write(line + "\n")
-                    key = str(relpath.parent).replace("/", "_").replace("-", "_")
-                    if key not in models:
-                        models[key] = []
-                    models[key].append(name)
+    registry: dict[str, dict[str, str | None]] = {}
+    modelmap: dict[str, list[str]] = {}
+    exclude = [".DS_Store", "compare"]
+    if is_zip := url.endswith((".zip", ".tar")):
+        registry[url.rpartition("/")[2]] = {"hash": None, "url": url}
 
-    models_path = registry_path.parent / "models.toml"
-    with models_path.open("ab+" if append else "wb") as mf:
-        tomli.dump(dict(sorted(models.items())), mf)
+    def _find_examples_dir(p):
+        while p.name != "examples":
+            p = p.parent
+        return p
+
+    model_paths = get_model_paths(path)
+    for model_path in model_paths:
+        # TODO: the renaming is only necessary because we're attaching auto-
+        # generated functions to the models module. If we can live without,
+        # and get by with a single function that takes model name as an arg,
+        # then the model names could correspond directly to directory names.
+        model_path = model_path.expanduser().absolute()
+        base_path = _find_examples_dir(model_path) if is_zip else path
+        model_name = (
+            str(model_path.relative_to(base_path)).replace("/", "_").replace("-", "_")
+        )
+        modelmap[model_name] = []
+        for p in model_path.glob("*"):
+            if not p.is_file() or any(e in p.name for e in exclude):
+                continue
+            if is_zip:
+                relpath = p.expanduser().absolute().relative_to(base_path)
+                name = str(relpath)
+                url_ = url
+                hash = None
+            else:
+                relpath = p.expanduser().absolute().relative_to(base_path)
+                name = str(relpath)
+                url_ = f"{url}/{relpath!s}"
+                hash = _sha256(p)
+            registry[name] = {"hash": hash, "url": url_}
+            modelmap[model_name].append(name)
+
+    def drop_none_or_empty(path, key, value):
+        if value is None or value == "":
+            return False
+        return True
+
+    with registry_path.open("ab+" if append else "wb") as registry_file:
+        tomli.dump(
+            remap(dict(sorted(registry.items())), visit=drop_none_or_empty),
+            registry_file,
+        )
+
+    with modelmap_path.open("ab+" if append else "wb") as modelmap_file:
+        tomli.dump(dict(sorted(modelmap.items())), modelmap_file)
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Convert DFN files to TOML.")
-    parser.add_argument(
-        "--path",
-        "-p",
-        type=str,
-        help="Directory containing model directories.",
-    )
+    parser = argparse.ArgumentParser(description="Make a registry of example models.")
+    parser.add_argument("path")
     parser.add_argument(
         "--append",
         "-a",
         action="store_true",
-        help="Append to the registry file instead of overwriting.",
+        help="Append instead of overwriting.",
     )
     parser.add_argument(
-        "--base-url",
-        "-b",
+        "--url",
+        "-u",
         type=str,
-        help="Base URL for the registry file.",
+        help="Base URL for example models.",
     )
     args = parser.parse_args()
-    path = Path(args.path) if args.path else DATA_PATH
-    base_url = args.base_url if args.base_url else BASE_URL
-    write_registry(path, REGISTRY_PATH, base_url, args.append)
+    path = Path(args.path)
+    url = args.url if args.url else BASE_URL
+    write_registry(path=path, registry_path=REGISTRY_PATH, url=url, append=args.append)
