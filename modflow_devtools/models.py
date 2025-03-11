@@ -1,5 +1,4 @@
 # TODO
-# - support modflow6-examples releases
 # - switch modflow6-testmodels and -largetestmodels to
 #   fetch zip of the repo instead of individual files?
 
