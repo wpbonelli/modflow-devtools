@@ -21,28 +21,35 @@ def test_registry():
     assert any(registry), "Registry is empty"
 
 
-@pytest.mark.parametrize("model_name, files", MODELMAP.items())
+@pytest.mark.parametrize(
+    "model_name, files", MODELMAP.items(), ids=list(MODELMAP.keys())
+)
 def test_models(model_name, files):
-    model_names = models.list_models()
+    model_names = list(models.get_models().keys())
     assert model_name in model_names, f"Model {model_name} not found in model map"
     assert files == models.MODELMAP[model_name], (
         f"Files for model {model_name} do not match"
-    )
-    assert hasattr(models, model_name), (
-        f"Function {model_name} not found in models module"
     )
     if "mf6" in model_name:
         assert any(Path(f).name == "mfsim.nam" for f in files)
 
 
-@pytest.mark.parametrize("example_name, model_names", models.get_examples().items())
+@pytest.mark.parametrize(
+    "example_name, model_names",
+    models.get_examples().items(),
+    ids=list(models.get_examples().keys()),
+)
 def test_get_examples(example_name, model_names):
     assert example_name in models.EXAMPLES
     for model_name in model_names:
         assert model_name in models.MODELMAP
 
 
-@pytest.mark.parametrize("model_name, files", list(islice(MODELMAP.items(), TAKE)))
+@pytest.mark.parametrize(
+    "model_name, files",
+    list(islice(MODELMAP.items(), TAKE)),
+    ids=list(MODELMAP.keys())[:TAKE],
+)
 def test_copy_to(model_name, files, tmp_path):
     workspace = models.copy_to(tmp_path, model_name, verbose=True)
     assert workspace.exists(), f"Model {model_name} was not copied to {tmp_path}"
@@ -54,21 +61,3 @@ def test_copy_to(model_name, files, tmp_path):
     )
     if "mf6" in model_name:
         assert any(Path(f).name == "mfsim.nam" for f in files)
-
-
-@pytest.mark.parametrize("model_name, files", list(islice(MODELMAP.items(), TAKE)))
-def test_generated_functions_return_files(model_name, files):
-    model_function = getattr(models, model_name)
-    fetched_files = model_function()
-    assert isinstance(fetched_files, list), (
-        f"Function {model_name} did not return a list"
-    )
-    assert len(fetched_files) == len(files), (
-        f"Function {model_name} did not return the correct number of files"
-    )
-    if "mf6" in model_name:
-        assert any(Path(f).name == "mfsim.nam" for f in files)
-    for fetched_file in fetched_files:
-        assert Path(fetched_file).exists(), (
-            f"Fetched file {fetched_file} does not exist"
-        )
