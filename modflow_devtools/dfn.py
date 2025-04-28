@@ -164,9 +164,9 @@ class Dfn(TypedDict):
     name: str
     advanced: bool
     multi: bool
-    ref: Optional[Ref]
-    sln: Optional[Sln]
-    fkeys: Optional[Dfns]
+    ref: Ref | None
+    sln: Sln | None
+    fkeys: Dfns | None
 
     @staticmethod
     def _load_v1_flat(f, common: dict | None = None) -> tuple[Mapping, list[str]]:
