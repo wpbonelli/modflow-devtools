@@ -1,6 +1,21 @@
 # Models API
 
-The `modflow_devtools.models` module provides programmatic access to MODFLOW 6 example models via [Pooch](https://www.fatiando.org/pooch/latest/index.html).
+The `modflow_devtools.models` module provides programmatic access to MODFLOW 6 example models via a `ModelRegistry`. There is one "official" `PoochRegistry`, aimed at users and developers &mdash; developers may create `LocalRegistry` instances to load models from the local filesystem.
+
+This module leans heavily on [Pooch](https://www.fatiando.org/pooch/latest/index.html), but it is an independent layer on top with strong opinions about how to train (configure) the fetch-happy friend.
+
+## `ModelRegistry`
+
+Registries expose the following properties:
+
+- `path`: the data path
+- `files`: a map of files to file info
+- `models`: a map of models to files
+- `examples`: a map of example scenarios to models
+
+An *example* is a set of models which run in a particular order.
+
+The default `PoochRegistry` is available at `modflow_devtools.models.DEFAULT_REGISTRY`. Its `path` is the pooch cache. Values in the `files` are dictionaries including a hash and url. Configuring the default registry is a developer task &mdash; see the instructions on [creating a registry](#creating-a-registry) below.
 
 ## Listing models
 
@@ -51,7 +66,19 @@ with TemporaryDirectory() as td:
 
 If the target directory doesn't exist, it will be created.
 
-## Developers
+## Creating a registry
+
+### Local registries
+
+A `LocalRegistry` accepts a `path` on initialization. This must be a directory containing model subdirectories at arbitrary depth. Model subdirectories are identified by the presence of a namefile matching `namefile_pattern`. By default `namefile_pattern="mfsim.nam"`, causing only MODFLOW 6 models to be returned.
+
+For instance, to load all MODFLOW models (pre-MF6 as well):
+
+```python
+registry = LocalRegistry("path/to/models", namefile_pattern="*.nam")
+```
+
+### Pooch registry
 
 The `make_registry.py` script is responsible for generating a registry text file and a mapping between files and models. This script should be run in the CI pipeline at release time before the package is built. The generated registry file and model mapping are used to create a pooch instance for fetching model files, and should be distributed with the package.
 
