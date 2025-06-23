@@ -13,6 +13,9 @@ on:
       - '**.md'
       - '.github/workflows/release.yml'
       - '.gitignore'
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 jobs:
   lint:
     name: Lint
@@ -22,19 +25,26 @@ jobs:
       - name: Checkout repo
         uses: actions/checkout@v4
 
-      - name: Setup Python
-        uses: actions/setup-python@v4
+      - name: Setup uv
+        uses: astral-sh/setup-uv@v5
         with:
-          python-version: 3.8
-          cache: 'pip'
-          cache-dependency-path: pyproject.toml
+          cache-dependency-glob: "**/pyproject.toml"
 
-      - name: Install Python packages
-        run: pip install ".[lint]"
+      - name: Install
+        run: uv sync --group lint
 
-      - name: Run ruff
-        run: ruff check .
-  
+      - name: Lint
+        run: uvx ruff check
+
+      - name: Format
+        run: uvx ruff format --check
+
+      - name: Spelling
+        run: uvx codespell
+
+      - name: Typing
+        run: uv run mypy modflow_devtools
+
   build:
     name: Build
     runs-on: ubuntu-latest
@@ -43,25 +53,22 @@ jobs:
       - name: Checkout repo
         uses: actions/checkout@v3
 
-      - name: Setup Python
-        uses: actions/setup-python@v4
+      - name: Setup uv
+        uses: astral-sh/setup-uv@v5
         with:
-          python-version: 3.8
+          cache-dependency-glob: "**/pyproject.toml"
 
-      - name: Install Python packages
-        run: |
-          pip install --upgrade pip
-          pip install build twine
-          pip --verbose install .
+      - name: Install project
+        run: uv sync --group build
 
       - name: Print package version
-        run: python -c "import modflow_devtools; print(modflow_devtools.__version__)"
+        run: uv run python -c "import modflow_devtools; print(modflow_devtools.__version__)"
 
       - name: Build package
-        run: python -m build
+        run: uv build
       
       - name: Check distribution
-        run: twine check --strict dist/*
+        run: uvx twine check --strict dist/*
 
   test:
     name: Test
@@ -72,8 +79,8 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ ubuntu-22.04, macos-12, windows-2022 ]
-        python: [ 3.8, 3.9, "3.10", "3.11", "3.12" ]
+        os: [ ubuntu-22.04, macos-13, windows-2022 ]
+        python: [ "3.10", "3.11", "3.12", "3.13" ]
     env:
       GCC_V: 11
     steps:
@@ -82,101 +89,40 @@ jobs:
         uses: actions/checkout@v4
         with:
           path: modflow-devtools
-      
-      - name: Checkout modflow6
-        uses: actions/checkout@v4
+ 
+      - name: Setup uv
+        uses: astral-sh/setup-uv@v5
         with:
-          repository: MODFLOW-USGS/modflow6
-          path: modflow6
-      
-      - name: Checkout modflow6 examples
-        uses: actions/checkout@v4
-        with:
-          repository: MODFLOW-USGS/modflow6-examples
-          path: modflow6-examples
-      
-      - name: Checkout modflow6 test models
-        uses: actions/checkout@v3
-        with:
-          repository: MODFLOW-USGS/modflow6-testmodels
-          path: modflow6-testmodels
-      
-      - name: Checkout modflow6 large test models
-        uses: actions/checkout@v3
-        with:
-          repository: MODFLOW-USGS/modflow6-largetestmodels
-          path: modflow6-largetestmodels
-
-      - name: Install executables
-        uses: modflowpy/install-modflow-action@v1
-      
-      - name: Install nightly build
-        uses: modflowpy/install-modflow-action@v1
-        with:
-          repo: modflow6-nightly-build
-
-      - name: Setup GNU Fortran ${{ env.GCC_V }}
-        uses: awvwgk/setup-fortran@main
-        with:
-          compiler: gcc
-          version: ${{ env.GCC_V }}
-
-      - name: Setup Python
-        uses: actions/setup-python@v4
-        with:
+          cache-dependency-glob: "**/pyproject.toml"
           python-version: ${{ matrix.python }}
 
-      - name: Install Python packages
+      - name: Install project
         working-directory: modflow-devtools
-        run: pip install ".[test]"
-
-      - name: Cache modflow6 examples
-        if: matrix.python != 3.8
-        id: cache-examples
-        uses: actions/cache@v3
-        with:
-          path: modflow6-examples/examples
-          key: modflow6-examples-${{ hashFiles('modflow6-examples/data/**') }}
-      
-      - name: Install extra Python packages
-        if: matrix.python != 3.8
-        working-directory: modflow6-examples/etc
-        run: |
-          pip install -r requirements.pip.txt
-          pip install -r requirements.usgs.txt
-
-      - name: Update FloPy packages
-        if: matrix.python != 3.8
-        run: python -m flopy.mf6.utils.generate_classes --ref develop --no-backup
-
-      - name: Build modflow6 example models
-        if: matrix.python != 3.8 && steps.cache-examples.outputs.cache-hit != 'true'
-        working-directory: modflow6-examples/autotest
-        run: pytest -v -n auto test_scripts.py --init
+        run: uv sync --all-extras
 
       - name: Run local tests
         working-directory: modflow-devtools/autotest
         env:
           REPOS_PATH: ${{ github.workspace }}
         # use --dist loadfile to so tests requiring pytest-virtualenv run on the same worker
-        run: pytest -v -n auto --dist loadfile --durations 0 --ignore test_download.py
+        run: uv run pytest -v -n auto --dist loadfile --durations 0 --ignore test_download.py
       
       - name: Run network-dependent tests
         # only invoke the GH API on one OS and Python version
         # to avoid rate limits (1000 rqs / hour / repository)
         # https://docs.github.com/en/actions/learn-github-actions/usage-limits-billing-and-administration#usage-limits
-        if: runner.os == 'Linux' && matrix.python == '3.8'
+        if: runner.os == 'Linux' && matrix.python == '3.10'
         working-directory: modflow-devtools/autotest
         env:
           REPOS_PATH: ${{ github.workspace }}
           GITHUB_TOKEN: ${{ github.token }}
-        run: pytest -v -n auto --durations 0 test_download.py
+        run: uv run pytest -v -n auto --durations 0 test_download.py
   
   rtd:
     name: Docs
     needs: test
     runs-on: ubuntu-22.04
-    if: github.repository_owner == 'MODFLOW-USGS' && github.event_name == 'push'
+    if: github.repository_owner == 'MODFLOW-ORG' && github.event_name == 'push'
     steps:
       - name: Trigger RTD
         uses: dfm/rtds-action@v1

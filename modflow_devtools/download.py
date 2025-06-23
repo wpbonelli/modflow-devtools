@@ -6,8 +6,6 @@ import timeit
 import urllib.request
 from os import PathLike
 from pathlib import Path
-from typing import List, Optional, Union
-from uuid import uuid4
 from warnings import warn
 
 from modflow_devtools.zip import MFZipFile
@@ -39,7 +37,7 @@ def get_request(url, params={}):
 
 def get_releases(
     repo, per_page=30, max_pages=10, retries=3, verbose=False
-) -> List[dict]:
+) -> list[dict]:
     """
     Get available releases for the given repository.
 
@@ -148,7 +146,6 @@ def get_release(repo, tag="latest", retries=3, verbose=False) -> dict:
         else f"{req_url}/releases/tags/{tag}"
     )
     request = get_request(req_url)
-    releases = None
     num_tries = 0
 
     while True:
@@ -156,8 +153,8 @@ def get_release(repo, tag="latest", retries=3, verbose=False) -> dict:
         try:
             with urllib.request.urlopen(request, timeout=10) as resp:
                 result = resp.read()
-                remaining = int(resp.headers["x-ratelimit-remaining"])
-                if remaining <= 10:
+                remaining = resp.headers.get("x-ratelimit-remaining", None)
+                if remaining and int(remaining) <= 10:
                     warn(
                         f"Only {remaining} GitHub API requests remaining "
                         "before rate-limiting"
@@ -171,12 +168,7 @@ def get_release(repo, tag="latest", retries=3, verbose=False) -> dict:
                     f"use GITHUB_TOKEN env to bypass rate limit ({err})"
                 ) from err
             elif err.code == 404:
-                if releases is None:
-                    releases = get_releases(repo, verbose=verbose)
-                if tag not in releases:
-                    raise ValueError(
-                        f"Release {tag} not found (choose from {', '.join(releases)})"
-                    )
+                raise ValueError(f"Release {tag} not found")
             elif err.code == 503 and num_tries < retries:
                 # GitHub sometimes returns this error for valid URLs, so retry
                 warn(f"URL request {num_tries} failed ({err})")
@@ -219,217 +211,9 @@ def get_latest_version(repo, retries=3, verbose=False) -> str:
     return release["tag_name"]
 
 
-def get_release_assets(
-    repo, tag="latest", simple=False, retries=3, verbose=False
-) -> Union[dict, List[dict]]:
-    """
-    Get assets corresponding to the given release.
-
-    Parameters
-    ----------
-    repo : str
-        The repository (format must be owner/name)
-    tag : str
-        The release tag to retrieve assets for
-    simple : bool
-        If True, return a dict mapping asset names to download URLs, otherwise (by
-        default) a list of dicts containing asset info as returned by the GitHub API
-    retries : int
-        The maximum number of retries for each request
-    verbose : bool
-        Whether to show verbose output
-
-    Returns
-    -------
-        A list of dicts if simple is False, one per release asset.
-        If simple is True, a dict mapping asset names to download URLs.
-    """
-
-    if "/" not in repo:
-        raise ValueError("repo format must be owner/name")
-
-    if not isinstance(tag, str) or not any(tag):
-        raise ValueError("tag must be a non-empty string")
-
-    if not isinstance(retries, int) or retries < 1:
-        raise ValueError("retries must be a positive int")
-
-    release = get_release(repo, tag=tag, retries=retries, verbose=verbose)
-    return (
-        {a["name"]: a["browser_download_url"] for a in release["assets"]}
-        if simple
-        else release["assets"]
-    )
-
-
-def list_artifacts(
-    repo, name=None, per_page=30, max_pages=10, retries=3, verbose=False
-) -> List[dict]:
-    """
-    List artifacts for the given repository, optionally filtering by name (exact match).
-    If more artifacts are available than will fit within the given page size, by default
-    requests are made until all artifacts are retrieved. The number of requests made can
-    be limited with the max_pages parameter.
-
-    Parameters
-    ----------
-    repo : str
-        The repository (format must be owner/name)
-    name : str
-        The artifact name (must be an exact match)
-    per_page : int
-        The number of artifacts to return per page (must be between 1-100, inclusive)
-    max_pages : int
-        The maximum number of pages to retrieve (i.e. the number of requests to make)
-    retries : int
-        The maximum number of retries for each request
-    verbose : bool
-        Whether to show verbose output
-
-    Returns
-    -------
-        A list of dictionaries, each containing information
-        about an artifact as returned by the GitHub API.
-    """
-
-    if "/" not in repo:
-        raise ValueError("repo format must be owner/name")
-
-    if not isinstance(retries, int) or retries < 1:
-        raise ValueError("retries must be a positive int")
-
-    msg = f"artifact(s) for {repo}" + (f" matching name {name}" if name else "")
-    req_url = f"https://api.github.com/repos/{repo}/actions/artifacts"
-    page = 1
-    params = {}
-
-    if name is not None:
-        if not isinstance(name, str) or len(name) == 0:
-            raise ValueError("name must be a non-empty string")
-        params["name"] = name
-
-    if per_page is not None:
-        if per_page < 1 or per_page > 100:
-            raise ValueError("per_page must be between 1 and 100")
-        params["per_page"] = int(per_page)
-
-    def get_response_json():
-        tries = 0
-        params["page"] = page
-        request = get_request(req_url, params=params)
-        while True:
-            tries += 1
-            try:
-                if verbose:
-                    print(f"Fetching {msg} (page {page}, {per_page} per page)")
-                with urllib.request.urlopen(request, timeout=10) as resp:
-                    return json.loads(resp.read().decode())
-            except urllib.error.HTTPError as err:
-                if err.code == 401 and os.environ.get("GITHUB_TOKEN"):
-                    raise ValueError("GITHUB_TOKEN env is invalid") from err
-                elif err.code == 403 and "rate limit exceeded" in err.reason:
-                    raise ValueError(
-                        f"use GITHUB_TOKEN env to bypass rate limit ({err})"
-                    ) from err
-                elif err.code in (404, 503) and tries < retries:
-                    # GitHub sometimes returns this error for valid URLs, so retry
-                    warn(f"URL request try {tries} failed ({err})")
-                    continue
-                raise RuntimeError(f"cannot retrieve data from {req_url}") from err
-
-    artifacts = []
-    diff = 1
-    max_pages = max_pages if max_pages else sys.maxsize
-    while diff > 0 and page <= max_pages:
-        result = get_response_json()
-        total = result["total_count"]
-        if page == 1:
-            print(f"Repo {repo} has {total} artifact(s)")
-
-        page += 1
-        artifacts.extend(result["artifacts"])
-        diff = total - len(artifacts)
-
-    if verbose:
-        print(f"Found {len(artifacts)} {msg}")
-
-    return artifacts
-
-
-def download_artifact(
-    repo,
-    id,
-    path: Optional[PathLike] = None,
-    delete_zip=True,
-    retries=3,
-    verbose=False,
-):
-    """
-    Download and unzip a GitHub Actions artifact, selected by its ID.
-
-    Parameters
-    ----------
-    repo : str
-        The repository (format must be owner/name)
-    id : str
-        The artifact ID
-    path : PathLike
-        Path where the zip file will be saved (default is current path)
-    delete_zip : bool
-        Whether the zip file should be deleted after it is unzipped (default is True)
-    retries : int
-        The maximum number of retries for each request
-    verbose : bool
-        Whether to show verbose output
-    """
-
-    if "/" not in repo:
-        raise ValueError("repo format must be owner/name")
-
-    if not isinstance(retries, int) or retries < 1:
-        raise ValueError("retries must be a positive int")
-
-    req_url = f"https://api.github.com/repos/{repo}/actions/artifacts/{id}/zip"
-    request = urllib.request.Request(req_url)
-    if "github.com" in req_url:
-        github_token = os.environ.get("GITHUB_TOKEN", None)
-        if github_token:
-            request.add_header("Authorization", f"Bearer {github_token}")
-
-    zip_path = Path(path).expanduser().absolute() / f"{str(uuid4())}.zip"
-    tries = 0
-    while True:
-        tries += 1
-        try:
-            with urllib.request.urlopen(request) as url_file, open(
-                zip_path, "wb"
-            ) as out_file:
-                content = url_file.read()
-                out_file.write(content)
-                break
-        except urllib.error.HTTPError as err:
-            if tries < retries:
-                warn(f"URL request try {tries} failed ({err})")
-                continue
-            else:
-                raise RuntimeError(f"cannot retrieve data from {req_url}") from err
-
-    if verbose:
-        print(f"Uncompressing: {zip_path}")
-
-    z = MFZipFile(zip_path)
-    z.extractall(str(path))
-    z.close()
-
-    if delete_zip:
-        if verbose:
-            print(f"Deleting zipfile {zip_path}")
-        zip_path.unlink()
-
-
 def download_and_unzip(
     url: str,
-    path: Optional[PathLike] = None,
+    path: PathLike | None = None,
     delete_zip=True,
     retries=3,
     verbose=False,
@@ -456,8 +240,10 @@ def download_and_unzip(
     Path
         The path to the directory where the zip file was unzipped
     """
-
-    path = Path(path if path else os.getcwd())
+    if path:
+        path = Path(path)
+    else:
+        path = Path.cwd()
     path.mkdir(exist_ok=True)
 
     if verbose:
@@ -477,9 +263,10 @@ def download_and_unzip(
     while True:
         tries += 1
         try:
-            with urllib.request.urlopen(request) as url_file, open(
-                file_path, "wb"
-            ) as out_file:
+            with (
+                urllib.request.urlopen(request) as url_file,
+                file_path.open("wb") as out_file,
+            ):
                 content = url_file.read()
                 out_file.write(content)
 

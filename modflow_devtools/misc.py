@@ -2,27 +2,26 @@ import importlib
 import socket
 import sys
 import traceback
+from _warnings import warn
 from ast import literal_eval
 from contextlib import contextmanager
+from enum import Enum
 from functools import wraps
 from importlib import metadata
-from os import PathLike, chdir, environ, getcwd
-from os.path import basename, normpath
-from pathlib import Path
+from os import PathLike, chdir, environ
+from pathlib import Path, PurePosixPath
 from shutil import which
-from subprocess import PIPE, Popen
+from subprocess import run
 from timeit import timeit
-from typing import Dict, List, Optional, Tuple
+from typing import Any
 from urllib import request
 from urllib.error import URLError
-
-from _warnings import warn
 
 
 @contextmanager
 def set_dir(path: PathLike):
-    origin = Path(getcwd()).absolute()
-    wrkdir = Path(path).expanduser().absolute()
+    origin = Path.cwd()
+    wrkdir = Path(path).expanduser().resolve()
 
     try:
         chdir(path)
@@ -31,6 +30,10 @@ def set_dir(path: PathLike):
     finally:
         chdir(origin)
         print(f"Returned to previous directory: {origin}")
+
+
+# alias like https://github.com/Deltares/imod-python/blob/ab2af5e20fd9996b1821c3356166a834945eef5e/imod/util/context.py#L26
+cd = set_dir
 
 
 class add_sys_path:
@@ -69,7 +72,7 @@ def get_ostag() -> str:
     raise ValueError(f"platform {sys.platform!r} not supported")
 
 
-def get_suffixes(ostag) -> Tuple[str, str]:
+def get_suffixes(ostag) -> tuple[str, str]:
     """
     Returns executable and library suffixes for the
     given OS (as returned by sys.platform)
@@ -93,17 +96,14 @@ def get_suffixes(ostag) -> Tuple[str, str]:
 def run_cmd(*args, verbose=False, **kwargs):
     """
     Run any command, return tuple (stdout, stderr, returncode).
-
-    Originally written by Mike Toews (mwtoews@gmail.com) for FloPy.
     """
     args = [str(g) for g in args]
     if verbose:
         print("running: " + " ".join(args))
-    p = Popen(args, stdout=PIPE, stderr=PIPE, **kwargs)
-    stdout, stderr = p.communicate()
-    stdout = stdout.decode()
-    stderr = stderr.decode()
-    returncode = p.returncode
+    proc = run(args, capture_output=True, text=True, **kwargs)
+    stdout = proc.stdout
+    stderr = proc.stderr
+    returncode = proc.returncode
     if verbose:
         print(f"stdout:\n{stdout}")
         print(f"stderr:\n{stderr}")
@@ -121,7 +121,7 @@ def run_py_script(script, *args, verbose=False):
 def get_current_branch() -> str:
     """
     Tries to determine the name of the current branch, first by the GITHUB_REF
-    environent variable, then by asking ``git`` if GITHUB_REF is not set.
+    environment variable, then by asking ``git`` if GITHUB_REF is not set.
 
     Returns
     -------
@@ -137,20 +137,19 @@ def get_current_branch() -> str:
     """
 
     # check if on GitHub Actions CI
-    ref = environ.get("GITHUB_REF")
-    if ref is not None:
-        return basename(normpath(ref)).lower()
+    if ref := environ.get("GITHUB_REF"):
+        return PurePosixPath(ref).name
 
     # otherwise ask git about it
     if not which("git"):
         raise RuntimeError("'git' required to determine current branch")
-    stdout, stderr, code = run_cmd("git", "rev-parse", "--abbrev-ref", "HEAD")
+    stdout, stderr, code = run_cmd("git", "branch", "--show-current")
     if code == 0 and stdout:
-        return stdout.strip().lower()
+        return stdout.strip()
     raise ValueError(f"Could not determine current branch: {stderr}")
 
 
-def get_packages(namefile_path: PathLike) -> List[str]:
+def get_packages(namefile_path: PathLike) -> list[str]:
     """
     Return a list of packages used by the simulation
     or model defined in the given namefile. The namefile
@@ -165,12 +164,13 @@ def get_packages(namefile_path: PathLike) -> List[str]:
 
     Returns
     -------
+    list
         a list of packages used by the simulation or model
     """
 
-    packages = []
-    path = Path(namefile_path).expanduser().absolute()
-    lines = open(path, "r").readlines()
+    packages: list[str] = []
+    path = Path(namefile_path).expanduser().resolve()
+    lines = path.read_text().splitlines()
     gwf_lines = [ln for ln in lines if ln.strip().lower().startswith("gwf6 ")]
     gwt_lines = [ln for ln in lines if ln.strip().lower().startswith("gwt6 ")]
 
@@ -194,12 +194,12 @@ def get_packages(namefile_path: PathLike) -> List[str]:
 
     for line in lines:
         # Skip over blank and commented lines
-        line = line.strip().split()
-        if len(line) < 2:
+        words = line.strip().split()
+        if len(words) < 2:
             continue
 
-        line = line[0].lower()
-        if any(line.startswith(c) for c in ["#", "!", "data", "list"]) or line in [
+        word = words[0].lower()
+        if any(word.startswith(c) for c in ["#", "!", "data", "list"]) or word in [
             "begin",
             "end",
             "memory_print_option",
@@ -207,9 +207,9 @@ def get_packages(namefile_path: PathLike) -> List[str]:
             continue
 
         # strip "6" from package name
-        line = line.replace("6", "")
+        word = word.replace("6", "")
 
-        packages.append(line.lower())
+        packages.append(word.lower())
 
     return list(set(packages))
 
@@ -224,7 +224,7 @@ def has_package(namefile_path: PathLike, package: str) -> bool:
 
 def get_namefile_paths(
     path: PathLike,
-    prefix: str = None,
+    prefix: str | None = None,
     namefile: str = "mfsim.nam",
     excluded=None,
     selected=None,
@@ -236,15 +236,14 @@ def get_namefile_paths(
     by parent directory name prefix or pattern, or by
     packages used.
     """
+    path = Path(path)
 
     # if path doesn't exist, return empty list
-    if not Path(path).is_dir():
+    if not path.is_dir():
         return []
 
     # find simulation namefiles
-    paths = [
-        p for p in Path(path).rglob(f"{prefix}*/**/{namefile}" if prefix else namefile)
-    ]
+    paths = list(path.rglob(f"{prefix}*/**/{namefile}" if prefix else namefile))
 
     # remove excluded
     paths = [
@@ -256,7 +255,7 @@ def get_namefile_paths(
         filtered = []
         for nfp in paths:
             nf_pkgs = get_packages(nfp)
-            shared = set(nf_pkgs).intersection(set([p.lower() for p in packages]))
+            shared = set(nf_pkgs).intersection({p.lower() for p in packages})
             if any(shared):
                 filtered.append(nfp)
         paths = filtered
@@ -274,23 +273,24 @@ def get_namefile_paths(
 
 def get_model_paths(
     path: PathLike,
-    prefix: str = None,
+    prefix: str | None = None,
     namefile: str = "mfsim.nam",
     excluded=None,
     selected=None,
     packages=None,
-) -> List[Path]:
+) -> list[Path]:
     """
     Find model directories recursively in the given location.
     A model directory is any directory containing one or more
     namefiles. Model directories can be filtered or excluded,
-    by prefix, pattern, namefile name, or packages used. The
-    directories are returned in order within scenario folders
+    by prefix, pattern, namefile name, or packages used. This
+    function attempts to sort model subdirectories of a shared
+    parent directory by the order in which the models must run,
     such that groundwater flow model workspaces precede other
-    model types. This allows models which depend on the flow
-    model's outputs to consume its head or budget, and models
-    should successfully run in the sequence returned provided
-    input files (e.g. FMI) refer to output via relative paths.
+    model types, if the model directory names contain standard
+    model abbreviates (e.g. "gwf", "gwt", "gwe"). This allows
+    transport or other models to consume a flow model's head
+    or budget results.
     """
 
     def keyfunc(v):
@@ -300,21 +300,18 @@ def get_model_paths(
         else:
             return 1
 
+    path = Path(path).expanduser().absolute()
     model_paths = []
     globbed = path.rglob(f"{prefix if prefix else ''}*")
     example_paths = [p for p in globbed if p.is_dir()]
     for p in example_paths:
         for mp in sorted(
-            list(
-                set(
-                    [
-                        p.parent
-                        for p in get_namefile_paths(
-                            p, prefix, namefile, excluded, selected, packages
-                        )
-                    ]
+            {
+                p.parent
+                for p in get_namefile_paths(
+                    p, prefix, namefile, excluded, selected, packages
                 )
-            ),
+            },
             key=keyfunc,
         ):
             if mp not in model_paths:
@@ -349,7 +346,7 @@ def is_in_ci():
     return bool(environ.get("CI", None))
 
 
-def is_github_rate_limited() -> Optional[bool]:
+def is_github_rate_limited() -> bool | None:
     """
     Determines if a GitHub API rate limit is applied to the current IP.
     Calling this function will consume an API request!
@@ -388,7 +385,7 @@ def has_exe(exe):
 
 
 def has_pkg(
-    pkg: str, strict: bool = False, name_map: Optional[Dict[str, str]] = None
+    pkg: str, strict: bool = False, name_map: dict[str, str] | None = None
 ) -> bool:
     """
     Determines if the given Python package is installed.
@@ -489,7 +486,7 @@ def timed(f):
     return _timed
 
 
-def get_env(name: str, default: object = None) -> Optional[object]:
+def get_env(name: str, default: object = None) -> object | None:
     """
     Try to parse the given environment variable as the type of the given
     default value, if one is provided, otherwise any type is acceptable.
@@ -510,7 +507,8 @@ def get_env(name: str, default: object = None) -> Optional[object]:
     otherwise the default value if the environment variable is not set.
     """
     try:
-        v = environ.get(name)
+        if (v := environ.get(name, None)) is None:
+            return default
         if isinstance(default, bool):
             v = v.lower().title()
         v = literal_eval(v)
@@ -559,3 +557,11 @@ def set_env(*remove, **update):
     finally:
         env.update(update_after)
         [env.pop(k) for k in remove_after]
+
+
+def try_get_enum_value(v: Any) -> Any:
+    """
+    Get the enum's value if the object is an instance
+    of an enumeration, otherwise return it unaltered.
+    """
+    return v.value if isinstance(v, Enum) else v

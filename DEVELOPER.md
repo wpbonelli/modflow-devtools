@@ -19,7 +19,7 @@ This document provides guidance to set up a development environment and discusse
 
 ## Requirements
 
-Python3.8+ is currently required. This project supports several recent versions of Python, loosely following [NEP 29](https://numpy.org/neps/nep-0029-deprecation_policy.html#implementation) and aiming to stay synchronized with [FloPy](https://github.com/modflowpy/flopy).
+Python3.10+ is currently required. This project has historically aimed to support several recent versions of Python, loosely following [NEP 29](https://numpy.org/neps/nep-0029-deprecation_policy.html#implementation). In current and future development this window may narrow to follow [SPEC 0](https://scientific-python.org/specs/spec-0000/#support-window) instead.
 
 ## Installation
 
@@ -74,7 +74,7 @@ The `modflow-devtools` release procedure is automated with GitHub Actions in [`.
 2. Reinitialize the `develop` branch
 3. Publish the package to PyPI
 
-To begin an automated release, create a release branch from `develop`. The release branch name should be the version number of with a `v`a prefix (e.g., `v0.0.6`). Pushing the release branch to the `MODFLOW-USGS/modflow-devtools` repository will trigger the release workflow, which begins with the following steps:
+To begin an automated release, create a release branch from `develop`. The release branch name should be the version number of with a `v`a prefix (e.g., `v0.0.6`). Pushing the release branch to the `MODFLOW-ORG/modflow-devtools` repository will trigger the release workflow, which begins with the following steps:
 
 - update version strings to match the version number in the release branch name
 - generate a changelog since the last release and update `HISTORY.md`

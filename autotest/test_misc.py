@@ -4,7 +4,6 @@ import shutil
 from os import environ
 from pathlib import Path
 from time import sleep
-from typing import List
 
 import pytest
 
@@ -22,10 +21,10 @@ from modflow_devtools.misc import (
 
 
 def test_set_dir(tmp_path):
-    assert Path(os.getcwd()) != tmp_path
+    assert Path.cwd() != tmp_path
     with set_dir(tmp_path):
-        assert Path(os.getcwd()) == tmp_path
-    assert Path(os.getcwd()) != tmp_path
+        assert Path.cwd() == tmp_path
+    assert Path.cwd() != tmp_path
 
 
 def test_set_env():
@@ -49,17 +48,13 @@ if _repos_path is None:
     _repos_path = Path(__file__).parent.parent.parent.parent
 _repos_path = Path(_repos_path).expanduser().absolute()
 _testmodels_repo_path = _repos_path / "modflow6-testmodels"
-_testmodels_repo_paths_mf6 = sorted(list((_testmodels_repo_path / "mf6").glob("test*")))
-_testmodels_repo_paths_mf5to6 = sorted(
-    list((_testmodels_repo_path / "mf5to6").glob("test*"))
-)
+_testmodels_repo_paths_mf6 = sorted((_testmodels_repo_path / "mf6").glob("test*"))
+_testmodels_repo_paths_mf5to6 = sorted((_testmodels_repo_path / "mf5to6").glob("test*"))
 _largetestmodels_repo_path = _repos_path / "modflow6-largetestmodels"
-_largetestmodel_paths = sorted(list(_largetestmodels_repo_path.glob("test*")))
+_largetestmodel_paths = sorted(_largetestmodels_repo_path.glob("test*"))
 _examples_repo_path = _repos_path / "modflow6-examples"
 _examples_path = _examples_repo_path / "examples"
-_example_paths = (
-    sorted(list(_examples_path.glob("ex-*"))) if _examples_path.is_dir() else []
-)
+_example_paths = sorted(_examples_path.glob("ex-*")) if _examples_path.is_dir() else []
 
 
 @pytest.mark.skipif(
@@ -95,20 +90,19 @@ def test_get_packages_fails_on_invalid_namefile(module_tmpdir):
 
     # invalid gwf namefile reference:
     # result should only contain packages from mfsim.nam
-    lines = open(namefile_path, "r").read().splitlines()
-    with open(namefile_path, "w") as f:
-        for line in lines:
-            if "GWF6" in line:
-                line = line.replace("GWF6", "GWF6  garbage")
-            f.write(line + os.linesep)
-    assert set(get_packages(namefile_path)) == {"gwf", "tdis", "ims"}
+    lines = []
+    for line in namefile_path.read_text().splitlines():
+        if "GWF6" in line:
+            line = line.replace("GWF6", "GWF6  garbage")
+        lines.append(line)
+    namefile_path.write_text("\n".join(lines))
 
-    # entirely unparseable namefile - result should be empty
-    lines = open(namefile_path, "r").read().splitlines()
-    with open(namefile_path, "w") as f:
-        for _ in lines:
-            f.write("garbage" + os.linesep)
-    assert not any(get_packages(namefile_path))
+    with pytest.warns(UserWarning, match="Invalid namefile format"):
+        assert set(get_packages(namefile_path)) == {"gwf", "tdis", "ims"}
+
+    # entirely unparsable namefile - result should be empty
+    namefile_path.write_text("garbage\n" * 20)
+    assert get_packages(namefile_path) == []
 
 
 @pytest.mark.skipif(not any(_example_paths), reason="examples not found")
@@ -127,36 +121,36 @@ def test_has_package():
     assert not has_package(namefile_path, "wel")
 
 
-def get_expected_model_dirs(path, pattern="mfsim.nam") -> List[Path]:
+def get_expected_model_dirs(path, pattern="mfsim.nam") -> list[Path]:
     folders = []
-    for root, dirs, files in os.walk(path):
+    for root, dirs, _ in os.walk(path):
         for d in dirs:
             p = Path(root) / d
             if any(p.glob(pattern)):
                 folders.append(p)
-    return sorted(list(set(folders)))
+    return sorted(set(folders))
 
 
-def get_expected_namefiles(path, pattern="mfsim.nam") -> List[Path]:
+def get_expected_namefiles(path, pattern="mfsim.nam") -> list[Path]:
     folders = []
-    for root, dirs, files in os.walk(path):
+    for root, dirs, _ in os.walk(path):
         for d in dirs:
             p = Path(root) / d
             found = list(p.glob(pattern))
             folders = folders + found
-    return sorted(list(set(folders)))
+    return sorted(set(folders))
 
 
 @pytest.mark.skipif(not any(_example_paths), reason="modflow6-examples repo not found")
 def test_get_model_paths_examples():
     expected_paths = get_expected_model_dirs(_examples_path)
     paths = get_model_paths(_examples_path)
-    assert sorted(paths) == sorted(list(set(paths)))  # no duplicates
+    assert sorted(paths) == sorted(set(paths))  # no duplicates
     assert set(expected_paths) == set(paths)
 
     expected_paths = get_expected_model_dirs(_examples_path, "*.nam")
     paths = get_model_paths(_examples_path, namefile="*.nam")
-    assert sorted(paths) == sorted(list(set(paths)))
+    assert sorted(paths) == sorted(set(paths))
     assert set(expected_paths) == set(paths)
 
 
@@ -166,12 +160,12 @@ def test_get_model_paths_examples():
 def test_get_model_paths_largetestmodels():
     expected_paths = get_expected_model_dirs(_examples_path)
     paths = get_model_paths(_examples_path)
-    assert sorted(paths) == sorted(list(set(paths)))
+    assert sorted(paths) == sorted(set(paths))
     assert set(expected_paths) == set(paths)
 
     expected_paths = get_expected_model_dirs(_examples_path)
     paths = get_model_paths(_examples_path)
-    assert sorted(paths) == sorted(list(set(paths)))
+    assert sorted(paths) == sorted(set(paths))
     assert set(expected_paths) == set(paths)
 
 
@@ -192,12 +186,12 @@ def test_get_model_paths_exclude_patterns(models):
 def test_get_namefile_paths_examples():
     expected_paths = get_expected_namefiles(_examples_path)
     paths = get_namefile_paths(_examples_path)
-    assert paths == sorted(list(set(paths)))
+    assert paths == sorted(set(paths))
     assert set(expected_paths) == set(paths)
 
     expected_paths = get_expected_namefiles(_examples_path, "*.nam")
     paths = get_namefile_paths(_examples_path, namefile="*.nam")
-    assert paths == sorted(list(set(paths)))
+    assert paths == sorted(set(paths))
     assert set(expected_paths) == set(paths)
 
 
@@ -207,12 +201,12 @@ def test_get_namefile_paths_examples():
 def test_get_namefile_paths_largetestmodels():
     expected_paths = get_expected_namefiles(_largetestmodels_repo_path)
     paths = get_namefile_paths(_largetestmodels_repo_path)
-    assert paths == sorted(list(set(paths)))
+    assert paths == sorted(set(paths))
     assert set(expected_paths) == set(paths)
 
     expected_paths = get_expected_namefiles(_largetestmodels_repo_path)
     paths = get_namefile_paths(_largetestmodels_repo_path)
-    assert paths == sorted(list(set(paths)))
+    assert paths == sorted(set(paths))
     assert set(expected_paths) == set(paths)
 
 

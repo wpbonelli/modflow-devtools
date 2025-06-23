@@ -144,3 +144,11 @@ bin
 
 **.DS_Store
 data_backup
+
+autotest/temp/
+
+# uv lockfile
+uv.lock
+
+# filelock files
+**/*.lock

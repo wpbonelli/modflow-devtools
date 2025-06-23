@@ -1,9 +1,6 @@
 [build-system]
-# Minimum requirements for the build system to execute
-requires = [
-    "setuptools>=61",
-]
-build-backend = "setuptools.build_meta"
+requires = ["hatchling"]
+build-backend = "hatchling.build"
 
 [project]
 name = "modflow-devtools"
@@ -32,19 +29,24 @@ classifiers = [
     "License :: CC0 1.0 Universal (CC0 1.0) Public Domain Dedication",
     "Programming Language :: Python :: 3 :: Only",
     "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.8",
-    "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
     "Topic :: Scientific/Engineering :: Hydrology"
 ]
-requires-python = ">=3.8"
+requires-python = ">=3.10"
 dynamic = ["version"]
 
 [project.optional-dependencies]
+build = [
+    "build",
+    "twine"
+]
 lint = [
-    "ruff"
+    "codespell[toml]",
+    "ruff",
+    "mypy"
 ]
 test = [
     "modflow-devtools[lint]",
@@ -67,36 +69,122 @@ docs = [
     "sphinx-rtd-theme",
     "myst-parser"
 ]
+dfn = [
+    "boltons",
+    "tomli",
+    "tomli-w"
+]
+models = [
+    "boltons",
+    "filelock",
+    "pooch",
+    "tomli",
+    "tomli-w"
+]
+dev = ["modflow-devtools[lint,test,docs,dfn,models]"]
+
+[dependency-groups]
+build = [
+    "build",
+    "twine"
+]
+lint = [
+    "codespell[toml]",
+    "ruff",
+    "mypy",
+]
+test = [
+    "modflow-devtools[lint]",
+    "coverage",
+    "flaky",
+    "filelock",
+    "meson!=0.63.0",
+    "ninja",
+    "numpy",
+    "pandas",
+    "pytest!=8.1.0",
+    "pytest-cov",
+    "pytest-dotenv",
+    "pytest-xdist",
+    "PyYaml",
+    "syrupy"
+]
+docs = [
+    "sphinx",
+    "sphinx-rtd-theme",
+    "myst-parser"
+]
+dfn = [
+    "boltons",
+    "tomli",
+    "tomli-w"
+]
+models = [
+    "boltons",
+    "filelock",
+    "pooch",
+    "tomli",
+    "tomli-w"
+]
+dev = [
+    {include-group = "build"},
+    {include-group = "lint"},
+    {include-group = "test"},
+    {include-group = "docs"},
+    {include-group = "dfn"},
+    {include-group = "models"},
+]
 
 [project.urls]
 "Documentation" = "https://modflow-devtools.readthedocs.io/en/latest/"
-"Bug Tracker" = "https://github.com/MODFLOW-USGS/modflow-devtools/issues"
-"Source Code" = "https://github.com/MODFLOW-USGS/modflow-devtools"
+"Bug Tracker" = "https://github.com/MODFLOW-ORG/modflow-devtools/issues"
+"Source Code" = "https://github.com/MODFLOW-ORG/modflow-devtools"
 
-[tool.ruff]
-target-version = "py38"
+[tool.hatch.build.targets.sdist]
+only-include = ["modflow_devtools"]
+
+[tool.hatch.build.targets.wheel]
+packages = ["modflow_devtools"]
+
+[tool.hatch.build]
 include = [
-    "pyproject.toml",
-    "modflow_devtools/**/*.py",
-    "autotest/**/*.py",
-    "docs/**/*.py",
-    "scripts/**/*.py",
-    ".github/**/*.py",
+    "modflow_devtools/registry/*"
 ]
 
+[tool.hatch.version]
+path = "modflow_devtools/__init__.py"
+
+[tool.codespell]
+skip = "cliff.toml,./modflow_devtools/registry/**,./docs/_build/**,./autotest/temp/**,./build/**"
+ignore-words-list = [
+    "nam",
+    "wel",
+    "gage",
+    "sav",
+]
+
+[tool.ruff]
+line-length = 88
+
 [tool.ruff.lint]
-select = ["F", "E", "I001"]
+select = [
+    "C4",   # flake8 comprehensions
+    "D409", # pydocstyle - section-underline-matches-section-length
+    "E", "W", # pycodestyle
+    "F",    # Pyflakes
+    "I",    # isort 
+    "PTH",  # flake8-use-pathlib
+    "RUF",  # Ruff-specific rules
+    "UP",   # pyupgrade
+]
 
-[tool.setuptools]
-packages = ["modflow_devtools"]
-include-package-data = true
-zip-safe = false
-
-[tool.setuptools.dynamic]
-version = {file = "version.txt"}
-
-[tool.setuptools_scm]
-fallback_version = "999"
+[tool.ruff.lint.per-file-ignores]
+"modflow_devtools/zip.py" = ["PTH"]
 
 [tool.pytest.ini_options]
 addopts = ["--import-mode=importlib"]
+
+[tool.mypy]
+mypy_path = "modflow_devtools"
+ignore_missing_imports = true
+warn_unreachable = true

@@ -1,9 +1,10 @@
 from collections import OrderedDict
+from collections.abc import Generator
 from itertools import groupby
 from os import PathLike, environ
 from pathlib import Path
 from shutil import copytree, rmtree
-from typing import Dict, Generator, List, Optional
+from warnings import warn
 
 from modflow_devtools.imports import import_optional_dependency
 from modflow_devtools.misc import get_namefile_paths, get_packages
@@ -16,8 +17,14 @@ pytest = import_optional_dependency("pytest")
 
 @pytest.fixture(scope="function")
 def function_tmpdir(tmpdir_factory, request) -> Generator[Path, None, None]:
-    node = request.node.name.replace("/", "_").replace("\\", "_").replace(":", "_")
-    temp = Path(tmpdir_factory.mktemp(node))
+    node_name = (
+        request.node.name.replace("/", "_")
+        .replace("\\", "_")
+        .replace(":", "_")
+        .replace("[", "_")
+        .replace("]", "_")
+    )
+    temp = Path(tmpdir_factory.mktemp(node_name))
     yield Path(temp)
 
     keep = request.config.option.KEEP
@@ -37,9 +44,9 @@ def function_tmpdir(tmpdir_factory, request) -> Generator[Path, None, None]:
 
 @pytest.fixture(scope="class")
 def class_tmpdir(tmpdir_factory, request) -> Generator[Path, None, None]:
-    assert (
-        request.cls is not None
-    ), "Class-scoped temp dir fixture must be used on class"
+    assert request.cls is not None, (
+        "Class-scoped temp dir fixture must be used on class"
+    )
     temp = Path(tmpdir_factory.mktemp(request.cls.__name__))
     yield temp
 
@@ -78,9 +85,10 @@ def session_tmpdir(tmpdir_factory, request) -> Generator[Path, None, None]:
 
 
 @pytest.fixture
-def repos_path() -> Optional[Path]:
+def repos_path() -> Path | None:
     """Path to directory containing test model and example repositories"""
-    return environ.get("REPOS_PATH", None)
+    path = environ.get("REPOS_PATH", None)
+    return Path(path) if path else None
 
 
 @pytest.fixture
@@ -226,7 +234,7 @@ def pytest_generate_tests(metafunc):
         # requesting these fixtures will be skipped.
         repos_path = Path.cwd().parent.parent
 
-    def get_repo_path(repo_name: str) -> Optional[Path]:
+    def get_repo_path(repo_name: str) -> Path | None:
         """Get the path for the repository with the given name
         (optionally with .git suffix), or None if not found"""
         repo_path = repos_path / repo_name
@@ -238,6 +246,10 @@ def pytest_generate_tests(metafunc):
 
     key = "test_model_mf6"
     if key in metafunc.fixturenames:
+        warn(
+            f"Fixture '{key}' is deprecated, use models module instead",
+            DeprecationWarning,
+        )
         repo_path = get_repo_path("modflow6-testmodels")
         namefile_paths = (
             get_namefile_paths(
@@ -254,6 +266,10 @@ def pytest_generate_tests(metafunc):
 
     key = "test_model_mf5to6"
     if key in metafunc.fixturenames:
+        warn(
+            f"Fixture '{key}' is deprecated, use models module instead",
+            DeprecationWarning,
+        )
         repo_path = get_repo_path("modflow6-testmodels")
         namefile_paths = (
             get_namefile_paths(
@@ -271,6 +287,10 @@ def pytest_generate_tests(metafunc):
 
     key = "large_test_model"
     if key in metafunc.fixturenames:
+        warn(
+            f"Fixture '{key}' is deprecated, use models module instead",
+            DeprecationWarning,
+        )
         repo_path = get_repo_path("modflow6-largetestmodels")
         namefile_paths = (
             get_namefile_paths(
@@ -288,6 +308,10 @@ def pytest_generate_tests(metafunc):
 
     key = "example_scenario"
     if key in metafunc.fixturenames:
+        warn(
+            f"Fixture '{key}' is deprecated, use models module instead",
+            DeprecationWarning,
+        )
         repo_path = get_repo_path("modflow6-examples")
 
         def is_nested(namfile_path: PathLike) -> bool:
@@ -307,13 +331,13 @@ def pytest_generate_tests(metafunc):
         def example_name_from_namfile_path(path: PathLike) -> str:
             return example_path_from_namfile_path(path).name
 
-        def group_examples(namefile_paths) -> Dict[str, List[Path]]:
+        def group_examples(namefile_paths) -> dict[str, list[Path]]:
             d = OrderedDict()
             for name, paths in groupby(
                 namefile_paths, key=example_name_from_namfile_path
             ):
                 # sort alphabetically (gwf < gwt)
-                nfpaths = sorted(list(paths))
+                nfpaths = sorted(paths)
 
                 # skip if no models found
                 if len(nfpaths) == 0:
@@ -327,9 +351,7 @@ def pytest_generate_tests(metafunc):
             # find MODFLOW 6 namfiles
             examples_path = repo_path / "examples"
             namfiles = (
-                [p for p in examples_path.rglob("mfsim.nam")]
-                if examples_path.is_dir()
-                else []
+                list(examples_path.rglob("mfsim.nam")) if examples_path.is_dir() else []
             )
 
             # group by scenario
@@ -371,9 +393,9 @@ def pytest_generate_tests(metafunc):
 
             return examples
 
-        example_scenarios = get_examples() if repo_path else dict()
+        example_scenarios = get_examples() if repo_path else {}
         metafunc.parametrize(
             key,
-            [(name, nfps) for name, nfps in example_scenarios.items()],
+            list(example_scenarios.items()),
             ids=list(example_scenarios.keys()),
         )

@@ -28,8 +28,10 @@ The `modflow-devtools` package provides a set of tools for developing and testin
    :maxdepth: 2
    :caption: Miscellaneous
 
+   md/dfn.md
    md/download.md
    md/latex.md
+   md/models.md
    md/ostags.md
    md/zip.md
    md/timed.md
@@ -41,12 +43,3 @@ The `modflow-devtools` package provides a set of tools for developing and testin
 
    md/act.md
    md/doctoc.md
-
-
-
-Indices and tables
-==================
-
-* :ref:`genindex`
-* :ref:`modindex`
-* :ref:`search`
