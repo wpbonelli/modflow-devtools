@@ -1,0 +1,27 @@
+// Generated grammar for MF6 SIM-NAM component
+%import "base.lark"
+
+start: [WS] [_NL*] (block [[WS] _NL*])+ [WS]
+block: options_block | timing_block | models_block | exchanges_block | solutiongroup_block
+options_block: "begin"i "options" [_block_index] _NL options_content "end"i "options" [_block_index] _NL+
+options_content: (continue | nocheck | memory_print_option | profile_option | maxerrors | print_input | hpc_data)*
+timing_block: "begin"i "timing" [_block_index] _NL timing_content "end"i "timing" [_block_index] _NL+
+timing_content: (tdis6)*
+models_block: "begin"i "models" [_block_index] _NL models_content "end"i "models" [_block_index] _NL+
+models_content: (models)*
+exchanges_block: "begin"i "exchanges" [_block_index] _NL exchanges_content "end"i "exchanges" [_block_index] _NL+
+exchanges_content: (exchanges)*
+solutiongroup_block: "begin"i "solutiongroup" [_block_index] _NL solutiongroup_content "end"i "solutiongroup" [_block_index] _NL+
+solutiongroup_content: (mxiter | solutiongroup)*
+continue: [WS] "continue" _NL+
+nocheck: [WS] "nocheck" _NL+
+memory_print_option: [WS] "memory_print_option" word _NL+
+profile_option: [WS] "profile_option" word _NL+
+maxerrors: [WS] "maxerrors" NUMBER _NL+
+print_input: [WS] "print_input" _NL+
+hpc_data: [WS] "hpc_data" word* _NL+
+tdis6: [WS] "tdis6" word _NL+
+models: [WS] "models" word* _NL+
+exchanges: [WS] "exchanges" word* _NL+
+mxiter: [WS] "mxiter" NUMBER _NL+
+solutiongroup: [WS] "solutiongroup" word* _NL+

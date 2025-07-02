@@ -84,7 +84,7 @@ models = [
 codec = [
     "lark"
 ]
-dev = ["modflow-devtools[lint,test,docs,dfn,models]"]
+dev = ["modflow-devtools[lint,test,codec,docs,dfn,models]"]
 
 [dependency-groups]
 build = [

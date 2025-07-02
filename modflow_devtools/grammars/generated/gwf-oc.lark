@@ -1,0 +1,13 @@
+// Generated grammar for MF6 GWF-OC component
+%import "base.lark"
+
+start: [WS] [_NL*] (block [[WS] _NL*])+ [WS]
+block: options_block | period_block
+options_block: "begin"i "options" [_block_index] _NL options_content "end"i "options" [_block_index] _NL+
+options_content: (budget_filerecord | budgetcsv_filerecord | head_filerecord | headprintrecord)*
+period_block: "begin"i "period" [_block_index] _NL period_content "end"i "period" [_block_index] _NL+
+period_content: recarray_line*
+budget_filerecord: [WS] "budget_filerecord" word word word _NL+
+budgetcsv_filerecord: [WS] "budgetcsv_filerecord" word word word _NL+
+head_filerecord: [WS] "head_filerecord" word word word _NL+
+headprintrecord: [WS] "headprintrecord" word word _NL+

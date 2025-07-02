@@ -1,0 +1,13 @@
+// Generated grammar for MF6 UTL-TAS component
+%import "base.lark"
+
+start: [WS] [_NL*] (block [[WS] _NL*])+ [WS]
+block: attributes_block | time_block
+attributes_block: "begin"i "attributes" [_block_index] _NL attributes_content "end"i "attributes" [_block_index] _NL+
+attributes_content: (time_series_namerecord | interpolation_methodrecord | sfacrecord)*
+time_block: "begin"i "time" [_block_index] _NL time_content "end"i "time" [_block_index] _NL+
+time_content: (tas_array)*
+time_series_namerecord: [WS] "time_series_namerecord" word word _NL+
+interpolation_methodrecord: [WS] "interpolation_methodrecord" word word _NL+
+sfacrecord: [WS] "sfacrecord" word NUMBER _NL+
+tas_array: [WS] "tas_array" NUMBER _NL+

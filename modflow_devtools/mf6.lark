@@ -1,8 +1,8 @@
 start: [WS] [_NL*] (block [[WS] _NL*])+ [WS]
 block: "begin"i CNAME [_block_index] _NL _content "end"i CNAME [_block_index] _NL+
 _block_index: INT
-_content: line* [WS]
-line: [WS] item* _NL+
+_content: line*
+line: [WS] item+ _NL+
 item: word | NUMBER
 word: /[a-zA-Z0-9._'~,-\\(\\)]+/
 

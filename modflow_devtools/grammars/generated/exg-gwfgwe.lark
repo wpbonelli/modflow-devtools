@@ -1,0 +1,7 @@
+// Generated grammar for MF6 EXG-GWFGWE component
+%import "base.lark"
+
+start: [WS] [_NL*] (block [[WS] _NL*])+ [WS]
+block: options_block
+options_block: "begin"i "options" [_block_index] _NL options_content "end"i "options" [_block_index] _NL+
+options_content: ()*
