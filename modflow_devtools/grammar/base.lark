@@ -1,18 +1,14 @@
 // Base grammar with common rules for all MF6 components
 
-// Common variable types
 array_format: ("constant" | "internal" | "external" | "open/close") word*
 array_data: ([WS] (NUMBER | word)+ _NL+)*
 
-// Recarray support  
 recarray_line: [WS] recarray_item* _NL+
 recarray_item: NUMBER | word
 
-// Common tokens
 word: /[a-zA-Z0-9._'~,-\\(\\)]+/
 _block_index: INT
 
-// Imports
 %import common.NEWLINE -> _NL
 %import common.WS
 %import common.WS_INLINE
