@@ -1,12 +1,8 @@
 """
-MODFLOW 6 definition file tools. Includes types for field
-and component specification, a parser for the original
-DFN format as well as for TOML definition files, and
-a function to fetch DFNs from the MF6 repository.
+MODFLOW 6 definition file tools.
 """
 
-import shutil
-import tempfile
+from dataclasses import dataclass
 from ast import literal_eval
 from collections.abc import Mapping
 from itertools import groupby
@@ -14,9 +10,6 @@ from os import PathLike
 from pathlib import Path
 from typing import (
     Any,
-    Literal,
-    Optional,
-    TypedDict,
 )
 from warnings import warn
 
@@ -24,203 +17,16 @@ import tomli
 from boltons.dictutils import OMD
 from boltons.iterutils import remap
 
-from modflow_devtools.download import download_and_unzip
 from modflow_devtools.misc import try_literal_eval
 
 
-def try_parse_bool(value: Any) -> Any:
+# TODO finish reimpl
+
+
+@dataclass
+class Dfn:
     """
-    Try to parse a boolean from a string as represented
-    in a DFN file, otherwise return the value unaltered.
-    """
-    if isinstance(value, str):
-        value = value.lower()
-        if value in ["true", "false"]:
-            return value == "true"
-    return value
-
-
-def field_attr_sort_key(item) -> int:
-    """
-    Sort key for input field attributes. The order is:
-    -1. block
-    0. name
-    1. type
-    2. shape
-    3. default
-    4. reader
-    5. optional
-    6. longname
-    7. description
-    """
-
-    k, _ = item
-    if k == "block":
-        return -1
-    if k == "name":
-        return 0
-    if k == "type":
-        return 1
-    if k == "shape":
-        return 2
-    if k == "default":
-        return 3
-    if k == "reader":
-        return 4
-    if k == "optional":
-        return 5
-    if k == "longname":
-        return 6
-    if k == "description":
-        return 7
-    return 8
-
-
-def block_sort_key(item) -> int:
-    k, _ = item
-    if k == "options":
-        return 0
-    elif k == "dimensions":
-        return 1
-    elif k == "griddata":
-        return 2
-    elif k == "packagedata":
-        return 3
-    elif "period" in k:
-        return 4
-    else:
-        return 5
-
-
-FormatVersion = Literal[1, 2]
-"""DFN format version number."""
-
-
-FieldType = Literal[
-    "keyword",
-    "integer",
-    "double precision",
-    "string",
-    "record",
-    "recarray",
-    "keystring",
-]
-
-
-Reader = Literal[
-    "urword",
-    "u1ddbl",
-    "u2ddbl",
-    "readarray",
-]
-
-
-_SCALAR_TYPES = ("keyword", "integer", "double precision", "string")
-
-
-Dfns = dict[str, "Dfn"]
-Fields = dict[str, "Field"]
-Block = Fields
-Blocks = dict[str, Block]
-
-
-def get_blocks(dfn: "Dfn") -> Blocks:
-    """
-    Extract blocks from an input definition.
-    """
-
-    def _is_block(item: tuple[str, Any]) -> bool:
-        k, v = item
-        return k not in Dfn.__annotations__
-
-    return dict(
-        sorted(
-            {k: v for k, v in dfn.items() if _is_block((k, v))}.items(),  # type: ignore
-            key=block_sort_key,
-        )
-    )
-
-
-def get_fields(dfn: "Dfn") -> Fields:
-    """
-    Extract a flat dictionary of fields from an input definition.
-    Only top-level fields are included, i.e. subfields of records
-    or recarrays are not included.
-    """
-    fields = {}
-    for block in get_blocks(dfn).values():
-        for field in block.values():
-            if field["name"] in fields:
-                warn(f"Duplicate field name {field['name']} in {dfn['name']}")
-            fields[field["name"]] = field
-    return fields
-
-
-class Field(TypedDict):
-    """A field specification."""
-
-    name: str
-    type: FieldType
-    shape: Any | None
-    block: str | None
-    default: Any | None
-    children: Optional["Fields"]
-    description: str | None
-    reader: Reader
-
-
-class Ref(TypedDict):
-    """
-    A foreign-key-like reference between a file input variable
-    in a referring input component and another input component
-    referenced by it. Previously known as a "subpackage".
-
-    A `Dfn` with a nonempty `ref` can be referred to by other
-    component definitions, via a filepath variable which acts
-    as a foreign key. If such a variable is detected when any
-    component is loaded, the component's `__init__` method is
-    modified, such that the variable named `val`, residing in
-    the referenced component, replaces the variable with name
-    `key` in the referencing component, i.e., the foreign key
-    filepath variable, This forces a referencing component to
-    accept a subcomponent's data directly, as if it were just
-    a variable, rather than indirectly, with the subcomponent
-    loaded up from a file identified by the filepath variable.
-    """
-
-    key: str
-    val: str
-    abbr: str
-    param: str
-    parent: str
-    description: str | None
-
-
-class Sln(TypedDict):
-    """
-    A solution package specification.
-    """
-
-    abbr: str
-    pattern: str
-
-
-class Dfn(TypedDict):
-    """
-    MODFLOW 6 input definition. An input definition
-    specifies a component in an MF6 simulation, e.g.
-    a model or package. A component contains input
-    variables, and may contain other metadata such
-    as foreign key references to other components
-    (i.e. subpackages), package-specific metadata
-    (e.g. for solutions), advanced package status,
-    and whether the component is a multi-package.
-
-    An input definition must have a name. Other top-
-    level keys are blocks, which must be mappings of
-    `str` to `Field`, and metadata, of which only a
-    limited set of keys are allowed. Block names and
-    metadata keys may not overlap.
+    MODFLOW 6 input component definition.
     """
 
     name: str
@@ -229,6 +35,7 @@ class Dfn(TypedDict):
     parent: str | None
     ref: Ref | None
     sln: Sln | None
+    blocks: Blocks
 
     @staticmethod  # type: ignore[misc]
     def _load_v1_flat(f, common: dict | None = None) -> tuple[Mapping, list[str]]:
@@ -602,18 +409,11 @@ class Dfn(TypedDict):
         )
 
     @classmethod  # type: ignore[misc]
-    def _load_v2(cls, f, name) -> "Dfn":
-        data = tomli.load(f)
-        if name and name != data.get("name", None):
-            raise ValueError(f"Name mismatch, expected {name}")
-        return cls(**data)
-
-    @classmethod  # type: ignore[misc]
     def load(
         cls,
         f,
         name: str | None = None,
-        version: FormatVersion = 1,
+        version: SchemaVersion = 1,
         **kwargs,
     ) -> "Dfn":
         """
@@ -664,7 +464,7 @@ class Dfn(TypedDict):
         return dfns
 
     @staticmethod  # type: ignore[misc]
-    def load_all(dfndir: PathLike, version: FormatVersion = 1) -> Dfns:
+    def load_all(dfndir: PathLike, version: SchemaVersion = 1) -> Dfns:
         """Load all component definitions from the given directory."""
         if version == 1:
             return Dfn._load_all_v1(dfndir)
@@ -672,58 +472,3 @@ class Dfn(TypedDict):
             return Dfn._load_all_v2(dfndir)
         else:
             raise ValueError(f"Unsupported version, expected one of {version.__args__}")
-
-    @staticmethod  # type: ignore[misc]
-    def load_tree(dfndir: PathLike, version: FormatVersion = 2) -> dict:
-        """Load all definitions and return as hierarchical tree."""
-        dfns = Dfn.load_all(dfndir, version)
-        return infer_tree(dfns)
-
-
-def infer_tree(dfns: dict[str, Dfn]) -> dict:
-    """Infer the component hierarchy from definitions.
-
-    Enforces single root requirement - must be exactly one component
-    with no parent, and it must be named 'sim'.
-    """
-    roots = [name for name, dfn in dfns.items() if not dfn.get("parent")]
-
-    if len(roots) != 1:
-        raise ValueError(
-            f"Expected exactly one root component, found {len(roots)}: {roots}"
-        )
-
-    root_name = roots[0]
-    if root_name != "sim":
-        raise ValueError(f"Root component must be named 'sim', found '{root_name}'")
-
-    def add_children(node_name: str) -> dict[str, Any]:
-        node = dict(dfns[node_name])
-        children = [
-            name for name, dfn in dfns.items() if dfn.get("parent") == node_name
-        ]
-        for child in children:
-            node[child] = add_children(child)
-        return node
-
-    return {root_name: add_children(root_name)}
-
-
-def get_dfns(
-    owner: str, repo: str, ref: str, outdir: str | PathLike, verbose: bool = False
-):
-    """Fetch definition files from the MODFLOW 6 repository."""
-    url = f"https://github.com/{owner}/{repo}/archive/{ref}.zip"
-    if verbose:
-        print(f"Downloading MODFLOW 6 repository from {url}")
-    with tempfile.TemporaryDirectory() as tmp:
-        dl_path = download_and_unzip(url, Path(tmp), verbose=verbose)
-        contents = list(dl_path.glob("modflow6-*"))
-        proj_path = next(iter(contents), None)
-        if not proj_path:
-            raise ValueError(f"Missing proj dir in {dl_path}, found {contents}")
-        if verbose:
-            print("Copying dfns from download dir to output dir")
-        shutil.copytree(
-            proj_path / "doc" / "mf6io" / "mf6ivar" / "dfn", outdir, dirs_exist_ok=True
-        )
