@@ -1,114 +1,11 @@
-"""
-MODFLOW 6 definition file tools.
-"""
-
-import shutil
-import tempfile
-from abc import ABC, abstractmethod
-from dataclasses import dataclass
-from itertools import groupby
-from os import PathLike
-from pathlib import Path
-from typing import (
-    Any,
-    Literal,
-)
-from warnings import warn
-
-import tomli
-from boltons.dictutils import OMD
-from boltons.iterutils import remap
-
 import modflow_devtools.dfn.schema.v1 as v1
-import modflow_devtools.dfn.schema.v2 as v2
-from modflow_devtools.dfn.legacy_parser import (
-    field_attr_sort_key,
-    is_advanced_package,
-    is_multi_package,
-    parse_dfn,
-    try_parse_bool,
-    try_parse_package_reference,
-    try_parse_solution_package,
-)
-from modflow_devtools.dfn.schema.block import Block, Blocks
+from modflow_devtools.dfn.legacy_parser import field_attr_sort_key, try_parse_bool
+from modflow_devtools.dfn.schema.block import Block
 from modflow_devtools.dfn.schema.field import Field, Fields
-from modflow_devtools.dfn.schema.ref import Ref
-from modflow_devtools.dfn.schema.sln import Sln
-from modflow_devtools.download import download_and_unzip
 from modflow_devtools.misc import try_literal_eval
 
-FormatOption = Literal["dfn", "toml"]
-"""DFN serialization format."""
 
-
-SchemaVersion = Literal[1, 2]
-"""DFN schema version number."""
-
-
-@dataclass
-class Dfn:
-    """
-    MODFLOW 6 input component definition.
-    """
-
-    name: str
-    advanced: bool
-    multi: bool
-    parent: str | None
-    ref: Ref | None
-    sln: Sln | None
-    blocks: Blocks
-    children: "Dfns" | None
-
-    @property
-    def fields(self) -> Fields:
-        """
-        Extract a flat dictionary of fields from an input definition.
-        Only top-level fields are included, i.e. subfields of records
-        or recarrays are not included.
-        """
-        fields = []
-        for block in self.blocks.values():
-            for field in block.values():
-                fields.append([field["name"], field])
-        return OMD(fields)
-
-    @property
-    def schema_version(self) -> SchemaVersion:
-        """The schema version used by the DFN."""
-        # TODO
-        pass
-
-    def to_v2(self) -> "Dfn":
-        """Convert the DFN from version 1 to version 2 schema."""
-        map = V1ToV2(self)
-        blocks = map.map_blocks(self.blocks)
-        return Dfn(
-            name=self.name,
-            advanced=self.advanced,
-            multi=self.multi,
-            sln=self.sln,
-            ref=self.ref,
-            blocks=blocks,
-        )
-
-    def to_v1(self) -> "Dfn":
-        """Convert the DFN from version 2 to version 1 schema."""
-        # TODO
-        pass
-
-
-Dfns = dict[str, Dfn]
-
-
-class SchemaMap(ABC):
-    @abstractmethod
-    def map_blocks(self, blocks: Blocks) -> Blocks:
-        """Map the blocks of a DFN to a new schema."""
-        pass
-
-
-class V1ToV2(SchemaMap):
+class V1ToV2:
     def __init__(self, dfn: "Dfn"):
         self.dfn = dfn
 
@@ -165,11 +62,13 @@ class V1ToV2(SchemaMap):
 
         def _map(_field) -> Field:
             _field = _field.copy()
+
             # parse booleans from strings. everything else can
             # stay a string except default values, which we'll
             # try to parse as arbitrary literals below, and at
             # some point types, once we introduce type hinting
             _field = {k: try_parse_bool(v) for k, v in _field.items()}
+
             _name = _field.pop("name")
             _type = _field.pop("type", None)
             shape = _field.pop("shape", None)
@@ -296,155 +195,3 @@ class V1ToV2(SchemaMap):
             return _field
 
         return dict(sorted(_map(field).items(), key=field_attr_sort_key))
-
-    def map_blocks(self, blocks: Blocks) -> Blocks:
-        # map top-level fields. nested # fields mapped recursively
-        fields = {
-            field["name"]: self.map_field(field)
-            for field in self.fields.values(multi=True)
-            if not field.get("in_record", False)
-        }
-        # group variables by block
-        blocks = {
-            block_name: {v["name"]: v for v in block}
-            for block_name, block in groupby(fields.values(), lambda v: v["block"])
-        }
-        # if there's a period block, convert array representations
-        if (period_block := blocks.get("period", None)) is not None:
-            blocks["period"] = self.map_period_block(period_block)
-
-        # remove unneeded variable attributes
-        def remove_attrs(path, key, value):
-            if key in ["in_record", "tagged", "preserve_case"]:
-                return False
-            return True
-
-        return remap(blocks, visit=remove_attrs)
-
-
-def load_dfn(
-    f: str | PathLike,
-    name: str | None = None,
-    **kwargs,
-) -> Dfn:
-    fpth = Path(f).expanduser().resolve()
-    with open(fpth) as file:
-        flat, meta = parse_dfn(file, **kwargs)
-        blocks = {
-            block_name: {v["name"]: v for v in block}
-            for block_name, block in groupby(flat.values(), lambda v: v["block"])
-        }
-        return Dfn(
-            name=name or fpth.stem,
-            blocks=blocks,
-            advanced=is_advanced_package(meta),
-            multi=is_multi_package(meta),
-            sln=try_parse_solution_package(meta),
-            ref=try_parse_package_reference(meta),
-        )
-
-
-def load_toml(f: str | PathLike) -> Dfn:
-    """
-    Load a MODFLOW 6 definition file in TOML format.
-    """
-    with open(f, "rb") as file:
-        return Dfn(**tomli.load(file))
-
-
-def load(
-    f: str | PathLike,
-    format: FormatOption = "dfn",
-    schema: SchemaVersion = 2,
-    **kwargs,
-) -> Dfn:
-    """Load a MODFLOW 6 definition file."""
-    if format == "dfn":
-        dfn = load_dfn(f, **kwargs)
-    elif format == "toml":
-        dfn = load_toml(f)
-    if schema == 2:
-        dfn = dfn.to_v2()
-    elif schema == 1:
-        dfn = dfn.to_v1()
-    return dfn
-
-
-def _load_all_dfn(dfndir: PathLike) -> Dfns:
-    paths: list[Path] = [
-        p for p in dfndir.glob("*.dfn") if p.stem not in ["common", "flopy"]
-    ]
-
-    # load common variables
-    common_path: Path | None = dfndir / "common.dfn"
-    if not common_path.is_file:
-        common = None
-    else:
-        with common_path.open() as f:
-            common, _ = load_dfn(f)
-
-    # load definitions
-    dfns: Dfns = {}
-    for path in paths:
-        with path.open() as f:
-            dfn = load_dfn(f, common=common)
-            dfns[path.stem] = dfn
-
-    return dfns
-
-
-def _load_all_toml(dfndir: PathLike) -> Dfns:
-    paths: list[Path] = [
-        p for p in dfndir.glob("*.toml") if p.stem not in ["common", "flopy"]
-    ]
-    dfns: Dfns = {}
-    for path in paths:
-        with path.open(mode="rb") as f:
-            dfn = load_toml(f)
-            dfns[path.stem] = dfn
-
-    return dfns
-
-
-def infer_tree(dfns: Dfns) -> Dfn:
-    """
-    Infer the MODFLOW 6 input component hierarchy from a flat dict of
-    unlinked DFNs, i.e. without `children` populated, only `parent`.
-
-    Returns the root component with children filled.
-    There must be exactly one root, i.e. component with no `parent`.
-    """
-
-    if len(roots := [name for name, dfn in dfns.items() if not dfn.get("parent")]) != 1:
-        raise ValueError(f"Expected one root component, found {len(roots)}: {roots}")
-
-    def add_children(node_name: str) -> dict[str, Any]:
-        node = dict(dfns[node_name])
-        children = [
-            name for name, dfn in dfns.items() if dfn.get("parent") == node_name
-        ]
-        for child in children:
-            node[child] = add_children(child)
-        return node
-
-    return {(root_name := roots[0]): add_children(root_name)}
-
-
-def load_all(
-    dfndir: str | PathLike,
-    format: FormatOption = "dfn",
-    schema: SchemaVersion = 2,
-) -> Dfn:
-    """Load a MODFLOW 6 specification from definition files in a directory."""
-    if format == "dfn":
-        dfns = _load_all_dfn(dfndir)
-    elif format == "toml":
-        dfns = _load_all_toml(dfndir)
-    else:
-        raise ValueError(f"Unsupported format, expected: {format.__args__}")
-    dfn = infer_tree(dfns)
-    if schema == 2:
-        dfn = dfn.to_v2()
-    elif schema == 1:
-        dfn = dfn.to_v1()
-    return dfn

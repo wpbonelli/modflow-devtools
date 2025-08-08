@@ -1,8 +1,7 @@
+from collections.abc import Mapping
 from typing import Any, TypedDict
 
-Fields = dict[str, "Field"]
-Block = Fields
-Blocks = dict[str, Block]
+Fields = Mapping[str, "Field"]
 
 
 class Field(TypedDict):
