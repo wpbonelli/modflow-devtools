@@ -11,13 +11,13 @@ from typing import (
     Any,
     Literal,
 )
-from warnings import warn
 
 import tomli
 from boltons.dictutils import OMD
 from boltons.iterutils import remap
 
-import modflow_devtools.dfn.schema.v1 as v1
+import modflow_devtools.dfn.schema.v1 as v1_schema
+import modflow_devtools.dfn.schema.v2 as v2_schema
 from modflow_devtools.dfn.legacy_parser import (
     field_attr_sort_key,
     is_advanced_package,
@@ -37,8 +37,11 @@ Format = Literal["dfn", "toml"]
 """DFN serialization format."""
 
 
-Schema = Literal[1, 2]
+SchemaVersion = Literal[1, 2]
 """DFN schema version number."""
+
+
+Dfns = dict[str, "Dfn"]
 
 
 @dataclass
@@ -54,7 +57,7 @@ class Dfn:
     ref: Ref | None
     sln: Sln | None
     blocks: Blocks
-    children: "Dfns" | None
+    children: Dfns | None
 
     @property
     def fields(self) -> Fields:
@@ -69,14 +72,15 @@ class Dfn:
                 fields.append([field["name"], field])
         return OMD(fields)
 
-    @property
-    def schema(self) -> Schema:
-        """The schema version used by the DFN."""
-        # TODO
-        pass
-
-
-Dfns = dict[str, Dfn]
+    def schema(self) -> SchemaVersion:
+        """
+        Return the schema version of this definition.
+        """
+        if (field := next(iter(self.fields.values()), None)) is None or isinstance(
+            field, v2_schema.FieldV2
+        ):
+            return 2
+        return 1
 
 
 class SchemaMap(ABC):
@@ -176,7 +180,7 @@ class MapV1To2(SchemaMap):
                     )
 
                 # implicit simple record (no children)
-                if all(t in v1._SCALAR_TYPES for t in item_types):
+                if all(t in v1_schema._SCALAR_TYPES for t in item_types):
                     return Field(
                         name=_name,
                         type="record",
@@ -260,7 +264,7 @@ class MapV1To2(SchemaMap):
             # for now, we can tell a var is an array if its type
             # is scalar and it has a shape. once we have proper
             # typing, this can be read off the type itself.
-            elif shape is not None and _type not in v1._SCALAR_TYPES:
+            elif shape is not None and _type not in v1_schema._SCALAR_TYPES:
                 raise TypeError(f"Unsupported array type: {_type}")
 
             else:
@@ -311,19 +315,70 @@ class MapV1To2(SchemaMap):
 
 def map(
     dfn: Dfn,
-    schema: Schema = 2,
+    schema: SchemaVersion = 2,
 ) -> Dfn:
     """Map a MODFLOW 6 specification to another schema version."""
     if schema == 1:
-        warn("Mapping to v1 schema is not implemented yet.", FutureWarning)
-        return dfn
+        raise NotImplementedError("Mapping to v1 schema is not implemented yet.")
     elif schema == 2:
         return MapV1To2().map(dfn)
 
 
+def load(
+    f: str | PathLike,
+    schema: SchemaVersion = 2,
+    **kwargs,
+) -> Dfn:
+    """Load a MODFLOW 6 definition file."""
+    path = Path(f).expanduser().resolve()
+    if path.suffix == ".dfn":
+        with path.open() as file:
+            flat, meta = parse_dfn(file, **kwargs)
+            blocks = {
+                block_name: {v["name"]: v for v in block}
+                for block_name, block in groupby(flat.values(), lambda v: v["block"])
+            }
+            dfn = Dfn(
+                name=path.stem,
+                blocks=blocks,
+                advanced=is_advanced_package(meta),
+                multi=is_multi_package(meta),
+                sln=try_parse_solution_package(meta),
+                ref=try_parse_package_reference(meta),
+            )
+    elif path.suffix == ".toml":
+        with path.open("rb") as file:
+            dfn = Dfn(**tomli.load(file))
+    return dfn.map(schema)
+
+
+def load_all(
+    dfndir: str | PathLike,
+    schema: SchemaVersion = 2,
+) -> Dfns:
+    """Load a MODFLOW 6 specification from definition files in a directory."""
+    exclude = ["common", "flopy"]
+    dfn_paths = [p for p in dfndir.glob("*.dfn") if p.stem not in exclude]
+    toml_paths = [p for p in dfndir.glob("*.toml") if p.stem not in exclude]
+    dfns: Dfns = {}
+    if dfn_paths:
+        if not (common_path := dfndir / "common.dfn").is_file:
+            common = None
+        else:
+            common = load(common_path, schema=1)
+        for path in dfn_paths:
+            dfn = load(path, schema=1, common=common)
+            dfns[path.stem] = dfn
+    if toml_paths:
+        for path in toml_paths:
+            dfn = load(path, schema=schema)
+            dfns[path.stem] = dfn
+    return dfns
+
+
 def infer_tree(dfns: Dfns) -> Dfn:
     """
-    Infer the MODFLOW 6 input component hierarchy from a flat dict of
+    Infer the MODFLOW 6 input component hierarchy from a flat spec:
     unlinked DFNs, i.e. without `children` populated, only `parent`.
 
     Returns the root component with children filled.
@@ -332,10 +387,40 @@ def infer_tree(dfns: Dfns) -> Dfn:
     Assumes all DFNs are of the same schema version.
     """
 
-    schema = next(iter(dfns.values())).schema
-    if schema == 1:
+    def drop_none_or_empty(path, key, value):
+        if value is None or value == "" or value == [] or value == {}:
+            return False
+        return True
+
+    def add_parent(dfn):
+        if (dfn_name := dfn["name"]) == "sim-nam":
+            dfn = dfn.copy()
+            dfn["name"] = "sim"
+        elif dfn_name.endswith("-nam"):
+            model_type = dfn_name[:-4]  # Remove "-nam"
+            dfn = dfn.copy()
+            dfn["name"] = model_type
+            dfn["parent"] = "sim"
+        elif dfn_name.startswith("exg-"):
+            dfn = dfn.copy()
+            dfn["parent"] = "sim"
+        elif dfn_name.startswith("sln-"):
+            dfn = dfn.copy()
+            dfn["parent"] = "sim"
+        elif dfn_name.startswith("utl-"):
+            dfn = dfn.copy()
+            dfn["parent"] = "sim"
+        elif "-" in dfn_name:
+            model_type = dfn_name.split("-")[0]
+            dfn = dfn.copy()
+            dfn["parent"] = model_type
+
+        return remap(dfn, visit=drop_none_or_empty)
+
+    dfns = {name: add_parent(dfn) for name, dfn in dfns.items()}
+    if (schema := next(iter(dfns.values()), None)) == 1:
         # TODO implement v1 schema structure inference
-        pass
+        raise NotImplementedError("Structure inference from v1 schema not implemented")
     elif schema == 2:
         if (
             len(roots := [name for name, dfn in dfns.items() if not dfn.get("parent")])
@@ -357,98 +442,14 @@ def infer_tree(dfns: Dfns) -> Dfn:
         return {(root_name := roots[0]): add_children(root_name)}
 
 
-def _load_dfn(
-    f: str | PathLike,
-    name: str | None = None,
-    **kwargs,
-) -> Dfn:
-    fpth = Path(f).expanduser().resolve()
-    with fpth.open() as file:
-        flat, meta = parse_dfn(file, **kwargs)
-        blocks = {
-            block_name: {v["name"]: v for v in block}
-            for block_name, block in groupby(flat.values(), lambda v: v["block"])
-        }
-        return Dfn(
-            name=name or fpth.stem,
-            blocks=blocks,
-            advanced=is_advanced_package(meta),
-            multi=is_multi_package(meta),
-            sln=try_parse_solution_package(meta),
-            ref=try_parse_package_reference(meta),
-        )
-
-
-def _load_toml(f: str | PathLike) -> Dfn:
-    """
-    Load a MODFLOW 6 definition file in TOML format.
-    """
-    fpth = Path(f).expanduser().resolve()
-    with fpth.open("rb") as file:
-        return Dfn(**tomli.load(file))
-
-
-def load(
-    f: str | PathLike,
-    format: Format = "dfn",
-    schema: Schema = 2,
-    **kwargs,
-) -> Dfn:
-    """Load a single MODFLOW 6 definition file."""
-    if format == "dfn":
-        dfn = _load_dfn(f, **kwargs)
-    elif format == "toml":
-        dfn = _load_toml(f)
-    return dfn.map(schema)
-
-
-def _load_all_dfn(dfndir: PathLike) -> Dfns:
-    if not (common_path := dfndir / "common.dfn").is_file:
-        common = None
-    else:
-        with common_path.open() as f:
-            common, _ = _load_dfn(f)
-
-    paths: list[Path] = [
-        p for p in dfndir.glob("*.dfn") if p.stem not in ["common", "flopy"]
-    ]
-    dfns: Dfns = {}
-    for path in paths:
-        with path.open() as f:
-            dfn = _load_dfn(f, common=common)
-            dfns[path.stem] = dfn
-
-    return dfns
-
-
-def _load_all_toml(dfndir: PathLike) -> Dfns:
-    paths: list[Path] = [
-        p for p in dfndir.glob("*.toml") if p.stem not in ["common", "flopy"]
-    ]
-    dfns: Dfns = {}
-    for path in paths:
-        with path.open(mode="rb") as f:
-            dfn = _load_toml(f)
-            dfns[path.stem] = dfn
-
-    return dfns
-
-
-def _load_all(dfndir: PathLike, format: Format = "dfn") -> Dfns:
-    if format == "dfn":
-        return _load_all_dfn(dfndir)
-    elif format == "toml":
-        return _load_all_toml(dfndir)
-    else:
-        raise ValueError(f"Unsupported format, expected: {format.__args__}")
-
-
-def load_all(
+def load_tree(
     dfndir: str | PathLike,
-    format: Format = "dfn",
-    schema: Schema = 2,
+    schema: SchemaVersion = 2,
 ) -> Dfn:
-    """Load a MODFLOW 6 specification from definition files in a directory."""
-    dfns = _load_all(dfndir, format=format)
-    root = infer_tree(dfns)
-    return map(root, schema)
+    """
+    Load a structured MODFLOW 6 specification from definition files in a directory.
+
+    A single root component definition (the simulation) is returned. This contains
+    child (and grandchild) components for the relevant models and packages.
+    """
+    return infer_tree(load_all(dfndir, schema=schema))

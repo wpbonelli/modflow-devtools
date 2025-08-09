@@ -9,7 +9,7 @@ class Field(TypedDict):
     block: str
     default: Any | None
     description: str | None
-    children: "Fields" | None
+    children: Fields | None
     optional: bool | None
     shape: str | None
     type: str

@@ -2,7 +2,8 @@ from pathlib import Path
 
 import pytest
 
-from modflow_devtools.dfn import Dfn, fetch_dfns
+from modflow_devtools.dfn import Dfn
+from modflow_devtools.dfn.fetch import fetch_dfns
 from modflow_devtools.dfn2toml import convert
 from modflow_devtools.markers import requires_pkg
 
