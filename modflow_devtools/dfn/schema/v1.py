@@ -1,3 +1,4 @@
+from dataclasses import dataclass
 from typing import Literal
 
 from modflow_devtools.dfn.schema.field import Field
@@ -24,15 +25,16 @@ Reader = Literal[
 ]
 
 
+@dataclass
 class FieldV1(Field):
-    valid: tuple[str, ...] | None
-    tagged: bool | None
-    in_record: bool | None
-    layered: bool | None
-    reader: Reader | None
-    longname: str | None
-    preserve_case: bool | None
-    numeric_index: bool | None
-    deprecated: bool | None
-    removed: bool | None
-    mf6internal: str | None
+    valid: tuple[str, ...] | None = None
+    tagged: bool | None = None
+    in_record: bool | None = None
+    layered: bool | None = None
+    reader: Reader = "urword"
+    longname: str | None = None
+    preserve_case: bool | None = None
+    numeric_index: bool | None = None
+    deprecated: bool = False
+    removed: bool = False
+    mf6internal: str | None = None

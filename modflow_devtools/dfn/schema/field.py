@@ -1,10 +1,12 @@
 from collections.abc import Mapping
-from typing import Any, TypedDict
+from dataclasses import dataclass
+from typing import Any
 
 Fields = Mapping[str, "Field"]
 
 
-class Field(TypedDict):
+@dataclass
+class Field:
     name: str
     block: str
     default: Any | None

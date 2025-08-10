@@ -1,7 +1,8 @@
-from typing import TypedDict
+from dataclasses import dataclass
 
 
-class Ref(TypedDict):
+@dataclass
+class Ref:
     """
     A foreign-key-like reference between a file input variable
     in a referring input component and another input component

@@ -3,12 +3,11 @@ MODFLOW 6 definition file tools.
 """
 
 from abc import ABC, abstractmethod
-from dataclasses import dataclass
+from dataclasses import asdict, dataclass, replace
 from itertools import groupby
 from os import PathLike
 from pathlib import Path
 from typing import (
-    Any,
     Literal,
 )
 
@@ -19,18 +18,15 @@ from boltons.iterutils import remap
 import modflow_devtools.dfn.schema.v1 as v1_schema
 import modflow_devtools.dfn.schema.v2 as v2_schema
 from modflow_devtools.dfn.legacy_parser import (
-    field_attr_sort_key,
     is_advanced_package,
     is_multi_package,
     parse_dfn,
     try_parse_bool,
-    try_parse_package_reference,
-    try_parse_solution_package,
+    try_parse_parent,
 )
 from modflow_devtools.dfn.schema.block import Block, Blocks
 from modflow_devtools.dfn.schema.field import Field, Fields
 from modflow_devtools.dfn.schema.ref import Ref
-from modflow_devtools.dfn.schema.sln import Sln
 from modflow_devtools.misc import try_literal_eval
 
 Format = Literal["dfn", "toml"]
@@ -51,34 +47,34 @@ class Dfn:
     """
 
     name: str
-    advanced: bool
-    multi: bool
-    parent: str | None
-    ref: Ref | None
-    sln: Sln | None
-    blocks: Blocks
-    children: Dfns | None
+    parent: str | None = None
+    advanced: bool = False
+    multi: bool = False
+    ref: Ref | None = None
+    blocks: Blocks | None = None
+    children: Dfns | None = None
 
     @property
-    def fields(self) -> Fields:
+    def fields(self) -> OMD[str, Field]:
         """
         Extract a flat dictionary of fields from an input definition.
         Only top-level fields are included, i.e. subfields of records
         or recarrays are not included.
         """
         fields = []
-        for block in self.blocks.values():
+        for block in (self.blocks or {}).values():
             for field in block.values():
-                fields.append([field["name"], field])
+                fields.append([field.name, field])
         return OMD(fields)
 
+    @property
     def schema(self) -> SchemaVersion:
         """
-        Return the schema version of this definition.
+        The definition's schema version.
         """
-        if (field := next(iter(self.fields.values()), None)) is None or isinstance(
-            field, v2_schema.FieldV2
-        ):
+        if (field := next(iter(self.fields.values()), None)) is None:
+            return 2
+        if isinstance(field, v2_schema.FieldV2):
             return 2
         return 1
 
@@ -99,29 +95,29 @@ class MapV1To2(SchemaMap):
         list shape in terms of maxbound as previously.
         """
 
+        block = dict(block)
         fields = list(block.values())
-        if fields[0]["type"] == "recarray":
+        if fields[0].type == "recarray":
             assert len(fields) == 1
-            recarray_name = fields[0]["name"]
-            item = next(iter(fields[0]["children"].values()))
-            columns = item["children"]
+            recarray_name = fields[0].name
+            block.pop(recarray_name, None)
+            item = next(iter((fields[0].children or {}).values()))
+            columns = dict(item.children or {})
         else:
             recarray_name = None
             columns = block
-        block.pop(recarray_name, None)
+
         cellid = columns.pop("cellid", None)
         for col_name, column in columns.items():
-            col_copy = column.copy()
-            old_dims = col_copy.get("shape")
+            old_dims = column.shape
             if old_dims:
-                old_dims = old_dims[1:-1].split(",")
+                old_dims = old_dims[1:-1].split(",")  # type: ignore
             new_dims = ["nper"]
             if cellid:
                 new_dims.append("nnodes")
             if old_dims:
                 new_dims.extend([dim for dim in old_dims if dim != "maxbound"])
-            col_copy["shape"] = f"({', '.join(new_dims)})"
-            block[col_name] = col_copy
+            block[col_name] = replace(column, shape=f"({', '.join(new_dims)})")
 
         return block
 
@@ -143,7 +139,7 @@ class MapV1To2(SchemaMap):
         flat = dfn.fields
 
         def _map_field(_field) -> Field:
-            _field = _field.copy()
+            _field = asdict(_field)
             # parse booleans from strings. everything else can
             # stay a string except default values, which we'll
             # try to parse as arbitrary literals below, and at
@@ -157,14 +153,13 @@ class MapV1To2(SchemaMap):
             default = _field.pop("default", None)
             default = try_literal_eval(default) if _type != "string" else default
             description = _field.pop("description", "")
-            reader = _field.pop("reader", "urword")
 
             def _item() -> Field:
                 item_names = _type.split()[1:]
                 item_types = [
-                    v["type"]
-                    for v in flat.values(multi=True)
-                    if v["name"] in item_names and v.get("in_record", False)
+                    f.type
+                    for f in flat.values(multi=True)
+                    if f.name in item_names and f.in_record
                 ]
                 n_item_names = len(item_names)
                 if n_item_names < 1:
@@ -189,53 +184,47 @@ class MapV1To2(SchemaMap):
                         description=description.replace(
                             "is the list of", "is the record of"
                         ),
-                        reader=reader,
                         **_field,
                     )
 
                 # implicit complex record (has children)
                 fields = {
-                    v["name"]: MapV1To2.map_field(dfn, v)
-                    for v in flat.values(multi=True)
-                    if v["name"] in item_names and v.get("in_record", False)
+                    f.name: MapV1To2.map_field(dfn, f)
+                    for f in flat.values(multi=True)
+                    if f.name in item_names and f.in_record
                 }
                 first = next(iter(fields.values()))
                 single = len(fields) == 1
                 item_type = (
-                    "keystring" if single and "keystring" in first["type"] else "record"
+                    "keystring" if single and "keystring" in first.type else "record"
                 )
                 return Field(
-                    name=first["name"] if single else _name,
+                    name=first.name if single else _name,
                     type=item_type,
                     block=block,
-                    children=first["children"] if single else fields,
+                    children=first.children if single else fields,
                     description=description.replace(
                         "is the list of", f"is the {item_type} of"
                     ),
-                    reader=reader,
                     **_field,
                 )
 
             def _choices() -> Fields:
                 names = _type.split()[1:]
                 return {
-                    v["name"]: MapV1To2.map_field(dfn, v)
-                    for v in flat.values(multi=True)
-                    if v["name"] in names and v.get("in_record", False)
+                    f.name: MapV1To2.map_field(dfn, f)
+                    for f in flat.values(multi=True)
+                    if f.name in names and f.in_record
                 }
 
             def _fields() -> Fields:
                 names = _type.split()[1:]
                 fields = {}
                 for name in names:
-                    v = flat.get(name, None)
-                    if (
-                        not v
-                        or not v.get("in_record", False)
-                        or v["type"].startswith("record")
-                    ):
+                    f = flat.get(name, None)
+                    if not f or not f.in_record or f.type.startswith("record"):
                         continue
-                    fields[name] = _map_field(v)
+                    fields[name] = _map_field(f)
                 return fields
 
             _field = Field(
@@ -244,22 +233,21 @@ class MapV1To2(SchemaMap):
                 block=block,
                 description=description,
                 default=default,
-                reader=reader,
                 **_field,
             )
 
             if _type.startswith("recarray"):
                 item = _item()
-                _field["children"] = {item["name"]: item}
-                _field["type"] = "recarray"
+                _field.children = {item.name: item}
+                _field.type = "recarray"
 
             elif _type.startswith("keystring"):
-                _field["children"] = _choices()
-                _field["type"] = "keystring"
+                _field.children = _choices()
+                _field.type = "keystring"
 
             elif _type.startswith("record"):
-                _field["children"] = _fields()
-                _field["type"] = "record"
+                _field.children = _fields()
+                _field.type = "record"
 
             # for now, we can tell a var is an array if its type
             # is scalar and it has a shape. once we have proper
@@ -268,25 +256,25 @@ class MapV1To2(SchemaMap):
                 raise TypeError(f"Unsupported array type: {_type}")
 
             else:
-                _field["type"] = _type
+                _field.type = _type
 
             return _field
 
-        return dict(sorted(_map_field(field).items(), key=field_attr_sort_key))
+        return _map_field(field)
 
     @staticmethod
     def map_blocks(dfn: Dfn) -> Blocks:
         blocks = dfn.blocks
         # map top-level fields. nested # fields mapped recursively
         fields = {
-            field["name"]: MapV1To2.map_field(dfn, field)
+            field.name: MapV1To2.map_field(dfn, field)
             for field in dfn.fields.values(multi=True)
-            if not field.get("in_record", False)
+            if not field.in_record
         }
         # group variables by block
         blocks = {
-            block_name: {v["name"]: v for v in block}
-            for block_name, block in groupby(fields.values(), lambda v: v["block"])
+            block_name: {f.name: f for f in block}
+            for block_name, block in groupby(fields.values(), lambda f: f.block)
         }
         # if there's a period block, convert array representations
         if (period_block := blocks.get("period", None)) is not None:
@@ -304,11 +292,10 @@ class MapV1To2(SchemaMap):
         if dfn.schema == 2:
             return dfn
         return Dfn(
-            name=self.name,
-            advanced=self.advanced,
-            multi=self.multi,
-            sln=self.sln,
-            ref=self.ref,
+            name=dfn.name,
+            advanced=dfn.advanced,
+            multi=dfn.multi,
+            ref=dfn.ref,
             blocks=MapV1To2.map_blocks(dfn),
         )
 
@@ -332,24 +319,22 @@ def load(
     """Load a MODFLOW 6 definition file."""
     path = Path(f).expanduser().resolve()
     if path.suffix == ".dfn":
-        with path.open() as file:
-            flat, meta = parse_dfn(file, **kwargs)
-            blocks = {
-                block_name: {v["name"]: v for v in block}
-                for block_name, block in groupby(flat.values(), lambda v: v["block"])
-            }
-            dfn = Dfn(
-                name=path.stem,
-                blocks=blocks,
-                advanced=is_advanced_package(meta),
-                multi=is_multi_package(meta),
-                sln=try_parse_solution_package(meta),
-                ref=try_parse_package_reference(meta),
-            )
+        flat, meta = parse_dfn(path, **kwargs)
+        blocks = {
+            block_name: {field.name: field for field in block}
+            for block_name, block in groupby(flat.values(), lambda field: field.block)
+        }
+        dfn = Dfn(
+            name=path.stem,
+            parent=try_parse_parent(meta, flat.values()),
+            advanced=is_advanced_package(meta),
+            multi=is_multi_package(meta),
+            blocks=blocks,
+        )
     elif path.suffix == ".toml":
         with path.open("rb") as file:
             dfn = Dfn(**tomli.load(file))
-    return dfn.map(schema)
+    return map(dfn, schema)
 
 
 def load_all(
@@ -358,11 +343,12 @@ def load_all(
 ) -> Dfns:
     """Load a MODFLOW 6 specification from definition files in a directory."""
     exclude = ["common", "flopy"]
+    dfndir = Path(dfndir).expanduser().resolve()
     dfn_paths = [p for p in dfndir.glob("*.dfn") if p.stem not in exclude]
     toml_paths = [p for p in dfndir.glob("*.toml") if p.stem not in exclude]
     dfns: Dfns = {}
     if dfn_paths:
-        if not (common_path := dfndir / "common.dfn").is_file:
+        if not (common_path := (dfndir / "common.dfn")).is_file():
             common = None
         else:
             common = load(common_path, schema=1)
@@ -395,25 +381,25 @@ def infer_tree(dfns: Dfns) -> Dfn:
     def add_parent(dfn):
         if (dfn_name := dfn["name"]) == "sim-nam":
             dfn = dfn.copy()
-            dfn["name"] = "sim"
+            dfn.name = "sim"
         elif dfn_name.endswith("-nam"):
             model_type = dfn_name[:-4]  # Remove "-nam"
             dfn = dfn.copy()
-            dfn["name"] = model_type
-            dfn["parent"] = "sim"
+            dfn.name = model_type
+            dfn.parent = "sim"
         elif dfn_name.startswith("exg-"):
             dfn = dfn.copy()
-            dfn["parent"] = "sim"
+            dfn.parent = "sim"
         elif dfn_name.startswith("sln-"):
             dfn = dfn.copy()
-            dfn["parent"] = "sim"
+            dfn.parent = "sim"
         elif dfn_name.startswith("utl-"):
             dfn = dfn.copy()
-            dfn["parent"] = "sim"
+            dfn.parent = "sim"
         elif "-" in dfn_name:
             model_type = dfn_name.split("-")[0]
             dfn = dfn.copy()
-            dfn["parent"] = model_type
+            dfn.parent = model_type
 
         return remap(dfn, visit=drop_none_or_empty)
 
@@ -423,23 +409,24 @@ def infer_tree(dfns: Dfns) -> Dfn:
         raise NotImplementedError("Structure inference from v1 schema not implemented")
     elif schema == 2:
         if (
-            len(roots := [name for name, dfn in dfns.items() if not dfn.get("parent")])
+            len(
+                roots := [
+                    (name, dfn) for name, dfn in dfns.items() if dfn.parent is None
+                ]
+            )
             != 1
         ):
-            raise ValueError(
-                f"Expected one root component, found {len(roots)}: {roots}"
-            )
+            raise ValueError(f"Expected one root component, found {len(roots)}")
 
-        def add_children(node_name: str) -> dict[str, Any]:
-            node = dict(dfns[node_name])
-            children = [
-                name for name, dfn in dfns.items() if dfn.get("parent") == node_name
-            ]
-            for child in children:
-                node[child] = add_children(child)
-            return node
+        def get_children(node_name: str) -> Dfns:
+            return {name: dfn for name, dfn in dfns.items() if dfn.parent == node_name}
 
-        return {(root_name := roots[0]): add_children(root_name)}
+        return Dfn(
+            name=(root_name := roots[0][0]),
+            blocks=dfns[root_name].blocks,
+            children=get_children(root_name),
+        )
+    raise ValueError(f"Unsupported schema version: {schema}. Expected 1 or 2.")
 
 
 def load_tree(

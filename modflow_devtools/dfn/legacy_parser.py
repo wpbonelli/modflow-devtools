@@ -1,13 +1,12 @@
 from ast import literal_eval
 from os import PathLike
+from pathlib import Path
 from typing import Any
 from warnings import warn
 
 from boltons.dictutils import OMD
 
 from modflow_devtools.dfn.schema.field import Field
-from modflow_devtools.dfn.schema.ref import Ref
-from modflow_devtools.dfn.schema.sln import Sln
 
 
 def field_attr_sort_key(item) -> int:
@@ -58,67 +57,22 @@ def try_parse_bool(value: Any) -> Any:
     return value
 
 
-def try_parse_solution_package(meta: list[str]) -> Sln | None:
-    sln = next(
-        iter(
-            m for m in meta if isinstance(m, str) and m.startswith("solution_package")
-        ),
+def try_parse_parent(meta: list[str], fields: list[Field]) -> str | None:
+    line = next(
+        iter(m for m in meta if isinstance(m, str) and m.startswith("parent")),
         None,
     )
-    if sln:
-        abbr, pattern = sln.split()[1:]
-        return Sln(abbr=abbr, pattern=pattern)
-    return None
+    if not line:
+        return None
+    split = line.split()
+    return split[1]
 
 
-def try_parse_package_reference(meta: list[str], fields: list[Field]) -> Ref | None:
-    def _parent():
-        line = next(
-            iter(m for m in meta if isinstance(m, str) and m.startswith("parent")),
-            None,
-        )
-        if not line:
-            return None
-        split = line.split()
-        return split[1]
-
-    def _rest():
-        line = next(
-            iter(m for m in meta if isinstance(m, str) and m.startswith("subpac")),
-            None,
-        )
-        if not line:
-            return None
-        _, key, abbr, param, tgt = line.split()
-        matches = [v for v in fields.values() if v["name"] == tgt]
-        if not any(matches):
-            descr = None
-        else:
-            if len(matches) > 1:
-                warn(f"Multiple matches for referenced variable {tgt}")
-            match = matches[0]
-            descr = match["description"]
-
-        return {
-            "key": key,
-            "tgt": tgt,
-            "abbr": abbr,
-            "param": param,
-            "description": descr,
-        }
-
-    parent = _parent()
-    rest = _rest()
-    if parent and rest:
-        return Ref(parent=parent, **rest)
-    return None
-
-
-def is_advanced_package(meta: list[str]) -> bool | None:
+def is_advanced_package(meta: list[str]) -> bool:
     return any("package-type advanced" in m for m in meta)
 
 
-def is_multi_package(meta: list[str]) -> bool | None:
+def is_multi_package(meta: list[str]) -> bool:
     return any("multi-package" in m for m in meta)
 
 
@@ -126,12 +80,12 @@ def parse_dfn(
     f: str | PathLike,
     common: dict | None = None,
 ) -> tuple[OMD, list[str]]:
-    field = {}
-    flat = []
-    meta = []
+    field: dict = {}
+    flat: list = []
+    meta: list = []
     common = common or {}
-
-    for line in f:
+    path = Path(f).expanduser().resolve()
+    for line in path.open():
         # remove whitespace/etc from the line
         line = line.strip()
 
@@ -170,7 +124,7 @@ def parse_dfn(
 
         # make substitutions from common variable definitions,
         # remove backslashes, TODO: generate/insert citations.
-        descr = field.get("description", None)
+        descr = field["description"]
         if descr:
             descr = descr.replace("\\", "").replace("``", "'").replace("''", "'")
             _, replace, tail = descr.strip().partition("REPLACE")
@@ -184,7 +138,7 @@ def parse_dfn(
                         f"common variable not found: {key}"
                     )
                 else:
-                    descr = cmmn.get("description", "")
+                    descr = cmmn.description
                     if any(subs):
                         descr = descr.replace("\\", "").replace("{#1}", subs["{#1}"])
             field["description"] = descr
