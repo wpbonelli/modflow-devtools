@@ -10,7 +10,7 @@ from functools import partial
 from os import PathLike
 from pathlib import Path
 from shutil import copy
-from typing import ClassVar
+from typing import ClassVar, Literal
 from warnings import warn
 
 import pooch
@@ -22,6 +22,8 @@ from pooch import Pooch
 
 import modflow_devtools
 from modflow_devtools.misc import drop_none_or_empty, get_model_paths
+
+MF6_MODEL_TYPES = Literal["gwf", "gwt", "gwe", "prt"]
 
 
 def _model_sort_key(k) -> int:
