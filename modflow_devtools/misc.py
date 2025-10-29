@@ -4,6 +4,7 @@ import sys
 import traceback
 from _warnings import warn
 from ast import literal_eval
+from collections.abc import Iterable
 from contextlib import contextmanager
 from enum import Enum
 from functools import wraps
@@ -565,3 +566,24 @@ def try_get_enum_value(v: Any) -> Any:
     of an enumeration, otherwise return it unaltered.
     """
     return v.value if isinstance(v, Enum) else v
+
+
+def try_literal_eval(value: str) -> Any:
+    """
+    Try to parse a string as a literal. If this fails,
+    return the value unaltered.
+    """
+    try:
+        return literal_eval(value)
+    except (SyntaxError, ValueError):
+        return value
+
+
+def drop_none_or_empty(path, key, value):
+    """
+    Drop dictionary items with None or empty values.
+    For use with `boltons.iterutils.remap`.
+    """
+    if value is None or (isinstance(value, Iterable) and not any(value)):
+        return False
+    return True
