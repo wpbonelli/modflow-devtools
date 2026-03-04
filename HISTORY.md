@@ -1,3 +1,13 @@
+### Version 1.9.0
+
+#### New features
+
+This release improves the architecture of the models API, decoupling model repositories from devtools and adding a CLI. The improvements should all be backwards-compatible.
+
+This release also contains an experimental programs API that can be used to inspect available versions of MODFLOW 6 and related programs, and help with installs, as well as an experimental redesign of the MF6 DFN specification file utilities.
+
+The aim here is to unify this project's ecosystem management utilities with consistent design and UX once we reach version 2. No breaking changes (and new stuff will stay experimental) for the remainder of 1.x.
+
 ### Version 1.8.0
 
 #### New features
