@@ -1,3 +1,10 @@
+### Version 1.9.1
+
+#### Bug fixes
+
+* [fix(dfn)](https://github.com/MODFLOW-ORG/modflow-devtools/commit/2dd65bf57307aa42a6043aca3e6da8f8253dc4f9): Restore old dfn2toml logic (#299). Committed by wpbonelli on 2026-03-04.
+* [fix](https://github.com/MODFLOW-ORG/modflow-devtools/commit/1e94d1bae8d33acf27becce3560bec092922dc35): Fix version comparison, improve autosync behavior (#300). Committed by wpbonelli on 2026-03-04.
+
 ### Version 1.9.0
 
 #### New features
