@@ -1,3 +1,10 @@
+### Version 1.9.2
+
+#### Bug fixes
+
+* [fix(dfns)](https://github.com/MODFLOW-ORG/modflow-devtools/commit/4e8ff9993045b7a4a291f50fb2167d79fce1bd46): Add tagged attribute to field schema (#304). Committed by wpbonelli on 2026-03-09.
+* [fix(dfns)](https://github.com/MODFLOW-ORG/modflow-devtools/commit/5ff8d7f17ecbc8ee0c8ddc16b020f7f992b6e69b): Remove fkeys/ref; add DfnSpec.dump/s() (#305). Committed by wpbonelli on 2026-04-20.
+
 ### Version 1.9.1
 
 #### Bug fixes
