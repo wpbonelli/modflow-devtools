@@ -14,9 +14,7 @@ def block_sort_key(item) -> int:
         return 1
     elif k == "griddata":
         return 2
-    elif k == "packagedata":
-        return 3
     elif "period" in k:
         return 4
     else:
-        return 5
+        return 3
