@@ -276,7 +276,6 @@ class TestSync:
             repo=TEST_MODELS_REPO,
             name=TEST_MODELS_SOURCE_NAME,
             refs=[TEST_MODELS_REF],
-            verbose=True,
         )
         result = source.sync(ref=TEST_MODELS_REF, verbose=True)
 

@@ -5,8 +5,6 @@ DFN format as well as for TOML definition files, and
 a function to fetch DFNs from the MF6 repository.
 """
 
-import shutil
-import tempfile
 from ast import literal_eval
 from collections.abc import Mapping
 from itertools import groupby
@@ -15,7 +13,7 @@ from pathlib import Path
 from typing import (
     Any,
     Literal,
-    Optional,
+    NotRequired,
     TypedDict,
 )
 from warnings import warn
@@ -24,11 +22,7 @@ import tomli
 from boltons.dictutils import OMD
 from boltons.iterutils import remap
 
-from modflow_devtools.download import download_and_unzip
-
-# TODO: use dataclasses instead of typed dicts? static
-# methods on typed dicts are evidently not allowed
-# mypy: ignore-errors
+from modflow_devtools.dfn import parser
 
 
 def _try_literal_eval(value: str) -> Any:
@@ -90,8 +84,22 @@ def _field_attr_sort_key(item) -> int:
     return 8
 
 
+def block_sort_key(item: tuple[str, Any]) -> int:
+    """Sort blocks in canonical MF6 order."""
+    order = ["options", "dimensions", "griddata", "packagedata", "connectiondata", "period"]
+    name = item[0]
+    try:
+        return order.index(name)
+    except ValueError:
+        return len(order)
+
+
 FormatVersion = Literal[1, 2]
 """DFN format version number."""
+
+
+DfnFormat = Literal["dfn", "toml", "yaml", "json"]
+"""DFN serialization format."""
 
 
 FieldType = Literal[
@@ -113,11 +121,8 @@ Reader = Literal[
 ]
 
 
-_SCALAR_TYPES = FieldType.__args__[:4]
-
-
-Dfns = dict[str, "Dfn"]
-Fields = dict[str, "Field"]
+_SCALAR_TYPES = ("keyword", "integer", "double precision", "string")
+SCALAR_TYPES = _SCALAR_TYPES  # public alias
 
 
 class Field(TypedDict):
@@ -125,12 +130,32 @@ class Field(TypedDict):
 
     name: str
     type: FieldType
-    shape: Any | None = None
-    block: str | None = None
-    default: Any | None = None
-    children: Optional["Fields"] = None
-    description: str | None = None
-    reader: Reader = "urword"
+    block: NotRequired[str | None]
+    default: NotRequired[Any | None]
+    longname: NotRequired[str | None]
+    description: NotRequired[str | None]
+    optional: NotRequired[bool]
+    developmode: NotRequired[bool]
+    shape: NotRequired[str | None]
+    valid: NotRequired[tuple[str, ...] | None]
+    netcdf: NotRequired[bool]
+    tagged: NotRequired[bool]
+    reader: NotRequired[Reader]
+    in_record: NotRequired[bool]
+    layered: NotRequired[bool | None]
+    preserve_case: NotRequired[bool]
+    numeric_index: NotRequired[bool]
+    deprecated: NotRequired[bool]
+    removed: NotRequired[bool]
+    mf6internal: NotRequired[str | None]
+    block_variable: NotRequired[bool]
+    just_data: NotRequired[bool]
+    time_series: NotRequired[bool]
+    children: NotRequired[Mapping[str, "Field"] | None]
+
+
+Fields = Mapping[str, "Field"]
+Blocks = Mapping[str, Fields]
 
 
 class Ref(TypedDict):
@@ -167,6 +192,9 @@ class Sln(TypedDict):
 
     abbr: str
     pattern: str
+
+
+Dfns = dict[str, "Dfn"]
 
 
 class Dfn(TypedDict):
@@ -210,15 +238,20 @@ class Dfn(TypedDict):
         Distinct from fkeys, which are field-level references.
     """
 
+    schema_version: str
     name: str
-    advanced: bool = False
-    multi: bool = False
-    ref: Ref | None = None
-    sln: Sln | None = None
-    fkeys: Dfns | None = None
-    subcomponents: list[str] | None = None
+    ftype: NotRequired[str | None]
+    parent: NotRequired[str | list[str] | None]
+    blocks: NotRequired[Blocks | None]
+    children: NotRequired[Dfns | None]
+    advanced: NotRequired[bool]
+    multi: NotRequired[bool]
+    ref: NotRequired[Ref | None]
+    sln: NotRequired[Sln | None]
+    fkeys: NotRequired[Dfns | None]  # deprecated
+    subcomponents: NotRequired[list[str] | None]
 
-    @staticmethod
+    @staticmethod  # type: ignore[misc]
     def _load_v1_flat(f, common: dict | None = None) -> tuple[Mapping, list[str]]:
         field = {}
         flat = []
@@ -292,7 +325,7 @@ class Dfn(TypedDict):
         # the point of the OMD is to losslessly handle duplicate variable names
         return OMD(flat), meta
 
-    @classmethod
+    @classmethod  # type: ignore[misc]
     def _load_v1(cls, f, name, **kwargs) -> "Dfn":
         """
         Temporary load routine for the v1 DFN format.
@@ -567,7 +600,7 @@ class Dfn(TypedDict):
                     result.append(abbr)
             return result if result else None
 
-        return cls(
+        return cls(  # type: ignore[misc]
             name=name,
             fkeys=fkeys,
             advanced=_advanced(),
@@ -578,95 +611,219 @@ class Dfn(TypedDict):
             **blocks,
         )
 
-    @classmethod
-    def _load_v2(cls, f, name) -> "Dfn":
-        data = tomli.load(f)
+    @classmethod  # type: ignore[misc]
+    def _load_v2(cls, f, name, fmt: str = "toml") -> "Dfn":
+        if fmt == "toml":
+            data = tomli.load(f)
+        elif fmt == "json":
+            import json
+
+            data = json.load(f)
+        elif fmt == "yaml":
+            import yaml
+
+            data = yaml.safe_load(f)
+        else:
+            raise ValueError(f"Unsupported format: {fmt!r}")
         if name and name != data.get("name", None):
             raise ValueError(f"Name mismatch, expected {name}")
+        for block in (data.get("blocks") or {}).values():
+            for field_name, field in block.items():
+                field.setdefault("name", field_name)
         return cls(**data)
 
-    @classmethod
+    @classmethod  # type: ignore[misc]
     def load(
         cls,
         f,
         name: str | None = None,
-        version: FormatVersion = 1,
+        version: FormatVersion | DfnFormat = "dfn",
         **kwargs,
     ) -> "Dfn":
         """
         Load a component definition from a definition file.
         """
 
-        if version == 1:
+        if version in ["dfn", 1]:
             return cls._load_v1(f, name, **kwargs)
-        elif version == 2:
-            return cls._load_v2(f, name)
+        elif version in ["toml", 2]:
+            return cls._load_v2(f, name, fmt="toml")
+        elif version == "yaml":
+            return cls._load_v2(f, name, fmt="yaml")
+        elif version == "json":
+            return cls._load_v2(f, name, fmt="json")
         else:
-            raise ValueError(f"Unsupported version, expected one of {version.__args__}")
+            raise ValueError(
+                f"Unsupported version {version!r}, expected one of: 'dfn', 'toml', 'yaml', 'json'"
+            )
 
-    @staticmethod
-    def _load_all_v1(dfndir: PathLike) -> Dfns:
-        paths: list[Path] = [p for p in dfndir.glob("*.dfn") if p.stem not in ["common", "flopy"]]
-
-        # load common variables
-        common_path: Path | None = dfndir / "common.dfn"
-        if not common_path.is_file():
-            common = None
-        else:
-            with common_path.open() as f:
-                common, _ = Dfn._load_v1_flat(f)
-
-        # load references (subpackages)
-        refs = {}
-        for path in paths:
-            with path.open() as f:
-                dfn = Dfn.load(f, name=path.stem, common=common)
-                ref = dfn.get("ref", None)
-                if ref:
-                    refs[ref["key"]] = ref
-
-        # load definitions
-        dfns: Dfns = {}
-        for path in paths:
-            with path.open() as f:
-                dfn = Dfn.load(f, name=path.stem, common=common, refs=refs)
-                dfns[path.stem] = dfn
-
-        return dfns
-
-    @staticmethod
-    def _load_all_v2(dfndir: PathLike) -> Dfns:
-        paths: list[Path] = [p for p in dfndir.glob("*.toml") if p.stem not in ["common", "flopy"]]
-        dfns: Dfns = {}
-        for path in paths:
-            with path.open(mode="rb") as f:
-                dfn = Dfn.load(f, name=path.stem, version=2)
-                dfns[path.stem] = dfn
-
-        return dfns
-
-    @staticmethod
-    def load_all(dfndir: PathLike, version: FormatVersion = 1) -> Dfns:
+    @staticmethod  # type: ignore[misc]
+    def load_all(dfndir: PathLike, version: FormatVersion | None = None) -> Dfns:
         """Load all component definitions from the given directory."""
-        if version == 1:
-            return Dfn._load_all_v1(dfndir)
-        elif version == 2:
-            return Dfn._load_all_v2(dfndir)
-        else:
-            raise ValueError(f"Unsupported version, expected one of {version.__args__}")
+
+        if version:
+            warn("load_all() argument 'version' is deprecated and ignored")
+
+        dfns: Dfns = {}
+        dfndir = Path(dfndir)
+        _EXCLUDE = {"common", "flopy"}
+
+        dfn_paths: list[Path] = [p for p in dfndir.glob("*.dfn") if p.stem not in _EXCLUDE]
+        toml_paths: list[Path] = [p for p in dfndir.glob("*.toml") if p.stem not in _EXCLUDE]
+        yaml_paths: list[Path] = [
+            p for ext in ("*.yaml", "*.yml") for p in dfndir.glob(ext) if p.stem not in _EXCLUDE
+        ]
+        json_paths: list[Path] = [p for p in dfndir.glob("*.json") if p.stem not in _EXCLUDE]
+
+        groups = [g for g in [dfn_paths, toml_paths, yaml_paths, json_paths] if g]
+        if len(groups) > 1:
+            raise ValueError("Directory contains definition files in multiple formats")
+        if not groups:
+            raise ValueError("Directory contains no definition files")
+
+        if dfn_paths:
+            # load common fields
+            common_path: Path | None = dfndir / "common.dfn"
+            if not common_path.is_file():
+                common = None
+            else:
+                with common_path.open() as f:
+                    common, _ = Dfn._load_v1_flat(f)
+
+            # load subpackages
+            refs = {}
+            for path in dfn_paths:
+                with path.open() as f:
+                    dfn = Dfn.load(f, name=path.stem, common=common)
+                    ref = dfn.get("ref", None)
+                    if ref:
+                        refs[ref["key"]] = ref
+
+            # load definitions
+            for path in dfn_paths:
+                with path.open() as f:
+                    dfn = Dfn.load(f, name=path.stem, common=common, refs=refs)
+                    dfns[path.stem] = dfn
+        elif toml_paths:
+            for path in toml_paths:
+                with path.open(mode="rb") as f:
+                    dfn = Dfn.load(f, name=path.stem, version="toml")
+                    dfns[path.stem] = dfn
+        elif yaml_paths:
+            for path in yaml_paths:
+                with path.open() as f:
+                    dfn = Dfn.load(f, name=path.stem, version="yaml")
+                    dfns[path.stem] = dfn
+        elif json_paths:
+            for path in json_paths:
+                with path.open() as f:
+                    dfn = Dfn.load(f, name=path.stem, version="json")
+                    dfns[path.stem] = dfn
+
+        return dfns
 
 
-def get_dfns(owner: str, repo: str, ref: str, outdir: str | PathLike, verbose: bool = False):
-    """Fetch definition files from the MODFLOW 6 repository."""
-    url = f"https://github.com/{owner}/{repo}/archive/{ref}.zip"
-    if verbose:
-        print(f"Downloading MODFLOW 6 repository from {url}")
-    with tempfile.TemporaryDirectory() as tmp:
-        dl_path = download_and_unzip(url, tmp, verbose=verbose)
-        contents = list(dl_path.glob("modflow6-*"))
-        proj_path = next(iter(contents), None)
-        if not proj_path:
-            raise ValueError(f"Missing proj dir in {dl_path}, found {contents}")
-        if verbose:
-            print("Copying dfns from download dir to output dir")
-        shutil.copytree(proj_path / "doc" / "mf6io" / "mf6ivar" / "dfn", outdir, dirs_exist_ok=True)
+def _load_common(f: Any) -> tuple[OMD, list[str]]:
+    common, _ = parser.parse_dfn(f)
+    return common
+
+
+load_common = _load_common  # public alias
+
+
+def load(f: Any, format: str = "dfn", **kwargs: Any) -> Dfn:
+    """Load a v1 definition file."""
+
+    if format != "dfn":
+        raise ValueError(f"Unsupported format: {format!r}. Expected 'dfn'.")
+
+    name = kwargs.pop("name")
+    fields, meta = parser.parse_dfn(f, **kwargs)
+    parent = parser.try_get_parent(meta)
+    blocks = {
+        block_name: {field["name"]: Field(field) for field in block}  # type: ignore[misc]
+        for block_name, block in groupby(fields.values(multi=True), lambda fd: fd["block"])
+    }
+    multi = parser.is_multi_package(meta)
+    advanced = parser.is_advanced_package(meta)
+    subcomponents = parser.get_subpackages(meta) or None
+
+    return Dfn(
+        schema_version="1",
+        name=name,
+        parent=parent,
+        blocks=blocks,
+        multi=multi,
+        advanced=advanced,
+        subcomponents=subcomponents,
+    )
+
+
+EXCLUDE_DFNS = ["common.dfn", "flopy.dfn"]
+
+
+def load_all(path: str | PathLike) -> Dfns:
+    """Load definition files in a directory."""
+    path = Path(path).expanduser().resolve()
+    dfn_paths = {p.stem: p for p in path.glob("*.dfn") if p.name not in EXCLUDE_DFNS}
+    dfns: Dfns = {}
+    if dfn_paths:
+        with (path / "common.dfn").open() as f:
+            common = _load_common(f)
+        for dfn_name, dfn_path in dfn_paths.items():
+            with dfn_path.open() as f:
+                dfns[dfn_name] = load(f, name=dfn_name, common=common, format="dfn")
+    return dfns
+
+
+def get_fields(dfn: Dfn) -> OMD:
+    """Combined map of fields from all blocks (flat, top-level only)."""
+    items = []
+    for block in (dfn["blocks"] or {}).values():
+        for f in block.values():
+            items.append((f["name"], f))
+    return OMD(items)
+
+
+def _has_grid_dependent_shapes(dfn: Dfn) -> bool:
+    """Return True if any field uses a semicolon grid-type-dependent shape."""
+    blocks = dfn.get("blocks", {})
+    if not blocks:
+        return False
+    for block in blocks.values():
+        for field in block.values():
+            if ";" in str(field.get("shape") or ""):
+                return True
+    return False
+
+
+def infer_parent(dfn: Dfn) -> str | None:
+    """Infer a component's parent using naming conventions."""
+    if dfn["name"] == "sim-nam":
+        return None
+    if dfn["name"].endswith("-nam"):
+        return "sim-nam"
+    if dfn["name"].startswith(("exg-", "sln-")):
+        return "sim-nam"
+    if dfn["name"].startswith("utl-"):
+        # Grid-dependent shapes (semicolon notation) mean the utility must be
+        # model-attached, not simulation-level.
+        if _has_grid_dependent_shapes(dfn):
+            return "package"
+        return "sim-nam"
+    if "-" in dfn["name"]:
+        mdl = dfn["name"].split("-")[0]
+        return f"{mdl}-nam"
+    return None
+
+
+def resolve_parent(dfn: Dfn) -> Dfn:
+    """Infer and set a component's parent using naming conventions."""
+    if dfn["parent"] is None:
+        dfn["parent"] = infer_parent(dfn)
+    return dfn
+
+
+def resolve_parents(dfns: Dfns) -> Dfns:
+    """Infer and set component parents using naming conventions."""
+    return {name: resolve_parent(dfn) for name, dfn in dfns.items()}

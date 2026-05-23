@@ -1,46 +1,21 @@
-"""Convert DFNs to TOML."""
+"""Convert DFNs to TOML (v1.1 schema). Compatibility shim for consumers of the old API."""
 
-import argparse
 from os import PathLike
 from pathlib import Path
 
-import tomli_w as tomli
+import tomli_w
 from boltons.iterutils import remap
 
 from modflow_devtools.dfn import Dfn
 
-# mypy: ignore-errors
+
+def _drop_none_or_empty(path, key, value):
+    return not (value is None or value == "" or value == [] or value == {})
 
 
-def convert(indir: PathLike, outdir: PathLike):
-    indir = Path(indir).expanduser().absolute()
-    outdir = Path(outdir).expanduser().absolute()
-    outdir.mkdir(exist_ok=True, parents=True)
-    for dfn in Dfn.load_all(indir).values():
-        with Path.open(outdir / f"{dfn['name']}.toml", "wb") as f:
-
-            def drop_none_or_empty(path, key, value):
-                if value is None or value == "" or value == [] or value == {}:
-                    return False
-                return True
-
-            tomli.dump(remap(dfn, visit=drop_none_or_empty), f)
-
-
-if __name__ == "__main__":
-    """Convert DFN files to TOML."""
-
-    parser = argparse.ArgumentParser(description="Convert DFN files to TOML.")
-    parser.add_argument(
-        "--indir",
-        "-i",
-        type=str,
-        help="Directory containing DFN files.",
-    )
-    parser.add_argument(
-        "--outdir",
-        "-o",
-        help="Output directory.",
-    )
-    args = parser.parse_args()
-    convert(args.indir, args.outdir)
+def convert(indir: str | PathLike, outdir: str | PathLike) -> None:
+    outdir = Path(outdir)
+    outdir.mkdir(parents=True, exist_ok=True)
+    for dfn in Dfn.load_all(Path(indir)).values():  # type: ignore
+        with (outdir / f"{dfn['name']}.toml").open("wb") as f:
+            tomli_w.dump(remap(dfn, visit=_drop_none_or_empty), f)
