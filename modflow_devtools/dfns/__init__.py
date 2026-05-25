@@ -12,6 +12,7 @@ from modflow_devtools.dfns.schema import (
     Component,
     Dfns,
     Double,
+    Field,
     FieldBase,
     File,
     Integer,
