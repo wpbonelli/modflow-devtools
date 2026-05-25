@@ -2,7 +2,7 @@
 
 import warnings
 
-from modflow_devtools.dfn import fetch_dfns, FieldType
+from modflow_devtools.dfn import FieldType, fetch_dfns
 from modflow_devtools.dfns.registry import DfnRegistry, LocalDfnRegistry, RemoteDfnRegistry
 from modflow_devtools.dfns.schema import (
     Array,
