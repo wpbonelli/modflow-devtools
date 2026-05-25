@@ -2,7 +2,7 @@
 
 import warnings
 
-from modflow_devtools.dfn import fetch_dfns
+from modflow_devtools.dfn import FieldType, fetch_dfns
 from modflow_devtools.dfns.registry import DfnRegistry, LocalDfnRegistry, RemoteDfnRegistry
 from modflow_devtools.dfns.schema import (
     Array,
@@ -40,7 +40,9 @@ __all__ = [
     "DfnRegistry",
     "Dfns",
     "Double",
+    "Field",
     "FieldBase",
+    "FieldType",
     "File",
     "Integer",
     "Keyword",
