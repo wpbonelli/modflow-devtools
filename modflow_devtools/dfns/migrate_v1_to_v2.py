@@ -10,6 +10,26 @@ from modflow_devtools.misc import try_literal_eval
 _IDENT_RE = re.compile(r"^[A-Za-z_]\w*$")
 _LOOKUP_RE = re.compile(r"^(\w+)\.(\w+)\((\w+)\)$")
 
+_DEPENDENT_VARS: dict[str, str] = {
+    "gwf": "head",
+    "gwt": "concentration",
+    "gwe": "temperature",
+    "chf": "stage",
+    "olf": "stage",
+    "swf": "stage",
+    # prt: particle tracking; no scalar dependent variable
+}
+
+_OC_RTYPE_VALID: dict[str, list[str]] = {
+    "gwf": ["HEAD", "BUDGET"],
+    "gwt": ["CONCENTRATION", "BUDGET"],
+    "gwe": ["TEMPERATURE", "BUDGET"],
+    "chf": ["STAGE", "BUDGET"],
+    "olf": ["STAGE", "BUDGET"],
+    "swf": ["STAGE", "BUDGET"],
+    "prt": ["BUDGET"],
+}
+
 
 def _scope_for(
     parent: "str | list[str] | None",
@@ -345,6 +365,61 @@ def _collapse_sto_keywords(
             valid=["steady-state", "transient"],
         )
         result[bname] = block.model_copy(update={"fields": {**non_sto, "storage": storage}})
+    return result
+
+
+def _patch_oc_rtype(
+    name: str,
+    blocks: dict[str, v2.Block],
+) -> dict[str, v2.Block]:
+    """Set valid values on rtype string fields in OC packages."""
+    if not name.endswith("-oc"):
+        return blocks
+    prefix = name.split("-")[0]
+    valid = _OC_RTYPE_VALID.get(prefix)
+    if not valid:
+        return blocks
+
+    def _patch(fields: dict) -> tuple[dict, bool]:
+        new_fields = {}
+        changed = False
+        for fname, field in fields.items():
+            if isinstance(field, v2.String) and fname == "rtype":
+                field = field.model_copy(update={"valid": valid})
+                changed = True
+            elif isinstance(field, v2.Record):
+                patched, c = _patch(field.fields)
+                if c:
+                    field = field.model_copy(update={"fields": patched})
+                    changed = True
+            elif isinstance(field, v2.Union):
+                patched, c = _patch(field.arms)
+                if c:
+                    field = field.model_copy(update={"arms": patched})
+                    changed = True
+            elif isinstance(field, v2.List):
+                item = field.item
+                if isinstance(item, v2.Record):
+                    patched, c = _patch(item.fields)
+                    if c:
+                        field = field.model_copy(
+                            update={"item": item.model_copy(update={"fields": patched})}
+                        )
+                        changed = True
+                elif isinstance(item, v2.Union):
+                    patched, c = _patch(item.arms)
+                    if c:
+                        field = field.model_copy(
+                            update={"item": item.model_copy(update={"arms": patched})}
+                        )
+                        changed = True
+            new_fields[fname] = field
+        return new_fields, changed
+
+    result = {}
+    for bname, block in blocks.items():
+        new_fields, changed = _patch(block.fields)
+        result[bname] = block.model_copy(update={"fields": new_fields}) if changed else block
     return result
 
 
@@ -754,6 +829,7 @@ def v1_to_v2(dfn: v1.Dfn) -> v2.Component:
     blocks = _fill_period_list_shapes(blocks, explicit_dims)
     blocks = _wrap_oc_period_records(blocks)
     blocks = _collapse_sto_keywords(blocks)
+    blocks = _patch_oc_rtype(name, blocks)
     dims = {**explicit_dims, **array_dims} or None
 
     d: dict[str, Any] = {
@@ -766,7 +842,8 @@ def v1_to_v2(dfn: v1.Dfn) -> v2.Component:
     if name == "sim-nam":
         return v2.Simulation(**d)
     if name.endswith("-nam"):
-        return v2.Model(**d)
+        prefix = name.split("-")[0]
+        return v2.Model(**d, dependent_variable=_DEPENDENT_VARS.get(prefix))
 
     subtype: Literal["solution", "exchange", "stress", "advanced", "utility"] | None = None
     if name.startswith("sln-"):
