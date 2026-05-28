@@ -50,21 +50,23 @@ def v2(request, dfn_dir, module_tmpdir):
     return out, fmt
 
 
-def test_migrate_v1_1(v1_1):
+def test_migrate_v1_1(v1_1, snapshot):
     out, fmt = v1_1
-    files = list(out.glob(f"*.{fmt}"))
+    files = sorted(out.glob(f"*.{fmt}"))
     assert files
     for p in files:
         data = _load(p, fmt)
         assert data["name"] == p.stem
         assert data["schema_version"] == "1.1"
+        assert snapshot == p.read_text()
 
 
-def test_migrate_v2(v2):
+def test_migrate_v2(v2, snapshot):
     out, fmt = v2
-    files = list(out.glob(f"*.{fmt}"))
+    files = sorted(out.glob(f"*.{fmt}"))
     assert files
     for p in files:
         data = _load(p, fmt)
         assert data["name"] == p.stem
         assert data["schema_version"] == "2"
+        assert snapshot == p.read_text()
