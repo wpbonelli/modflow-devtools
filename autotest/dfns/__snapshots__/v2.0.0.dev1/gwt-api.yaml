@@ -1,0 +1,112 @@
+name: gwt-api
+schema_version: 2.0.0.dev1
+advanced: false
+multi: true
+ftype: API
+blocks:
+  options:
+    boundnames:
+      block: options
+      description: keyword to indicate that boundary names may be provided with the list of api boundary
+        cells.
+      reader: urword
+      optional: true
+      type: keyword
+    print_input:
+      block: options
+      description: keyword to indicate that the list of api boundary information will be written to the
+        listing file immediately after it is read.
+      reader: urword
+      optional: true
+      longname: print input to listing file
+      mf6internal: iprpak
+      type: keyword
+    print_flows:
+      block: options
+      description: keyword to indicate that the list of api boundary flow rates will be printed to the
+        listing file for every stress period time step in which 'BUDGET PRINT' is specified in Output
+        Control.  If there is no Output Control option and 'PRINT_FLOWS' is specified, then flow rates
+        are printed for the last time step of each stress period.
+      reader: urword
+      optional: true
+      longname: print calculated flows to listing file
+      mf6internal: iprflow
+      type: keyword
+    save_flows:
+      block: options
+      description: keyword to indicate that api boundary flow terms will be written to the file specified
+        with 'BUDGET FILEOUT' in Output Control.
+      reader: urword
+      optional: true
+      longname: save api flows to budget file
+      mf6internal: ipakcb
+      type: keyword
+    obs_filerecord:
+      block: options
+      reader: urword
+      optional: true
+      type: record
+      children:
+        obs6:
+          block: options
+          description: keyword to specify that record corresponds to an observations file.
+          reader: urword
+          optional: false
+          longname: obs keyword
+          type: keyword
+        filein:
+          block: options
+          description: keyword to specify that an input filename is expected next.
+          reader: urword
+          optional: false
+          longname: file keyword
+          type: keyword
+        obs6_filename:
+          block: options
+          description: name of input file to define observations for the api boundary package. See the
+            'Observation utility' section for instructions for preparing observation input files. Table
+            {#2} lists observation type(s) supported by the api boundary package.
+          reader: urword
+          optional: false
+          longname: obs6 input filename
+          type: string
+    obs6:
+      block: options
+      description: keyword to specify that record corresponds to an observations file.
+      reader: urword
+      optional: false
+      longname: obs keyword
+      type: keyword
+    filein:
+      block: options
+      description: keyword to specify that an input filename is expected next.
+      reader: urword
+      optional: false
+      longname: file keyword
+      type: keyword
+    obs6_filename:
+      block: options
+      description: name of input file to define observations for the api boundary package. See the 'Observation
+        utility' section for instructions for preparing observation input files. Table {#2} lists observation
+        type(s) supported by the api boundary package.
+      reader: urword
+      optional: false
+      longname: obs6 input filename
+      type: string
+    mover:
+      block: options
+      description: keyword to indicate that this instance of the api boundary Package can be used with
+        the Water Mover (MVR) Package.  When the MOVER option is specified, additional memory is allocated
+        within the package to store the available, provided, and received water.
+      reader: urword
+      optional: true
+      type: keyword
+  dimensions:
+    maxbound:
+      block: dimensions
+      description: integer value specifying the maximum number of api boundary cells that will be specified
+        for use during any stress period.
+      reader: urword
+      optional: false
+      longname: maximum number of user-defined api boundaries
+      type: integer

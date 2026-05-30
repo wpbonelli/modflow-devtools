@@ -1,0 +1,1043 @@
+{
+  "name": "gwf-csub",
+  "schema_version": "2.0.0.dev1",
+  "advanced": false,
+  "multi": false,
+  "ftype": "CSUB",
+  "blocks": {
+    "options": {
+      "boundnames": {
+        "block": "options",
+        "description": "keyword to indicate that boundary names may be provided with the list of CSUB cells.",
+        "reader": "urword",
+        "optional": true,
+        "type": "keyword"
+      },
+      "print_input": {
+        "block": "options",
+        "description": "keyword to indicate that the list of CSUB information will be written to the listing file immediately after it is read.",
+        "reader": "urword",
+        "optional": true,
+        "longname": "print input to listing file",
+        "type": "keyword"
+      },
+      "save_flows": {
+        "block": "options",
+        "description": "keyword to indicate that cell-by-cell flow terms will be written to the file specified with 'BUDGET SAVE FILE' in Output Control.",
+        "reader": "urword",
+        "optional": true,
+        "longname": "keyword to save CSUB flows",
+        "type": "keyword"
+      },
+      "gammaw": {
+        "block": "options",
+        "description": "unit weight of water. For freshwater, GAMMAW is 9806.65 Newtons/cubic meters or 62.48 lb/cubic foot in SI and English units, respectively. By default, GAMMAW is 9806.65 Newtons/cubic meters.",
+        "default": "9806.65",
+        "reader": "urword",
+        "optional": true,
+        "longname": "unit weight of water",
+        "type": "double"
+      },
+      "beta": {
+        "block": "options",
+        "description": "compressibility of water. Typical values of BETA are 4.6512e-10 1/Pa or 2.2270e-8 lb/square foot in SI and English units, respectively. By default, BETA is 4.6512e-10 1/Pa.",
+        "default": "4.6512e-10",
+        "reader": "urword",
+        "optional": true,
+        "longname": "compressibility of water",
+        "type": "double"
+      },
+      "head_based": {
+        "block": "options",
+        "description": "keyword to indicate the head-based formulation will be used to simulate coarse-grained aquifer materials and no-delay and delay interbeds. Specifying HEAD_BASED also specifies the INITIAL_PRECONSOLIDATION_HEAD option.",
+        "reader": "urword",
+        "optional": true,
+        "longname": "keyword to indicate the head-based formulation will be used",
+        "type": "keyword"
+      },
+      "initial_preconsolidation_head": {
+        "block": "options",
+        "description": "keyword to indicate that preconsolidation heads will be specified for no-delay and delay interbeds in the PACKAGEDATA block. If the SPECIFIED_INITIAL_INTERBED_STATE option is specified in the OPTIONS block, user-specified preconsolidation heads in the PACKAGEDATA block are absolute values. Otherwise, user-specified preconsolidation heads in the PACKAGEDATA block are relative to steady-state or initial heads.",
+        "reader": "urword",
+        "optional": true,
+        "longname": "keyword to indicate that preconsolidation heads will be specified",
+        "mf6internal": "precon_head",
+        "type": "keyword"
+      },
+      "ndelaycells": {
+        "block": "options",
+        "description": "number of nodes used to discretize delay interbeds. If not specified, then a default value of 19 is assigned.",
+        "reader": "urword",
+        "optional": true,
+        "longname": "number of interbed cell nodes",
+        "type": "integer"
+      },
+      "compression_indices": {
+        "block": "options",
+        "description": "keyword to indicate that the recompression (CR) and compression (CC) indices are specified instead of the elastic specific storage (SSE) and inelastic specific storage (SSV) coefficients. If not specified, then elastic specific storage (SSE) and inelastic specific storage (SSV) coefficients must be specified.",
+        "reader": "urword",
+        "optional": true,
+        "longname": "keyword to indicate CR and CC are read instead of SSE and SSV",
+        "mf6internal": "icompress",
+        "type": "keyword"
+      },
+      "update_material_properties": {
+        "block": "options",
+        "description": "keyword to indicate that the thickness and void ratio of coarse-grained and interbed sediments (delay and no-delay) will vary during the simulation. If not specified, the thickness and void ratio of coarse-grained and interbed sediments will not vary during the simulation.",
+        "reader": "urword",
+        "optional": true,
+        "longname": "keyword to indicate material properties can change during the simulations",
+        "mf6internal": "matprop",
+        "type": "keyword"
+      },
+      "cell_fraction": {
+        "block": "options",
+        "description": "keyword to indicate that the thickness of interbeds will be specified in terms of the fraction of cell thickness. If not specified, interbed thicknness must be specified.",
+        "reader": "urword",
+        "optional": true,
+        "longname": "keyword to indicate cell fraction interbed thickness",
+        "type": "keyword"
+      },
+      "specified_initial_interbed_state": {
+        "block": "options",
+        "description": "keyword to indicate that absolute preconsolidation stresses (heads) and delay bed heads will be specified for interbeds defined in the PACKAGEDATA block. The SPECIFIED_INITIAL_INTERBED_STATE option is equivalent to specifying the SPECIFIED_INITIAL_PRECONSOLITATION_STRESS and SPECIFIED_INITIAL_DELAY_HEAD. If SPECIFIED_INITIAL_INTERBED_STATE is not specified then preconsolidation stress (head) and delay bed head values specified in the PACKAGEDATA block are relative to simulated values of the first stress period if steady-state or initial stresses and GWF heads if the first stress period is transient.",
+        "reader": "urword",
+        "optional": true,
+        "longname": "keyword to indicate that absolute initial states will be specified",
+        "mf6internal": "interbed_state",
+        "type": "keyword"
+      },
+      "specified_initial_preconsolidation_stress": {
+        "block": "options",
+        "description": "keyword to indicate that absolute preconsolidation stresses (heads) will be specified for interbeds defined in the PACKAGEDATA block. If SPECIFIED_INITIAL_PRECONSOLITATION_STRESS and SPECIFIED_INITIAL_INTERBED_STATE are not specified then preconsolidation stress (head) values specified in the PACKAGEDATA block are relative to simulated values if the first stress period is steady-state or initial stresses (heads) if the first stress period is transient.",
+        "reader": "urword",
+        "optional": true,
+        "longname": "keyword to indicate that absolute initial preconsolidation stresses (head) will be specified",
+        "mf6internal": "precon_stress",
+        "type": "keyword"
+      },
+      "specified_initial_delay_head": {
+        "block": "options",
+        "description": "keyword to indicate that absolute initial delay bed head will be specified for interbeds defined in the PACKAGEDATA block. If SPECIFIED_INITIAL_DELAY_HEAD and SPECIFIED_INITIAL_INTERBED_STATE are not specified then delay bed head values specified in the PACKAGEDATA block are relative to simulated values if the first stress period is steady-state or initial GWF heads if the first stress period is transient.",
+        "reader": "urword",
+        "optional": true,
+        "longname": "keyword to indicate that absolute initial delay bed heads will be specified",
+        "mf6internal": "delay_head",
+        "type": "keyword"
+      },
+      "effective_stress_lag": {
+        "block": "options",
+        "description": "keyword to indicate the effective stress from the previous time step will be used to calculate specific storage values. This option can 1) help with convergence in models with thin cells and water table elevations close to land surface; 2) is identical to the approach used in the SUBWT package for MODFLOW-2005; and 3) is only used if the effective-stress formulation is being used. By default, current effective stress values are used to calculate specific storage values.",
+        "reader": "urword",
+        "optional": true,
+        "longname": "keyword to indicate that specific storage will be calculate using the effective stress from the previous time step",
+        "mf6internal": "stress_lag",
+        "type": "keyword"
+      },
+      "strainib_filerecord": {
+        "block": "options",
+        "reader": "urword",
+        "optional": true,
+        "mf6internal": "strainibfr",
+        "type": "record",
+        "children": {
+          "strain_csv_interbed": {
+            "block": "options",
+            "description": "keyword to specify the record that corresponds to final interbed strain output.",
+            "reader": "urword",
+            "optional": false,
+            "longname": "budget keyword",
+            "mf6internal": "csvinterbed",
+            "type": "keyword"
+          },
+          "fileout": {
+            "block": "options",
+            "description": "keyword to specify that an output filename is expected next.",
+            "reader": "urword",
+            "optional": false,
+            "longname": "file keyword",
+            "type": "keyword"
+          },
+          "interbedstrain_filename": {
+            "block": "options",
+            "description": "name of the comma-separated-values output file to write final interbed strain information.",
+            "reader": "urword",
+            "optional": false,
+            "longname": "file keyword",
+            "mf6internal": "interbedstrainfn",
+            "type": "string"
+          }
+        }
+      },
+      "strain_csv_interbed": {
+        "block": "options",
+        "description": "keyword to specify the record that corresponds to final interbed strain output.",
+        "reader": "urword",
+        "optional": false,
+        "longname": "budget keyword",
+        "mf6internal": "csvinterbed",
+        "type": "keyword"
+      },
+      "fileout": {
+        "block": "options",
+        "description": "keyword to specify that an output filename is expected next.",
+        "reader": "urword",
+        "optional": false,
+        "longname": "file keyword",
+        "type": "keyword"
+      },
+      "interbedstrain_filename": {
+        "block": "options",
+        "description": "name of the comma-separated-values output file to write final interbed strain information.",
+        "reader": "urword",
+        "optional": false,
+        "longname": "file keyword",
+        "mf6internal": "interbedstrainfn",
+        "type": "string"
+      },
+      "straincg_filerecord": {
+        "block": "options",
+        "reader": "urword",
+        "optional": true,
+        "mf6internal": "straincgfr",
+        "type": "record",
+        "children": {
+          "strain_csv_coarse": {
+            "block": "options",
+            "description": "keyword to specify the record that corresponds to final coarse-grained material strain output.",
+            "reader": "urword",
+            "optional": false,
+            "longname": "budget keyword",
+            "mf6internal": "csvcoarse",
+            "type": "keyword"
+          },
+          "fileout": {
+            "block": "options",
+            "description": "keyword to specify that an output filename is expected next.",
+            "reader": "urword",
+            "optional": false,
+            "longname": "file keyword",
+            "type": "keyword"
+          },
+          "coarsestrain_filename": {
+            "block": "options",
+            "description": "name of the comma-separated-values output file to write final coarse-grained material strain information.",
+            "reader": "urword",
+            "optional": false,
+            "longname": "file keyword",
+            "mf6internal": "coarsestrainfn",
+            "type": "string"
+          }
+        }
+      },
+      "strain_csv_coarse": {
+        "block": "options",
+        "description": "keyword to specify the record that corresponds to final coarse-grained material strain output.",
+        "reader": "urword",
+        "optional": false,
+        "longname": "budget keyword",
+        "mf6internal": "csvcoarse",
+        "type": "keyword"
+      },
+      "coarsestrain_filename": {
+        "block": "options",
+        "description": "name of the comma-separated-values output file to write final coarse-grained material strain information.",
+        "reader": "urword",
+        "optional": false,
+        "longname": "file keyword",
+        "mf6internal": "coarsestrainfn",
+        "type": "string"
+      },
+      "compaction_filerecord": {
+        "block": "options",
+        "reader": "urword",
+        "optional": true,
+        "mf6internal": "cmpfr",
+        "type": "record",
+        "children": {
+          "compaction": {
+            "block": "options",
+            "description": "keyword to specify that record corresponds to the compaction.",
+            "reader": "urword",
+            "optional": false,
+            "longname": "compaction keyword",
+            "type": "keyword"
+          },
+          "fileout": {
+            "block": "options",
+            "description": "keyword to specify that an output filename is expected next.",
+            "reader": "urword",
+            "optional": false,
+            "longname": "file keyword",
+            "type": "keyword"
+          },
+          "compaction_filename": {
+            "block": "options",
+            "description": "name of the binary output file to write compaction information.",
+            "reader": "urword",
+            "optional": false,
+            "longname": "file keyword",
+            "mf6internal": "cmpfn",
+            "type": "string"
+          }
+        }
+      },
+      "compaction": {
+        "block": "options",
+        "description": "keyword to specify that record corresponds to the compaction.",
+        "reader": "urword",
+        "optional": false,
+        "longname": "compaction keyword",
+        "type": "keyword"
+      },
+      "compaction_filename": {
+        "block": "options",
+        "description": "name of the binary output file to write compaction information.",
+        "reader": "urword",
+        "optional": false,
+        "longname": "file keyword",
+        "mf6internal": "cmpfn",
+        "type": "string"
+      },
+      "compaction_elastic_filerecord": {
+        "block": "options",
+        "reader": "urword",
+        "optional": true,
+        "mf6internal": "cmpelasticfr",
+        "type": "record",
+        "children": {
+          "compaction_elastic": {
+            "block": "options",
+            "description": "keyword to specify that record corresponds to the elastic interbed compaction binary file.",
+            "reader": "urword",
+            "optional": false,
+            "longname": "elastic interbed compaction keyword",
+            "mf6internal": "cmpelastic",
+            "type": "keyword"
+          },
+          "fileout": {
+            "block": "options",
+            "description": "keyword to specify that an output filename is expected next.",
+            "reader": "urword",
+            "optional": false,
+            "longname": "file keyword",
+            "type": "keyword"
+          },
+          "elastic_compaction_filename": {
+            "block": "options",
+            "description": "name of the binary output file to write elastic interbed compaction information.",
+            "reader": "urword",
+            "optional": false,
+            "longname": "file keyword",
+            "mf6internal": "elasticcmpfn",
+            "type": "string"
+          }
+        }
+      },
+      "compaction_elastic": {
+        "block": "options",
+        "description": "keyword to specify that record corresponds to the elastic interbed compaction binary file.",
+        "reader": "urword",
+        "optional": false,
+        "longname": "elastic interbed compaction keyword",
+        "mf6internal": "cmpelastic",
+        "type": "keyword"
+      },
+      "elastic_compaction_filename": {
+        "block": "options",
+        "description": "name of the binary output file to write elastic interbed compaction information.",
+        "reader": "urword",
+        "optional": false,
+        "longname": "file keyword",
+        "mf6internal": "elasticcmpfn",
+        "type": "string"
+      },
+      "compaction_inelastic_filerecord": {
+        "block": "options",
+        "reader": "urword",
+        "optional": true,
+        "mf6internal": "cmpinelasticfr",
+        "type": "record",
+        "children": {
+          "compaction_inelastic": {
+            "block": "options",
+            "description": "keyword to specify that record corresponds to the inelastic interbed compaction binary file.",
+            "reader": "urword",
+            "optional": false,
+            "longname": "inelastic interbed compaction keyword",
+            "mf6internal": "cmpinelastic",
+            "type": "keyword"
+          },
+          "fileout": {
+            "block": "options",
+            "description": "keyword to specify that an output filename is expected next.",
+            "reader": "urword",
+            "optional": false,
+            "longname": "file keyword",
+            "type": "keyword"
+          },
+          "inelastic_compaction_filename": {
+            "block": "options",
+            "description": "name of the binary output file to write inelastic interbed compaction information.",
+            "reader": "urword",
+            "optional": false,
+            "longname": "file keyword",
+            "mf6internal": "inelasticcmpfn",
+            "type": "string"
+          }
+        }
+      },
+      "compaction_inelastic": {
+        "block": "options",
+        "description": "keyword to specify that record corresponds to the inelastic interbed compaction binary file.",
+        "reader": "urword",
+        "optional": false,
+        "longname": "inelastic interbed compaction keyword",
+        "mf6internal": "cmpinelastic",
+        "type": "keyword"
+      },
+      "inelastic_compaction_filename": {
+        "block": "options",
+        "description": "name of the binary output file to write inelastic interbed compaction information.",
+        "reader": "urword",
+        "optional": false,
+        "longname": "file keyword",
+        "mf6internal": "inelasticcmpfn",
+        "type": "string"
+      },
+      "compaction_interbed_filerecord": {
+        "block": "options",
+        "reader": "urword",
+        "optional": true,
+        "mf6internal": "cmpinterbedfr",
+        "type": "record",
+        "children": {
+          "compaction_interbed": {
+            "block": "options",
+            "description": "keyword to specify that record corresponds to the interbed compaction binary file.",
+            "reader": "urword",
+            "optional": false,
+            "longname": "interbed compaction keyword",
+            "mf6internal": "cmpinterbed",
+            "type": "keyword"
+          },
+          "fileout": {
+            "block": "options",
+            "description": "keyword to specify that an output filename is expected next.",
+            "reader": "urword",
+            "optional": false,
+            "longname": "file keyword",
+            "type": "keyword"
+          },
+          "interbed_compaction_filename": {
+            "block": "options",
+            "description": "name of the binary output file to write interbed compaction information.",
+            "reader": "urword",
+            "optional": false,
+            "longname": "file keyword",
+            "mf6internal": "interbedcmpfn",
+            "type": "string"
+          }
+        }
+      },
+      "compaction_interbed": {
+        "block": "options",
+        "description": "keyword to specify that record corresponds to the interbed compaction binary file.",
+        "reader": "urword",
+        "optional": false,
+        "longname": "interbed compaction keyword",
+        "mf6internal": "cmpinterbed",
+        "type": "keyword"
+      },
+      "interbed_compaction_filename": {
+        "block": "options",
+        "description": "name of the binary output file to write interbed compaction information.",
+        "reader": "urword",
+        "optional": false,
+        "longname": "file keyword",
+        "mf6internal": "interbedcmpfn",
+        "type": "string"
+      },
+      "compaction_coarse_filerecord": {
+        "block": "options",
+        "reader": "urword",
+        "optional": true,
+        "mf6internal": "cmpcoarsefr",
+        "type": "record",
+        "children": {
+          "compaction_coarse": {
+            "block": "options",
+            "description": "keyword to specify that record corresponds to the elastic coarse-grained material compaction binary file.",
+            "reader": "urword",
+            "optional": false,
+            "longname": "coarse compaction keyword",
+            "mf6internal": "cmpcoarse",
+            "type": "keyword"
+          },
+          "fileout": {
+            "block": "options",
+            "description": "keyword to specify that an output filename is expected next.",
+            "reader": "urword",
+            "optional": false,
+            "longname": "file keyword",
+            "type": "keyword"
+          },
+          "coarse_compaction_filename": {
+            "block": "options",
+            "description": "name of the binary output file to write elastic coarse-grained material compaction information.",
+            "reader": "urword",
+            "optional": false,
+            "longname": "file keyword",
+            "mf6internal": "cmpcoarsefn",
+            "type": "string"
+          }
+        }
+      },
+      "compaction_coarse": {
+        "block": "options",
+        "description": "keyword to specify that record corresponds to the elastic coarse-grained material compaction binary file.",
+        "reader": "urword",
+        "optional": false,
+        "longname": "coarse compaction keyword",
+        "mf6internal": "cmpcoarse",
+        "type": "keyword"
+      },
+      "coarse_compaction_filename": {
+        "block": "options",
+        "description": "name of the binary output file to write elastic coarse-grained material compaction information.",
+        "reader": "urword",
+        "optional": false,
+        "longname": "file keyword",
+        "mf6internal": "cmpcoarsefn",
+        "type": "string"
+      },
+      "zdisplacement_filerecord": {
+        "block": "options",
+        "reader": "urword",
+        "optional": true,
+        "mf6internal": "zdispfr",
+        "type": "record",
+        "children": {
+          "zdisplacement": {
+            "block": "options",
+            "description": "keyword to specify that record corresponds to the z-displacement binary file.",
+            "reader": "urword",
+            "optional": false,
+            "longname": "budget keyword",
+            "type": "keyword"
+          },
+          "fileout": {
+            "block": "options",
+            "description": "keyword to specify that an output filename is expected next.",
+            "reader": "urword",
+            "optional": false,
+            "longname": "file keyword",
+            "type": "keyword"
+          },
+          "zdisplacement_filename": {
+            "block": "options",
+            "description": "name of the binary output file to write z-displacement information.",
+            "reader": "urword",
+            "optional": false,
+            "longname": "file keyword",
+            "mf6internal": "zdispfn",
+            "type": "string"
+          }
+        }
+      },
+      "zdisplacement": {
+        "block": "options",
+        "description": "keyword to specify that record corresponds to the z-displacement binary file.",
+        "reader": "urword",
+        "optional": false,
+        "longname": "budget keyword",
+        "type": "keyword"
+      },
+      "zdisplacement_filename": {
+        "block": "options",
+        "description": "name of the binary output file to write z-displacement information.",
+        "reader": "urword",
+        "optional": false,
+        "longname": "file keyword",
+        "mf6internal": "zdispfn",
+        "type": "string"
+      },
+      "package_convergence_filerecord": {
+        "block": "options",
+        "reader": "urword",
+        "optional": true,
+        "mf6internal": "pkgconvergefr",
+        "type": "record",
+        "children": {
+          "package_convergence": {
+            "block": "options",
+            "description": "keyword to specify that record corresponds to the package convergence comma spaced values file. Package convergence data is for delay interbeds. A warning message will be issued if package convergence data is requested but delay interbeds are not included in the package.",
+            "reader": "urword",
+            "optional": false,
+            "longname": "package_convergence keyword",
+            "mf6internal": "pkgconverge",
+            "type": "keyword"
+          },
+          "fileout": {
+            "block": "options",
+            "description": "keyword to specify that an output filename is expected next.",
+            "reader": "urword",
+            "optional": false,
+            "longname": "file keyword",
+            "type": "keyword"
+          },
+          "package_convergence_filename": {
+            "block": "options",
+            "description": "name of the comma spaced values output file to write package convergence information.",
+            "reader": "urword",
+            "optional": false,
+            "longname": "file keyword",
+            "mf6internal": "pkgconvergefn",
+            "type": "string"
+          }
+        }
+      },
+      "package_convergence": {
+        "block": "options",
+        "description": "keyword to specify that record corresponds to the package convergence comma spaced values file. Package convergence data is for delay interbeds. A warning message will be issued if package convergence data is requested but delay interbeds are not included in the package.",
+        "reader": "urword",
+        "optional": false,
+        "longname": "package_convergence keyword",
+        "mf6internal": "pkgconverge",
+        "type": "keyword"
+      },
+      "package_convergence_filename": {
+        "block": "options",
+        "description": "name of the comma spaced values output file to write package convergence information.",
+        "reader": "urword",
+        "optional": false,
+        "longname": "file keyword",
+        "mf6internal": "pkgconvergefn",
+        "type": "string"
+      },
+      "ts_filerecord": {
+        "block": "options",
+        "reader": "urword",
+        "optional": true,
+        "type": "record",
+        "children": {
+          "ts6": {
+            "block": "options",
+            "description": "keyword to specify that record corresponds to a time-series file.",
+            "reader": "urword",
+            "optional": false,
+            "longname": "head keyword",
+            "type": "keyword"
+          },
+          "filein": {
+            "block": "options",
+            "description": "keyword to specify that an input filename is expected next.",
+            "reader": "urword",
+            "optional": false,
+            "longname": "file keyword",
+            "type": "keyword"
+          },
+          "ts6_filename": {
+            "block": "options",
+            "description": "defines a time-series file defining time series that can be used to assign time-varying values. See the 'Time-Variable Input' section for instructions on using the time-series capability.",
+            "reader": "urword",
+            "optional": false,
+            "longname": "file name of time series information",
+            "type": "string"
+          }
+        }
+      },
+      "ts6": {
+        "block": "options",
+        "description": "keyword to specify that record corresponds to a time-series file.",
+        "reader": "urword",
+        "optional": false,
+        "longname": "head keyword",
+        "type": "keyword"
+      },
+      "filein": {
+        "block": "options",
+        "description": "keyword to specify that an input filename is expected next.",
+        "reader": "urword",
+        "optional": false,
+        "longname": "file keyword",
+        "type": "keyword"
+      },
+      "ts6_filename": {
+        "block": "options",
+        "description": "defines a time-series file defining time series that can be used to assign time-varying values. See the 'Time-Variable Input' section for instructions on using the time-series capability.",
+        "reader": "urword",
+        "optional": false,
+        "longname": "file name of time series information",
+        "type": "string"
+      },
+      "obs_filerecord": {
+        "block": "options",
+        "reader": "urword",
+        "optional": true,
+        "type": "record",
+        "children": {
+          "obs6": {
+            "block": "options",
+            "description": "keyword to specify that record corresponds to an observations file.",
+            "reader": "urword",
+            "optional": false,
+            "longname": "obs keyword",
+            "type": "keyword"
+          },
+          "filein": {
+            "block": "options",
+            "description": "keyword to specify that an input filename is expected next.",
+            "reader": "urword",
+            "optional": false,
+            "longname": "file keyword",
+            "type": "keyword"
+          },
+          "obs6_filename": {
+            "block": "options",
+            "description": "name of input file to define observations for the CSUB package. See the 'Observation utility' section for instructions for preparing observation input files. Table {#2} lists observation type(s) supported by the CSUB package.",
+            "reader": "urword",
+            "optional": false,
+            "longname": "obs6 input filename",
+            "type": "string"
+          }
+        }
+      },
+      "obs6": {
+        "block": "options",
+        "description": "keyword to specify that record corresponds to an observations file.",
+        "reader": "urword",
+        "optional": false,
+        "longname": "obs keyword",
+        "type": "keyword"
+      },
+      "obs6_filename": {
+        "block": "options",
+        "description": "name of input file to define observations for the CSUB package. See the 'Observation utility' section for instructions for preparing observation input files. Table {#2} lists observation type(s) supported by the CSUB package.",
+        "reader": "urword",
+        "optional": false,
+        "longname": "obs6 input filename",
+        "type": "string"
+      }
+    },
+    "dimensions": {
+      "ninterbeds": {
+        "block": "dimensions",
+        "description": "is the number of CSUB interbed systems.  More than 1 CSUB interbed systems can be assigned to a GWF cell; however, only 1 GWF cell can be assigned to a single CSUB interbed system.",
+        "reader": "urword",
+        "optional": false,
+        "longname": "number of CSUB interbed systems",
+        "type": "integer"
+      },
+      "maxsig0": {
+        "block": "dimensions",
+        "description": "is the maximum number of cells that can have a specified stress offset.  More than 1 stress offset can be assigned to a GWF cell. By default, MAXSIG0 is 0.",
+        "reader": "urword",
+        "optional": true,
+        "longname": "maximum number of stress offset cells",
+        "mf6internal": "maxbound",
+        "type": "integer"
+      }
+    },
+    "griddata": {
+      "cg_ske_cr": {
+        "shape": "(nodes)",
+        "block": "griddata",
+        "description": "is the initial elastic coarse-grained material specific storage or recompression index. The recompression index is specified if COMPRESSION_INDICES is specified in the OPTIONS block.  Specified or calculated elastic coarse-grained material specific storage values are not adjusted from initial values if HEAD_BASED is specified in the OPTIONS block.",
+        "default": "1e-5",
+        "reader": "readarray",
+        "layered": true,
+        "netcdf": true,
+        "longname": "elastic coarse specific storage",
+        "type": "double"
+      },
+      "cg_theta": {
+        "shape": "(nodes)",
+        "block": "griddata",
+        "description": "is the initial porosity of coarse-grained materials.",
+        "default": "0.2",
+        "reader": "readarray",
+        "layered": true,
+        "netcdf": true,
+        "longname": "initial coarse-grained material porosity",
+        "type": "double"
+      },
+      "sgm": {
+        "shape": "(nodes)",
+        "block": "griddata",
+        "description": "is the specific gravity of moist or unsaturated sediments.  If not specified, then a default value of 1.7 is assigned.",
+        "reader": "readarray",
+        "layered": true,
+        "netcdf": true,
+        "optional": true,
+        "longname": "specific gravity of moist sediments",
+        "type": "double"
+      },
+      "sgs": {
+        "shape": "(nodes)",
+        "block": "griddata",
+        "description": "is the specific gravity of saturated sediments. If not specified, then a default value of 2.0 is assigned.",
+        "reader": "readarray",
+        "layered": true,
+        "netcdf": true,
+        "optional": true,
+        "longname": "specific gravity of saturated sediments",
+        "type": "double"
+      }
+    },
+    "packagedata": {
+      "packagedata": {
+        "shape": "(ninterbeds)",
+        "block": "packagedata",
+        "reader": "urword",
+        "optional": true,
+        "type": "list",
+        "children": {
+          "packagedata": {
+            "shape": "(ninterbeds)",
+            "block": "packagedata",
+            "reader": "urword",
+            "optional": true,
+            "type": "record",
+            "children": {
+              "icsubno": {
+                "block": "packagedata",
+                "description": "integer value that defines the CSUB interbed number associated with the specified PACKAGEDATA data on the line. CSUBNO must be greater than zero and less than or equal to NINTERBEDS.  CSUB information must be specified for every CSUB cell or the program will terminate with an error.  The program will also terminate with an error if information for a CSUB interbed number is specified more than once.",
+                "reader": "urword",
+                "longname": "CSUB id number for this entry",
+                "numeric_index": true,
+                "type": "integer"
+              },
+              "cellid": {
+                "shape": "(ncelldim)",
+                "block": "packagedata",
+                "description": "is the cell identifier, and depends on the type of grid that is used for the simulation.  For a structured grid that uses the DIS input file, CELLID is the layer, row, and column.   For a grid that uses the DISV input file, CELLID is the layer and CELL2D number.  If the model uses the unstructured discretization (DISU) input file, CELLID is the node number for the cell.",
+                "reader": "urword",
+                "longname": "cell identifier",
+                "mf6internal": "cellid_pkgdata",
+                "type": "integer"
+              },
+              "cdelay": {
+                "block": "packagedata",
+                "description": "character string that defines the subsidence delay type for the interbed. Possible subsidence package CDELAY strings include: NODELAY--character keyword to indicate that delay will not be simulated in the interbed.  DELAY--character keyword to indicate that delay will be simulated in the interbed.",
+                "reader": "urword",
+                "longname": "delay type",
+                "type": "string"
+              },
+              "pcs0": {
+                "block": "packagedata",
+                "description": "is the initial offset from the calculated initial effective stress or initial preconsolidation stress in the interbed, in units of height of a column of water. PCS0 is the initial preconsolidation stress if SPECIFIED_INITIAL_INTERBED_STATE or SPECIFIED_INITIAL_PRECONSOLIDATION_STRESS are specified in the OPTIONS block. If HEAD_BASED is specified in the OPTIONS block, PCS0 is the initial offset from the calculated initial head or initial preconsolidation head in the CSUB interbed and the initial preconsolidation stress is calculated from the calculated initial effective stress or calculated initial geostatic stress, respectively.",
+                "reader": "urword",
+                "longname": "initial stress",
+                "type": "double"
+              },
+              "thick_frac": {
+                "block": "packagedata",
+                "description": "is the interbed thickness or cell fraction of the interbed. Interbed thickness is specified as a fraction of the cell thickness if CELL_FRACTION is specified in the OPTIONS block.",
+                "reader": "urword",
+                "longname": "interbed thickness or cell fraction",
+                "type": "double"
+              },
+              "rnb": {
+                "block": "packagedata",
+                "description": "is the interbed material factor equivalent number of interbeds in the interbed system represented by the interbed. RNB must be greater than or equal to 1 if CDELAY is DELAY. Otherwise, RNB can be any value.",
+                "reader": "urword",
+                "longname": "delay interbed material factor",
+                "type": "double"
+              },
+              "ssv_cc": {
+                "block": "packagedata",
+                "description": "is the initial inelastic specific storage or compression index of the interbed. The compression index is specified if COMPRESSION_INDICES is specified in the OPTIONS block. Specified or calculated interbed inelastic specific storage values are not adjusted from initial values if HEAD_BASED is specified in the OPTIONS block.",
+                "reader": "urword",
+                "longname": "initial interbed inelastic specific storage",
+                "type": "double"
+              },
+              "sse_cr": {
+                "block": "packagedata",
+                "description": "is the initial elastic coarse-grained material specific storage or recompression index of the interbed. The recompression index is specified if COMPRESSION_INDICES is specified in the OPTIONS block. Specified or calculated interbed elastic specific storage values are not adjusted from initial values if HEAD_BASED is specified in the OPTIONS block.",
+                "reader": "urword",
+                "longname": "initial interbed elastic specific storage",
+                "type": "double"
+              },
+              "theta": {
+                "block": "packagedata",
+                "description": "is the initial porosity of the interbed.",
+                "default": "0.2",
+                "reader": "urword",
+                "longname": "initial interbed porosity",
+                "type": "double"
+              },
+              "kv": {
+                "block": "packagedata",
+                "description": "is the vertical hydraulic conductivity of the delay interbed. KV must be greater than 0 if CDELAY is DELAY. Otherwise, KV can be any value.",
+                "reader": "urword",
+                "longname": "delay interbed vertical hydraulic conductivity",
+                "type": "double"
+              },
+              "h0": {
+                "block": "packagedata",
+                "description": "is the initial offset from the head in cell cellid or the initial head in the delay interbed. H0 is the initial head in the delay bed if SPECIFIED_INITIAL_INTERBED_STATE or SPECIFIED_INITIAL_DELAY_HEAD are specified in the OPTIONS block. H0 can be any value if CDELAY is NODELAY.",
+                "reader": "urword",
+                "longname": "initial delay interbed head",
+                "type": "double"
+              },
+              "boundname": {
+                "block": "packagedata",
+                "description": "name of the CSUB cell.  BOUNDNAME is an ASCII character variable that can contain as many as 40 characters.  If BOUNDNAME contains spaces in it, then the entire name must be enclosed within single quotes.",
+                "reader": "urword",
+                "optional": true,
+                "longname": "interbed name",
+                "type": "string"
+              }
+            }
+          }
+        }
+      },
+      "icsubno": {
+        "block": "packagedata",
+        "description": "integer value that defines the CSUB interbed number associated with the specified PACKAGEDATA data on the line. CSUBNO must be greater than zero and less than or equal to NINTERBEDS.  CSUB information must be specified for every CSUB cell or the program will terminate with an error.  The program will also terminate with an error if information for a CSUB interbed number is specified more than once.",
+        "reader": "urword",
+        "longname": "CSUB id number for this entry",
+        "numeric_index": true,
+        "type": "integer"
+      },
+      "cellid": {
+        "shape": "(ncelldim)",
+        "block": "packagedata",
+        "description": "is the cell identifier, and depends on the type of grid that is used for the simulation.  For a structured grid that uses the DIS input file, CELLID is the layer, row, and column.   For a grid that uses the DISV input file, CELLID is the layer and CELL2D number.  If the model uses the unstructured discretization (DISU) input file, CELLID is the node number for the cell.",
+        "reader": "urword",
+        "longname": "cell identifier",
+        "mf6internal": "cellid_pkgdata",
+        "type": "integer"
+      },
+      "cdelay": {
+        "block": "packagedata",
+        "description": "character string that defines the subsidence delay type for the interbed. Possible subsidence package CDELAY strings include: NODELAY--character keyword to indicate that delay will not be simulated in the interbed.  DELAY--character keyword to indicate that delay will be simulated in the interbed.",
+        "reader": "urword",
+        "longname": "delay type",
+        "type": "string"
+      },
+      "pcs0": {
+        "block": "packagedata",
+        "description": "is the initial offset from the calculated initial effective stress or initial preconsolidation stress in the interbed, in units of height of a column of water. PCS0 is the initial preconsolidation stress if SPECIFIED_INITIAL_INTERBED_STATE or SPECIFIED_INITIAL_PRECONSOLIDATION_STRESS are specified in the OPTIONS block. If HEAD_BASED is specified in the OPTIONS block, PCS0 is the initial offset from the calculated initial head or initial preconsolidation head in the CSUB interbed and the initial preconsolidation stress is calculated from the calculated initial effective stress or calculated initial geostatic stress, respectively.",
+        "reader": "urword",
+        "longname": "initial stress",
+        "type": "double"
+      },
+      "thick_frac": {
+        "block": "packagedata",
+        "description": "is the interbed thickness or cell fraction of the interbed. Interbed thickness is specified as a fraction of the cell thickness if CELL_FRACTION is specified in the OPTIONS block.",
+        "reader": "urword",
+        "longname": "interbed thickness or cell fraction",
+        "type": "double"
+      },
+      "rnb": {
+        "block": "packagedata",
+        "description": "is the interbed material factor equivalent number of interbeds in the interbed system represented by the interbed. RNB must be greater than or equal to 1 if CDELAY is DELAY. Otherwise, RNB can be any value.",
+        "reader": "urword",
+        "longname": "delay interbed material factor",
+        "type": "double"
+      },
+      "ssv_cc": {
+        "block": "packagedata",
+        "description": "is the initial inelastic specific storage or compression index of the interbed. The compression index is specified if COMPRESSION_INDICES is specified in the OPTIONS block. Specified or calculated interbed inelastic specific storage values are not adjusted from initial values if HEAD_BASED is specified in the OPTIONS block.",
+        "reader": "urword",
+        "longname": "initial interbed inelastic specific storage",
+        "type": "double"
+      },
+      "sse_cr": {
+        "block": "packagedata",
+        "description": "is the initial elastic coarse-grained material specific storage or recompression index of the interbed. The recompression index is specified if COMPRESSION_INDICES is specified in the OPTIONS block. Specified or calculated interbed elastic specific storage values are not adjusted from initial values if HEAD_BASED is specified in the OPTIONS block.",
+        "reader": "urword",
+        "longname": "initial interbed elastic specific storage",
+        "type": "double"
+      },
+      "theta": {
+        "block": "packagedata",
+        "description": "is the initial porosity of the interbed.",
+        "default": "0.2",
+        "reader": "urword",
+        "longname": "initial interbed porosity",
+        "type": "double"
+      },
+      "kv": {
+        "block": "packagedata",
+        "description": "is the vertical hydraulic conductivity of the delay interbed. KV must be greater than 0 if CDELAY is DELAY. Otherwise, KV can be any value.",
+        "reader": "urword",
+        "longname": "delay interbed vertical hydraulic conductivity",
+        "type": "double"
+      },
+      "h0": {
+        "block": "packagedata",
+        "description": "is the initial offset from the head in cell cellid or the initial head in the delay interbed. H0 is the initial head in the delay bed if SPECIFIED_INITIAL_INTERBED_STATE or SPECIFIED_INITIAL_DELAY_HEAD are specified in the OPTIONS block. H0 can be any value if CDELAY is NODELAY.",
+        "reader": "urword",
+        "longname": "initial delay interbed head",
+        "type": "double"
+      },
+      "boundname": {
+        "block": "packagedata",
+        "description": "name of the CSUB cell.  BOUNDNAME is an ASCII character variable that can contain as many as 40 characters.  If BOUNDNAME contains spaces in it, then the entire name must be enclosed within single quotes.",
+        "reader": "urword",
+        "optional": true,
+        "longname": "interbed name",
+        "type": "string"
+      }
+    },
+    "period": {
+      "iper": {
+        "shape": "(nper, nnodes)",
+        "block": "period",
+        "description": "integer value specifying the starting stress period number for which the data specified in the PERIOD block apply.  IPER must be less than or equal to NPER in the TDIS Package and greater than zero.  The IPER value assigned to a stress period block must be greater than the IPER value assigned for the previous PERIOD block.  The information specified in the PERIOD block will continue to apply for all subsequent stress periods, unless the program encounters another PERIOD block.",
+        "block_variable": true,
+        "reader": "urword",
+        "optional": false,
+        "longname": "stress period number",
+        "type": "integer"
+      },
+      "stress_period_data": {
+        "shape": "(nper, nnodes, maxsig0)",
+        "block": "period",
+        "reader": "urword",
+        "mf6internal": "spd",
+        "type": "list",
+        "children": {
+          "stress_period_data": {
+            "shape": "(maxsig0)",
+            "block": "period",
+            "reader": "urword",
+            "mf6internal": "spd",
+            "type": "record",
+            "children": {
+              "cellid": {
+                "shape": "(ncelldim)",
+                "block": "packagedata",
+                "description": "is the cell identifier, and depends on the type of grid that is used for the simulation.  For a structured grid that uses the DIS input file, CELLID is the layer, row, and column.   For a grid that uses the DISV input file, CELLID is the layer and CELL2D number.  If the model uses the unstructured discretization (DISU) input file, CELLID is the node number for the cell.",
+                "reader": "urword",
+                "longname": "cell identifier",
+                "mf6internal": "cellid_pkgdata",
+                "type": "integer"
+              },
+              "sig0": {
+                "block": "period",
+                "description": "is the stress offset for the cell. SIG0 is added to the calculated geostatic stress for the cell. SIG0 is specified only if MAXSIG0 is specified to be greater than 0 in the DIMENSIONS block. If the Options block includes a TIMESERIESFILE entry (see the 'Time-Variable Input' section), values can be obtained from a time series by entering the time-series name in place of a numeric value.",
+                "reader": "urword",
+                "time_series": true,
+                "longname": "geostatic stress offset",
+                "type": "double"
+              }
+            }
+          }
+        }
+      },
+      "sig0": {
+        "shape": "(nper, nnodes)",
+        "block": "period",
+        "description": "is the stress offset for the cell. SIG0 is added to the calculated geostatic stress for the cell. SIG0 is specified only if MAXSIG0 is specified to be greater than 0 in the DIMENSIONS block. If the Options block includes a TIMESERIESFILE entry (see the 'Time-Variable Input' section), values can be obtained from a time series by entering the time-series name in place of a numeric value.",
+        "reader": "urword",
+        "time_series": true,
+        "longname": "geostatic stress offset",
+        "type": "double"
+      }
+    }
+  }
+}

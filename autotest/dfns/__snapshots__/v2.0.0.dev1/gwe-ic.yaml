@@ -1,0 +1,41 @@
+name: gwe-ic
+schema_version: 2.0.0.dev1
+advanced: false
+multi: false
+ftype: IC
+blocks:
+  options:
+    export_array_ascii:
+      block: options
+      description: keyword that specifies input griddata arrays should be written to layered ascii output
+        files.
+      reader: urword
+      optional: true
+      mf6internal: export_ascii
+      longname: export array variables to layered ascii files.
+      type: keyword
+    export_array_netcdf:
+      block: options
+      description: keyword that specifies input gridded arrays should be written to the model output NetCDF
+        file with attributes that support using the generated file as a MODFLOW 6 simulation input.  This
+        option only has an effect when an output model NetCDF file is configured and the simulation is
+        run in VALIDATE mode, otherwise it is ignored.
+      reader: urword
+      optional: true
+      mf6internal: export_nc
+      longname: export array variables to netcdf output files.
+      extended: true
+      type: keyword
+  griddata:
+    strt:
+      shape: (nodes)
+      block: griddata
+      description: is the initial (starting) temperature---that is, the temperature at the beginning of
+        the GWE Model simulation.  STRT must be specified for all GWE Model simulations. One value is
+        read for every model cell.
+      default: '0.0'
+      reader: readarray
+      layered: true
+      netcdf: true
+      longname: starting temperature
+      type: double

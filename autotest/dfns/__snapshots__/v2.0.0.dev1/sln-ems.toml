@@ -1,0 +1,9 @@
+name = "sln-ems"
+schema_version = "2.0.0.dev1"
+advanced = false
+multi = false
+ftype = "EMS"
+
+[sln]
+abbr = "ems"
+pattern = "*"

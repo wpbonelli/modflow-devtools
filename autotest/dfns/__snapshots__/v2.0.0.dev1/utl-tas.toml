@@ -1,0 +1,135 @@
+name = "utl-tas"
+schema_version = "2.0.0.dev1"
+parent = "parent_package"
+advanced = false
+multi = true
+ftype = "TAS"
+
+[blocks.attributes.time_series_namerecord]
+block = "attributes"
+description = "xxx"
+reader = "urword"
+optional = false
+type = "record"
+
+[blocks.attributes.time_series_namerecord.children.name]
+block = "attributes"
+description = "xxx"
+reader = "urword"
+optional = false
+type = "keyword"
+
+[blocks.attributes.time_series_namerecord.children.time_series_name]
+shape = "(any1d)"
+block = "attributes"
+description = "Name by which a package references a particular time-array series. The name must be unique among all time-array series used in a package."
+reader = "urword"
+optional = false
+type = "string"
+
+[blocks.attributes.name]
+block = "attributes"
+description = "xxx"
+reader = "urword"
+optional = false
+type = "keyword"
+
+[blocks.attributes.time_series_name]
+shape = "(any1d)"
+block = "attributes"
+description = "Name by which a package references a particular time-array series. The name must be unique among all time-array series used in a package."
+reader = "urword"
+optional = false
+type = "string"
+
+[blocks.attributes.interpolation_methodrecord]
+block = "attributes"
+description = "xxx"
+reader = "urword"
+optional = true
+type = "record"
+
+[blocks.attributes.interpolation_methodrecord.children.method]
+block = "attributes"
+description = " xxx"
+reader = "urword"
+optional = false
+type = "keyword"
+
+[blocks.attributes.interpolation_methodrecord.children.interpolation_method]
+block = "attributes"
+description = "Interpolation method, which is either STEPWISE or LINEAR."
+valid = "stepwise linear linearend"
+reader = "urword"
+optional = false
+type = "string"
+
+[blocks.attributes.method]
+block = "attributes"
+description = " xxx"
+reader = "urword"
+optional = false
+type = "keyword"
+
+[blocks.attributes.interpolation_method]
+block = "attributes"
+description = "Interpolation method, which is either STEPWISE or LINEAR."
+valid = "stepwise linear linearend"
+reader = "urword"
+optional = false
+type = "string"
+
+[blocks.attributes.sfacrecord]
+block = "attributes"
+description = "xxx"
+reader = "urword"
+optional = true
+type = "record"
+
+[blocks.attributes.sfacrecord.children.sfac]
+block = "attributes"
+description = " xxx"
+reader = "urword"
+optional = false
+type = "keyword"
+
+[blocks.attributes.sfacrecord.children.sfacval]
+shape = "time_series_name"
+block = "attributes"
+description = "Scale factor, which will multiply all array values in time series. SFAC is an optional attribute; if omitted, SFAC = 1.0."
+reader = "urword"
+optional = false
+type = "double"
+
+[blocks.attributes.sfac]
+block = "attributes"
+description = " xxx"
+reader = "urword"
+optional = false
+type = "keyword"
+
+[blocks.attributes.sfacval]
+shape = "time_series_name"
+block = "attributes"
+description = "Scale factor, which will multiply all array values in time series. SFAC is an optional attribute; if omitted, SFAC = 1.0."
+reader = "urword"
+optional = false
+type = "double"
+
+[blocks.time.time_from_model_start]
+block = "time"
+description = "A numeric time relative to the start of the simulation, in the time unit used in the simulation. Times must be strictly increasing."
+block_variable = true
+reader = "urword"
+optional = false
+type = "double"
+
+[blocks.time.tas_array]
+shape = "(unknown)"
+block = "time"
+description = "An array of numeric, floating-point values, or a constant value, readable by the U2DREL array-reading utility."
+just_data = true
+reader = "readarray"
+optional = false
+repeating = true
+type = "double"
