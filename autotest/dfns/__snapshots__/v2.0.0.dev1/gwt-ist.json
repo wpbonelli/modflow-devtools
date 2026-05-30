@@ -1,0 +1,468 @@
+{
+  "name": "gwt-ist",
+  "schema_version": "2.0.0.dev1",
+  "advanced": false,
+  "multi": true,
+  "ftype": "IST",
+  "blocks": {
+    "options": {
+      "save_flows": {
+        "block": "options",
+        "description": "keyword to indicate that IST flow terms will be written to the file specified with 'BUDGET FILEOUT' in Output Control.",
+        "reader": "urword",
+        "optional": true,
+        "longname": "save calculated flows to budget file",
+        "type": "keyword"
+      },
+      "budget_filerecord": {
+        "block": "options",
+        "reader": "urword",
+        "optional": true,
+        "mf6internal": "budfilerec",
+        "type": "record",
+        "children": {
+          "budget": {
+            "block": "options",
+            "description": "keyword to specify that record corresponds to the budget.",
+            "reader": "urword",
+            "optional": false,
+            "longname": "budget keyword",
+            "type": "keyword"
+          },
+          "fileout": {
+            "block": "options",
+            "description": "keyword to specify that an output filename is expected next.",
+            "reader": "urword",
+            "optional": false,
+            "longname": "file keyword",
+            "type": "keyword"
+          },
+          "budgetfile": {
+            "block": "options",
+            "description": "name of the binary output file to write budget information.",
+            "reader": "urword",
+            "optional": false,
+            "longname": "file keyword",
+            "type": "string"
+          }
+        }
+      },
+      "budget": {
+        "block": "options",
+        "description": "keyword to specify that record corresponds to the budget.",
+        "reader": "urword",
+        "optional": false,
+        "longname": "budget keyword",
+        "type": "keyword"
+      },
+      "fileout": {
+        "block": "options",
+        "description": "keyword to specify that an output filename is expected next.",
+        "reader": "urword",
+        "optional": false,
+        "longname": "file keyword",
+        "type": "keyword"
+      },
+      "budgetfile": {
+        "block": "options",
+        "description": "name of the binary output file to write budget information.",
+        "reader": "urword",
+        "optional": false,
+        "longname": "file keyword",
+        "type": "string"
+      },
+      "budgetcsv_filerecord": {
+        "block": "options",
+        "reader": "urword",
+        "optional": true,
+        "mf6internal": "budcsvfilerec",
+        "type": "record",
+        "children": {
+          "budgetcsv": {
+            "block": "options",
+            "description": "keyword to specify that record corresponds to the budget CSV.",
+            "reader": "urword",
+            "optional": false,
+            "longname": "budget keyword",
+            "type": "keyword"
+          },
+          "fileout": {
+            "block": "options",
+            "description": "keyword to specify that an output filename is expected next.",
+            "reader": "urword",
+            "optional": false,
+            "longname": "file keyword",
+            "type": "keyword"
+          },
+          "budgetcsvfile": {
+            "block": "options",
+            "description": "name of the comma-separated value (CSV) output file to write budget summary information.  A budget summary record will be written to this file for each time step of the simulation.",
+            "reader": "urword",
+            "optional": false,
+            "longname": "file keyword",
+            "type": "string"
+          }
+        }
+      },
+      "budgetcsv": {
+        "block": "options",
+        "description": "keyword to specify that record corresponds to the budget CSV.",
+        "reader": "urword",
+        "optional": false,
+        "longname": "budget keyword",
+        "type": "keyword"
+      },
+      "budgetcsvfile": {
+        "block": "options",
+        "description": "name of the comma-separated value (CSV) output file to write budget summary information.  A budget summary record will be written to this file for each time step of the simulation.",
+        "reader": "urword",
+        "optional": false,
+        "longname": "file keyword",
+        "type": "string"
+      },
+      "sorption": {
+        "block": "options",
+        "description": "is a text keyword to indicate that sorption will be activated.  Valid sorption options include LINEAR, FREUNDLICH, and LANGMUIR.  Use of this keyword requires that BULK_DENSITY and DISTCOEF are specified in the GRIDDATA block.  If sorption is specified as FREUNDLICH or LANGMUIR then SP2 is also required in the GRIDDATA block.  The sorption option must be consistent with the sorption option specified in the MST Package or the program will terminate with an error.",
+        "valid": "linear freundlich langmuir",
+        "reader": "urword",
+        "optional": true,
+        "longname": "activate sorption",
+        "type": "string"
+      },
+      "first_order_decay": {
+        "block": "options",
+        "description": "is a text keyword to indicate that first-order decay will occur.  Use of this keyword requires that DECAY and DECAY_SORBED (if sorption is active) are specified in the GRIDDATA block.",
+        "reader": "urword",
+        "optional": true,
+        "longname": "activate first-order decay",
+        "mf6internal": "order1_decay",
+        "type": "keyword"
+      },
+      "zero_order_decay": {
+        "block": "options",
+        "description": "is a text keyword to indicate that zero-order decay will occur.  Use of this keyword requires that DECAY and DECAY_SORBED (if sorption is active) are specified in the GRIDDATA block.",
+        "reader": "urword",
+        "optional": true,
+        "mf6internal": "order0_decay",
+        "longname": "activate zero-order decay",
+        "type": "keyword"
+      },
+      "cim_filerecord": {
+        "block": "options",
+        "reader": "urword",
+        "optional": true,
+        "mf6internal": "cimfilerec",
+        "type": "record",
+        "children": {
+          "cim": {
+            "block": "options",
+            "description": "keyword to specify that record corresponds to immobile concentration.",
+            "reader": "urword",
+            "optional": false,
+            "longname": "cim keyword",
+            "mf6internal": "cimopt",
+            "type": "keyword"
+          },
+          "fileout": {
+            "block": "options",
+            "description": "keyword to specify that an output filename is expected next.",
+            "reader": "urword",
+            "optional": false,
+            "longname": "file keyword",
+            "type": "keyword"
+          },
+          "cimfile": {
+            "block": "options",
+            "description": "name of the output file to write immobile concentrations.  This file is a binary file that has the same format and structure as a binary head and concentration file.  The value for the text variable written to the file is CIM.  Immobile domain concentrations will be written to this file at the same interval as mobile domain concentrations are saved, as specified in the GWT Model Output Control file.",
+            "reader": "urword",
+            "optional": false,
+            "longname": "file keyword",
+            "type": "string"
+          }
+        }
+      },
+      "cim": {
+        "block": "options",
+        "description": "keyword to specify that record corresponds to immobile concentration.",
+        "reader": "urword",
+        "optional": false,
+        "longname": "cim keyword",
+        "mf6internal": "cimopt",
+        "type": "keyword"
+      },
+      "cimfile": {
+        "block": "options",
+        "description": "name of the output file to write immobile concentrations.  This file is a binary file that has the same format and structure as a binary head and concentration file.  The value for the text variable written to the file is CIM.  Immobile domain concentrations will be written to this file at the same interval as mobile domain concentrations are saved, as specified in the GWT Model Output Control file.",
+        "reader": "urword",
+        "optional": false,
+        "longname": "file keyword",
+        "type": "string"
+      },
+      "cimprintrecord": {
+        "block": "options",
+        "reader": "urword",
+        "optional": true,
+        "type": "record",
+        "children": {
+          "cim": {
+            "block": "options",
+            "description": "keyword to specify that record corresponds to immobile concentration.",
+            "reader": "urword",
+            "optional": false,
+            "longname": "cim keyword",
+            "mf6internal": "cimopt",
+            "type": "keyword"
+          },
+          "print_format": {
+            "block": "options",
+            "description": "keyword to specify format for printing to the listing file.",
+            "reader": "urword",
+            "optional": false,
+            "longname": "keyword to indicate that a print format follows",
+            "type": "keyword"
+          }
+        }
+      },
+      "print_format": {
+        "block": "options",
+        "description": "keyword to specify format for printing to the listing file.",
+        "reader": "urword",
+        "optional": false,
+        "longname": "keyword to indicate that a print format follows",
+        "type": "keyword"
+      },
+      "formatrecord": {
+        "block": "options",
+        "reader": "urword",
+        "optional": false,
+        "type": "record",
+        "children": {
+          "columns": {
+            "block": "options",
+            "description": "number of columns for writing data.",
+            "reader": "urword",
+            "longname": "number of columns",
+            "type": "integer"
+          },
+          "width": {
+            "block": "options",
+            "description": "width for writing each number.",
+            "reader": "urword",
+            "longname": "width for each number",
+            "type": "integer"
+          },
+          "digits": {
+            "block": "options",
+            "description": "number of digits to use for writing a number.",
+            "reader": "urword",
+            "longname": "number of digits",
+            "type": "integer"
+          },
+          "format": {
+            "block": "options",
+            "description": "write format can be EXPONENTIAL, FIXED, GENERAL, or SCIENTIFIC.",
+            "reader": "urword",
+            "optional": false,
+            "longname": "write format",
+            "type": "string"
+          }
+        }
+      },
+      "columns": {
+        "block": "options",
+        "description": "number of columns for writing data.",
+        "reader": "urword",
+        "longname": "number of columns",
+        "type": "integer"
+      },
+      "width": {
+        "block": "options",
+        "description": "width for writing each number.",
+        "reader": "urword",
+        "longname": "width for each number",
+        "type": "integer"
+      },
+      "digits": {
+        "block": "options",
+        "description": "number of digits to use for writing a number.",
+        "reader": "urword",
+        "longname": "number of digits",
+        "type": "integer"
+      },
+      "format": {
+        "block": "options",
+        "description": "write format can be EXPONENTIAL, FIXED, GENERAL, or SCIENTIFIC.",
+        "reader": "urword",
+        "optional": false,
+        "longname": "write format",
+        "type": "string"
+      },
+      "sorbate_filerecord": {
+        "block": "options",
+        "reader": "urword",
+        "optional": true,
+        "mf6internal": "sorbatefilerec",
+        "type": "record",
+        "children": {
+          "sorbate": {
+            "block": "options",
+            "description": "keyword to specify that record corresponds to immobile sorbate concentration.",
+            "reader": "urword",
+            "optional": false,
+            "longname": "sorbate keyword",
+            "type": "keyword"
+          },
+          "fileout": {
+            "block": "options",
+            "description": "keyword to specify that an output filename is expected next.",
+            "reader": "urword",
+            "optional": false,
+            "longname": "file keyword",
+            "type": "keyword"
+          },
+          "sorbatefile": {
+            "block": "options",
+            "description": "name of the output file to write immobile sorbate concentration information.  Immobile sorbate concentrations will be written whenever aqueous immobile concentrations are saved, as determined by settings in the Output Control option.",
+            "reader": "urword",
+            "optional": false,
+            "longname": "file keyword",
+            "type": "string"
+          }
+        }
+      },
+      "sorbate": {
+        "block": "options",
+        "description": "keyword to specify that record corresponds to immobile sorbate concentration.",
+        "reader": "urword",
+        "optional": false,
+        "longname": "sorbate keyword",
+        "type": "keyword"
+      },
+      "sorbatefile": {
+        "block": "options",
+        "description": "name of the output file to write immobile sorbate concentration information.  Immobile sorbate concentrations will be written whenever aqueous immobile concentrations are saved, as determined by settings in the Output Control option.",
+        "reader": "urword",
+        "optional": false,
+        "longname": "file keyword",
+        "type": "string"
+      },
+      "export_array_ascii": {
+        "block": "options",
+        "description": "keyword that specifies input griddata arrays should be written to layered ascii output files.",
+        "reader": "urword",
+        "optional": true,
+        "mf6internal": "export_ascii",
+        "longname": "export array variables to layered ascii files.",
+        "type": "keyword"
+      },
+      "export_array_netcdf": {
+        "block": "options",
+        "description": "keyword that specifies input gridded arrays should be written to the model output NetCDF file with attributes that support using the generated file as a MODFLOW 6 simulation input.  This option only has an effect when an output model NetCDF file is configured and the simulation is run in VALIDATE mode, otherwise it is ignored.",
+        "reader": "urword",
+        "optional": true,
+        "mf6internal": "export_nc",
+        "longname": "export array variables to netcdf output files.",
+        "extended": true,
+        "type": "keyword"
+      }
+    },
+    "griddata": {
+      "porosity": {
+        "shape": "(nodes)",
+        "block": "griddata",
+        "description": "porosity of the immobile domain specified as the immobile domain pore volume per immobile domain volume.",
+        "reader": "readarray",
+        "layered": true,
+        "netcdf": true,
+        "longname": "porosity of the immobile domain",
+        "type": "double"
+      },
+      "volfrac": {
+        "shape": "(nodes)",
+        "block": "griddata",
+        "description": "fraction of the cell volume that consists of this immobile domain.  The sum of all immobile domain volume fractions must be less than one.",
+        "reader": "readarray",
+        "layered": true,
+        "netcdf": true,
+        "longname": "volume fraction of this immobile domain",
+        "type": "double"
+      },
+      "zetaim": {
+        "shape": "(nodes)",
+        "block": "griddata",
+        "description": "mass transfer rate coefficient between the mobile and immobile domains, in dimensions of per time.",
+        "reader": "readarray",
+        "layered": true,
+        "netcdf": true,
+        "longname": "mass transfer rate coefficient between the mobile and immobile domains",
+        "type": "double"
+      },
+      "cim": {
+        "shape": "(nodes)",
+        "block": "griddata",
+        "description": "initial concentration of the immobile domain in mass per length cubed.  If CIM is not specified, then it is assumed to be zero.",
+        "reader": "readarray",
+        "optional": true,
+        "layered": true,
+        "netcdf": true,
+        "longname": "initial concentration of the immobile domain",
+        "type": "double"
+      },
+      "decay": {
+        "shape": "(nodes)",
+        "block": "griddata",
+        "description": "is the rate coefficient for first or zero-order decay for the aqueous phase of the immobile domain.  A negative value indicates solute production.  The dimensions of decay for first-order decay is one over time.  The dimensions of decay for zero-order decay is mass per length cubed per time.  Decay will have no effect on simulation results unless either first- or zero-order decay is specified in the options block.",
+        "reader": "readarray",
+        "layered": true,
+        "netcdf": true,
+        "optional": true,
+        "longname": "first rate coefficient",
+        "type": "double"
+      },
+      "decay_sorbed": {
+        "shape": "(nodes)",
+        "block": "griddata",
+        "description": "is the rate coefficient for first or zero-order decay for the sorbed phase of the immobile domain.  A negative value indicates solute production.  The dimensions of decay_sorbed for first-order decay is one over time.  The dimensions of decay_sorbed for zero-order decay is mass of solute per mass of aquifer per time.  If decay_sorbed is not specified and both decay and sorption are active, then the program will terminate with an error.  decay_sorbed will have no effect on simulation results unless the SORPTION keyword and either first- or zero-order decay are specified in the options block.",
+        "reader": "readarray",
+        "optional": true,
+        "layered": true,
+        "netcdf": true,
+        "longname": "second rate coefficient",
+        "type": "double"
+      },
+      "bulk_density": {
+        "shape": "(nodes)",
+        "block": "griddata",
+        "description": "is the bulk density of this immobile domain in mass per length cubed.  Bulk density is defined as the immobile domain solid mass per volume of the immobile domain.  bulk_density is not required unless the SORPTION keyword is specified in the options block.  If the SORPTION keyword is not specified in the options block, bulk_density will have no effect on simulation results.",
+        "reader": "readarray",
+        "optional": true,
+        "layered": true,
+        "netcdf": true,
+        "longname": "bulk density",
+        "type": "double"
+      },
+      "distcoef": {
+        "shape": "(nodes)",
+        "block": "griddata",
+        "description": "is the distribution coefficient for the equilibrium-controlled linear sorption isotherm in dimensions of length cubed per mass.  distcoef is not required unless the SORPTION keyword is specified in the options block.  If the SORPTION keyword is not specified in the options block, distcoef will have no effect on simulation results.",
+        "reader": "readarray",
+        "optional": true,
+        "layered": true,
+        "netcdf": true,
+        "longname": "distribution coefficient",
+        "type": "double"
+      },
+      "sp2": {
+        "shape": "(nodes)",
+        "block": "griddata",
+        "description": "is the exponent for the Freundlich isotherm and the sorption capacity for the Langmuir isotherm.  sp2 is not required unless the SORPTION keyword is specified in the options block and sorption is specified as FREUNDLICH or LANGMUIR. If the SORPTION keyword is not specified in the options block, or if sorption is specified as LINEAR, sp2 will have no effect on simulation results.",
+        "reader": "readarray",
+        "layered": true,
+        "netcdf": true,
+        "optional": true,
+        "longname": "second sorption parameter",
+        "type": "double"
+      }
+    }
+  }
+}

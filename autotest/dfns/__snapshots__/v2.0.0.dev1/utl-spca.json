@@ -1,0 +1,116 @@
+{
+  "name": "utl-spca",
+  "schema_version": "2.0.0.dev1",
+  "advanced": false,
+  "multi": true,
+  "ftype": "SPCA",
+  "blocks": {
+    "options": {
+      "readasarrays": {
+        "block": "options",
+        "description": "indicates that array-based input will be used for the SPC Package.  This keyword must be specified to use array-based input.  When READASARRAYS is specified, values must be provided for every cell within a model layer, even those cells that have an IDOMAIN value less than one.  Values assigned to cells with IDOMAIN values less than one are not used and have no effect on simulation results.",
+        "default": true,
+        "reader": "urword",
+        "optional": false,
+        "longname": "use array-based input",
+        "type": "keyword"
+      },
+      "print_input": {
+        "block": "options",
+        "description": "keyword to indicate that the list of spc information will be written to the listing file immediately after it is read.",
+        "reader": "urword",
+        "optional": true,
+        "longname": "print input to listing file",
+        "type": "keyword"
+      },
+      "tas_filerecord": {
+        "block": "options",
+        "reader": "urword",
+        "optional": true,
+        "type": "record",
+        "children": {
+          "tas6": {
+            "block": "options",
+            "description": "keyword to specify that record corresponds to a time-array-series file.",
+            "reader": "urword",
+            "optional": false,
+            "longname": "head keyword",
+            "type": "keyword"
+          },
+          "filein": {
+            "block": "options",
+            "description": "keyword to specify that an input filename is expected next.",
+            "reader": "urword",
+            "optional": false,
+            "longname": "file keyword",
+            "type": "keyword"
+          },
+          "tas6_filename": {
+            "block": "options",
+            "description": "defines a time-array-series file defining a time-array series that can be used to assign time-varying values. See the Time-Variable Input section for instructions on using the time-array series capability.",
+            "reader": "urword",
+            "optional": false,
+            "longname": "file name of time series information",
+            "type": "string"
+          }
+        }
+      },
+      "tas6": {
+        "block": "options",
+        "description": "keyword to specify that record corresponds to a time-array-series file.",
+        "reader": "urword",
+        "optional": false,
+        "longname": "head keyword",
+        "type": "keyword"
+      },
+      "filein": {
+        "block": "options",
+        "description": "keyword to specify that an input filename is expected next.",
+        "reader": "urword",
+        "optional": false,
+        "longname": "file keyword",
+        "type": "keyword"
+      },
+      "tas6_filename": {
+        "block": "options",
+        "description": "defines a time-array-series file defining a time-array series that can be used to assign time-varying values. See the Time-Variable Input section for instructions on using the time-array series capability.",
+        "reader": "urword",
+        "optional": false,
+        "longname": "file name of time series information",
+        "type": "string"
+      }
+    },
+    "period": {
+      "iper": {
+        "shape": "(nper)",
+        "block": "period",
+        "description": "integer value specifying the starting stress period number for which the data specified in the PERIOD block apply.  IPER must be less than or equal to NPER in the TDIS Package and greater than zero.  The IPER value assigned to a stress period block must be greater than the IPER value assigned for the previous PERIOD block.  The information specified in the PERIOD block will continue to apply for all subsequent stress periods, unless the program encounters another PERIOD block.",
+        "block_variable": true,
+        "reader": "urword",
+        "optional": false,
+        "longname": "stress period number",
+        "type": "integer"
+      },
+      "concentration": {
+        "shape": "(nper, ncol*nrow; ncpl)",
+        "block": "period",
+        "description": "is the concentration of the associated Recharge or Evapotranspiration stress package.  The concentration array may be defined by a time-array series (see the \"Using Time-Array Series in a Package\" section).",
+        "reader": "readarray",
+        "time_series": true,
+        "optional": true,
+        "longname": "concentration",
+        "type": "double"
+      },
+      "temperature": {
+        "shape": "(nper, ncol*nrow; ncpl)",
+        "block": "period",
+        "description": "is the temperature of the associated Recharge or Evapotranspiration stress package.  The temperature array may be defined by a time-array series (see the \"Using Time-Array Series in a Package\" section).",
+        "reader": "readarray",
+        "time_series": true,
+        "optional": true,
+        "longname": "temperature",
+        "type": "double"
+      }
+    }
+  }
+}

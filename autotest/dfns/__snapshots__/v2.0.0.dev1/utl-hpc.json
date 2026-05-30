@@ -1,0 +1,78 @@
+{
+  "name": "utl-hpc",
+  "schema_version": "2.0.0.dev1",
+  "parent": "parent_package",
+  "advanced": false,
+  "multi": false,
+  "ftype": "HPC",
+  "blocks": {
+    "options": {
+      "print_table": {
+        "block": "options",
+        "description": "keyword to indicate that the partition table will be printed to the listing file.",
+        "reader": "urword",
+        "optional": true,
+        "longname": "model print table to listing file",
+        "type": "keyword"
+      },
+      "dev_log_mpi": {
+        "block": "options",
+        "description": "keyword to enable (extremely verbose) logging of mpi traffic to file.",
+        "reader": "urword",
+        "optional": true,
+        "longname": "log mpi traffic",
+        "type": "keyword"
+      }
+    },
+    "partitions": {
+      "partitions": {
+        "block": "partitions",
+        "description": "is the list of zero-based partition numbers.",
+        "reader": "urword",
+        "optional": true,
+        "longname": "list of partition numbers",
+        "type": "list",
+        "children": {
+          "partitions": {
+            "block": "partitions",
+            "description": "is the record of zero-based partition numbers.",
+            "reader": "urword",
+            "optional": true,
+            "longname": "list of partition numbers",
+            "type": "record",
+            "children": {
+              "mname": {
+                "block": "partitions",
+                "description": "is the unique model name.",
+                "reader": "urword",
+                "longname": "model name",
+                "type": "string"
+              },
+              "mrank": {
+                "block": "partitions",
+                "description": "is the zero-based partition number (also: MPI rank or processor id) to which the model will be assigned.",
+                "reader": "urword",
+                "longname": "model rank",
+                "type": "integer"
+              }
+            }
+          }
+        }
+      },
+      "mname": {
+        "block": "partitions",
+        "description": "is the unique model name.",
+        "reader": "urword",
+        "longname": "model name",
+        "type": "string"
+      },
+      "mrank": {
+        "block": "partitions",
+        "description": "is the zero-based partition number (also: MPI rank or processor id) to which the model will be assigned.",
+        "reader": "urword",
+        "longname": "model rank",
+        "type": "integer"
+      }
+    }
+  }
+}

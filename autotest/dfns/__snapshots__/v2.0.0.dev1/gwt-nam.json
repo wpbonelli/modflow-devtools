@@ -1,0 +1,297 @@
+{
+  "name": "gwt-nam",
+  "schema_version": "2.0.0.dev1",
+  "advanced": false,
+  "multi": false,
+  "ftype": "NAM",
+  "blocks": {
+    "options": {
+      "list": {
+        "block": "options",
+        "description": "is name of the listing file to create for this GWT model.  If not specified, then the name of the list file will be the basename of the GWT model name file and the '.lst' extension.  For example, if the GWT name file is called 'my.model.nam' then the list file will be called 'my.model.lst'.",
+        "reader": "urword",
+        "optional": true,
+        "longname": "name of listing file",
+        "type": "string"
+      },
+      "print_input": {
+        "block": "options",
+        "description": "keyword to indicate that the list of all model stress package information will be written to the listing file immediately after it is read.",
+        "reader": "urword",
+        "optional": true,
+        "longname": "print input to listing file",
+        "type": "keyword"
+      },
+      "print_flows": {
+        "block": "options",
+        "description": "keyword to indicate that the list of all model package flow rates will be printed to the listing file for every stress period time step in which 'BUDGET PRINT' is specified in Output Control.  If there is no Output Control option and 'PRINT_FLOWS' is specified, then flow rates are printed for the last time step of each stress period.",
+        "reader": "urword",
+        "optional": true,
+        "longname": "print calculated flows to listing file",
+        "type": "keyword"
+      },
+      "save_flows": {
+        "block": "options",
+        "description": "keyword to indicate that all model package flow terms will be written to the file specified with 'BUDGET FILEOUT' in Output Control.",
+        "reader": "urword",
+        "optional": true,
+        "longname": "save flows for all packages to budget file",
+        "type": "keyword"
+      },
+      "dependent_variable_scaling": {
+        "block": "options",
+        "description": "flag to scale X and RHS to avoid very large positive or negative dependent variable values",
+        "reader": "urword",
+        "optional": true,
+        "longname": "flag to scale X and RHS",
+        "mf6internal": "idv_scale",
+        "type": "keyword"
+      },
+      "nc_mesh2d_filerecord": {
+        "block": "options",
+        "description": "NetCDF layered mesh fileout record.",
+        "reader": "urword",
+        "optional": true,
+        "mf6internal": "ncmesh2drec",
+        "type": "record",
+        "children": {
+          "netcdf_mesh2d": {
+            "block": "options",
+            "description": "keyword to specify that record corresponds to a layered mesh NetCDF file.",
+            "reader": "urword",
+            "optional": false,
+            "longname": "budget keyword",
+            "extended": true,
+            "type": "keyword"
+          },
+          "fileout": {
+            "block": "options",
+            "description": "keyword to specify that an output filename is expected next.",
+            "reader": "urword",
+            "optional": false,
+            "longname": "file keyword",
+            "type": "keyword"
+          },
+          "ncmesh2dfile": {
+            "block": "options",
+            "description": "name of the NetCDF ugrid layered mesh output file.",
+            "reader": "urword",
+            "optional": false,
+            "longname": "file keyword",
+            "extended": true,
+            "type": "string"
+          }
+        }
+      },
+      "netcdf_mesh2d": {
+        "block": "options",
+        "description": "keyword to specify that record corresponds to a layered mesh NetCDF file.",
+        "reader": "urword",
+        "optional": false,
+        "longname": "budget keyword",
+        "extended": true,
+        "type": "keyword"
+      },
+      "nc_structured_filerecord": {
+        "block": "options",
+        "description": "NetCDF structured fileout record.",
+        "reader": "urword",
+        "optional": true,
+        "mf6internal": "ncstructrec",
+        "type": "record",
+        "children": {
+          "netcdf_structured": {
+            "block": "options",
+            "description": "keyword to specify that record corresponds to a structured NetCDF file.",
+            "reader": "urword",
+            "optional": false,
+            "longname": "budget keyword",
+            "mf6internal": "netcdf_struct",
+            "extended": true,
+            "type": "keyword"
+          },
+          "fileout": {
+            "block": "options",
+            "description": "keyword to specify that an output filename is expected next.",
+            "reader": "urword",
+            "optional": false,
+            "longname": "file keyword",
+            "type": "keyword"
+          },
+          "ncstructfile": {
+            "block": "options",
+            "description": "name of the NetCDF structured output file.",
+            "reader": "urword",
+            "optional": false,
+            "longname": "file keyword",
+            "extended": true,
+            "type": "string"
+          }
+        }
+      },
+      "netcdf_structured": {
+        "block": "options",
+        "description": "keyword to specify that record corresponds to a structured NetCDF file.",
+        "reader": "urword",
+        "optional": false,
+        "longname": "budget keyword",
+        "mf6internal": "netcdf_struct",
+        "extended": true,
+        "type": "keyword"
+      },
+      "fileout": {
+        "block": "options",
+        "description": "keyword to specify that an output filename is expected next.",
+        "reader": "urword",
+        "optional": false,
+        "longname": "file keyword",
+        "type": "keyword"
+      },
+      "ncmesh2dfile": {
+        "block": "options",
+        "description": "name of the NetCDF ugrid layered mesh output file.",
+        "reader": "urword",
+        "optional": false,
+        "longname": "file keyword",
+        "extended": true,
+        "type": "string"
+      },
+      "ncstructfile": {
+        "block": "options",
+        "description": "name of the NetCDF structured output file.",
+        "reader": "urword",
+        "optional": false,
+        "longname": "file keyword",
+        "extended": true,
+        "type": "string"
+      },
+      "nc_filerecord": {
+        "block": "options",
+        "description": "NetCDF filerecord",
+        "reader": "urword",
+        "optional": true,
+        "type": "record",
+        "children": {
+          "netcdf": {
+            "block": "options",
+            "description": "keyword to specify that record corresponds to a NetCDF input file.",
+            "reader": "urword",
+            "optional": false,
+            "longname": "netcdf keyword",
+            "extended": true,
+            "type": "keyword"
+          },
+          "filein": {
+            "block": "options",
+            "description": "keyword to specify that an input filename is expected next.",
+            "reader": "urword",
+            "optional": false,
+            "longname": "file keyword",
+            "type": "keyword"
+          },
+          "netcdf_filename": {
+            "block": "options",
+            "description": "defines a NetCDF input file.",
+            "reader": "urword",
+            "optional": false,
+            "longname": "netcdf input filename",
+            "mf6internal": "netcdf_fname",
+            "extended": true,
+            "type": "string"
+          }
+        }
+      },
+      "netcdf": {
+        "block": "options",
+        "description": "keyword to specify that record corresponds to a NetCDF input file.",
+        "reader": "urword",
+        "optional": false,
+        "longname": "netcdf keyword",
+        "extended": true,
+        "type": "keyword"
+      },
+      "filein": {
+        "block": "options",
+        "description": "keyword to specify that an input filename is expected next.",
+        "reader": "urword",
+        "optional": false,
+        "longname": "file keyword",
+        "type": "keyword"
+      },
+      "netcdf_filename": {
+        "block": "options",
+        "description": "defines a NetCDF input file.",
+        "reader": "urword",
+        "optional": false,
+        "longname": "netcdf input filename",
+        "mf6internal": "netcdf_fname",
+        "extended": true,
+        "type": "string"
+      }
+    },
+    "packages": {
+      "packages": {
+        "block": "packages",
+        "reader": "urword",
+        "optional": false,
+        "longname": "package list",
+        "type": "list",
+        "children": {
+          "packages": {
+            "block": "packages",
+            "reader": "urword",
+            "optional": false,
+            "longname": "package list",
+            "type": "record",
+            "children": {
+              "ftype": {
+                "block": "packages",
+                "description": "is the file type, which must be one of the following character values shown in table~ref{table:ftype-gwt}. Ftype may be entered in any combination of uppercase and lowercase.",
+                "reader": "urword",
+                "longname": "package type",
+                "type": "string"
+              },
+              "fname": {
+                "block": "packages",
+                "description": "is the name of the file containing the package input.  The path to the file should be included if the file is not located in the folder where the program was run.",
+                "reader": "urword",
+                "longname": "file name",
+                "type": "string"
+              },
+              "pname": {
+                "block": "packages",
+                "description": "is the user-defined name for the package. PNAME is restricted to 16 characters.  No spaces are allowed in PNAME.  PNAME character values are read and stored by the program for stress packages only.  These names may be useful for labeling purposes when multiple stress packages of the same type are located within a single GWT Model.  If PNAME is specified for a stress package, then PNAME will be used in the flow budget table in the listing file; it will also be used for the text entry in the cell-by-cell budget file.  PNAME is case insensitive and is stored in all upper case letters.",
+                "reader": "urword",
+                "optional": true,
+                "longname": "user name for package",
+                "type": "string"
+              }
+            }
+          }
+        }
+      },
+      "ftype": {
+        "block": "packages",
+        "description": "is the file type, which must be one of the following character values shown in table~ref{table:ftype-gwt}. Ftype may be entered in any combination of uppercase and lowercase.",
+        "reader": "urword",
+        "longname": "package type",
+        "type": "string"
+      },
+      "fname": {
+        "block": "packages",
+        "description": "is the name of the file containing the package input.  The path to the file should be included if the file is not located in the folder where the program was run.",
+        "reader": "urword",
+        "longname": "file name",
+        "type": "string"
+      },
+      "pname": {
+        "block": "packages",
+        "description": "is the user-defined name for the package. PNAME is restricted to 16 characters.  No spaces are allowed in PNAME.  PNAME character values are read and stored by the program for stress packages only.  These names may be useful for labeling purposes when multiple stress packages of the same type are located within a single GWT Model.  If PNAME is specified for a stress package, then PNAME will be used in the flow budget table in the listing file; it will also be used for the text entry in the cell-by-cell budget file.  PNAME is case insensitive and is stored in all upper case letters.",
+        "reader": "urword",
+        "optional": true,
+        "longname": "user name for package",
+        "type": "string"
+      }
+    }
+  }
+}

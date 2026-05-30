@@ -73,7 +73,7 @@ def test_load_all(dfn_dir):
     assert sim["options"]["continue"]["block"] == "options"
 
     dfns = Dfn.load_all(dfn_dir, schema_version="2.0.0.dev1")
-    assert len(dfns) == 1
+    assert len(dfns) > 1
     sim = dfns["sim-nam"]
     assert any(sim)
     assert sim["schema_version"] == "2.0.0.dev1"

@@ -343,17 +343,11 @@ class Dfn(TypedDict):
                             refs=subpkgs,
                         )
             case "2.0.0.dev1":
-                from modflow_devtools.dfn.migrate_to_v2_0_0_dev1 import to_tree
-
                 for path in dfn_paths:
                     with path.open() as f:
                         dfns[path.stem] = Dfn.load(
                             f, name=path.stem, schema_version="2.0.0.dev1", common=common
                         )
-
-                # 2.0.0.dev1 is a tree not a flat dict like 2.0.0.dev0
-                root = to_tree(dfns)
-                dfns = {root["name"]: root}
             case _:
                 raise ValueError(
                     f"Unsupported schema version '{schema_version!r}' requested, "

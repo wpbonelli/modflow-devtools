@@ -1,0 +1,125 @@
+name: gwt-mvt
+schema_version: 2.0.0.dev1
+parent: parent_model_or_package
+advanced: false
+multi: false
+ftype: MVT
+blocks:
+  options:
+    print_input:
+      block: options
+      description: keyword to indicate that the list of mover information will be written to the listing
+        file immediately after it is read.
+      reader: urword
+      optional: true
+      longname: print input to listing file
+      type: keyword
+    print_flows:
+      block: options
+      description: keyword to indicate that the list of lake flow rates will be printed to the listing
+        file for every stress period time step in which 'BUDGET PRINT' is specified in Output Control.  If
+        there is no Output Control option and 'PRINT_FLOWS' is specified, then flow rates are printed
+        for the last time step of each stress period.
+      reader: urword
+      optional: true
+      longname: print calculated flows to listing file
+      type: keyword
+    save_flows:
+      block: options
+      description: keyword to indicate that lake flow terms will be written to the file specified with
+        'BUDGET FILEOUT' in Output Control.
+      reader: urword
+      optional: true
+      longname: save MVT flows to budget file
+      type: keyword
+    budget_filerecord:
+      block: options
+      reader: urword
+      optional: true
+      type: record
+      children:
+        budget:
+          block: options
+          description: keyword to specify that record corresponds to the budget.
+          reader: urword
+          optional: false
+          longname: budget keyword
+          type: keyword
+        fileout:
+          block: options
+          description: keyword to specify that an output filename is expected next.
+          reader: urword
+          optional: false
+          longname: file keyword
+          type: keyword
+        budgetfile:
+          block: options
+          description: name of the binary output file to write budget information.
+          reader: urword
+          optional: false
+          longname: file keyword
+          type: string
+    budget:
+      block: options
+      description: keyword to specify that record corresponds to the budget.
+      reader: urword
+      optional: false
+      longname: budget keyword
+      type: keyword
+    fileout:
+      block: options
+      description: keyword to specify that an output filename is expected next.
+      reader: urword
+      optional: false
+      longname: file keyword
+      type: keyword
+    budgetfile:
+      block: options
+      description: name of the binary output file to write budget information.
+      reader: urword
+      optional: false
+      longname: file keyword
+      type: string
+    budgetcsv_filerecord:
+      block: options
+      reader: urword
+      optional: true
+      type: record
+      children:
+        budgetcsv:
+          block: options
+          description: keyword to specify that record corresponds to the budget CSV.
+          reader: urword
+          optional: false
+          longname: budget keyword
+          type: keyword
+        fileout:
+          block: options
+          description: keyword to specify that an output filename is expected next.
+          reader: urword
+          optional: false
+          longname: file keyword
+          type: keyword
+        budgetcsvfile:
+          block: options
+          description: name of the comma-separated value (CSV) output file to write budget summary information.  A
+            budget summary record will be written to this file for each time step of the simulation.
+          reader: urword
+          optional: false
+          longname: file keyword
+          type: string
+    budgetcsv:
+      block: options
+      description: keyword to specify that record corresponds to the budget CSV.
+      reader: urword
+      optional: false
+      longname: budget keyword
+      type: keyword
+    budgetcsvfile:
+      block: options
+      description: name of the comma-separated value (CSV) output file to write budget summary information.  A
+        budget summary record will be written to this file for each time step of the simulation.
+      reader: urword
+      optional: false
+      longname: file keyword
+      type: string

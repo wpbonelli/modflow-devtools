@@ -1,0 +1,223 @@
+name: gwf-drng
+schema_version: 2.0.0.dev1
+advanced: false
+multi: true
+ftype: DRNG
+blocks:
+  options:
+    readarraygrid:
+      block: options
+      description: indicates that array-based grid input will be used for the drain package.  This keyword
+        must be specified to use array-based grid input.  When READARRAYGRID is specified, values must
+        be provided for every cell within a model grid, even those cells that have an IDOMAIN value less
+        than one.  Values assigned to cells with IDOMAIN values less than one are not used and have no
+        effect on simulation results. No data cells should contain the value DNODATA (3.0E+30).
+      default: true
+      reader: urword
+      optional: false
+      developmode: true
+      longname: use array-based grid input
+      type: keyword
+    auxiliary:
+      shape: (naux)
+      block: options
+      description: defines an array of one or more auxiliary variable names.  There is no limit on the
+        number of auxiliary variables that can be provided on this line; however, lists of information
+        provided in subsequent blocks must have a column of data for each auxiliary variable name defined
+        here.   The number of auxiliary variables detected on this line determines the value for naux.  Comments
+        cannot be provided anywhere on this line as they will be interpreted as auxiliary variable names.  Auxiliary
+        variables may not be used by the package, but they will be available for use by other parts of
+        the program.  The program will terminate with an error if auxiliary variables are specified on
+        more than one line in the options block.
+      reader: urword
+      optional: true
+      longname: keyword to specify aux variables
+      type: string
+    auxmultname:
+      block: options
+      description: name of auxiliary variable to be used as multiplier of drain conductance.
+      reader: urword
+      optional: true
+      longname: name of auxiliary variable for multiplier
+      type: string
+    auxdepthname:
+      block: options
+      description: name of a variable listed in AUXILIARY that defines the depth at which drainage discharge
+        will be scaled. If a positive value is specified for the AUXDEPTHNAME AUXILIARY variable, then
+        ELEV is the elevation at which the drain starts to discharge and ELEV + DDRN (assuming DDRN is
+        the AUXDEPTHNAME variable) is the elevation when the drain conductance (COND) scaling factor is
+        1. If a negative drainage depth value is specified for DDRN, then ELEV + DDRN is the elevation
+        at which the drain starts to discharge and ELEV is the elevation when the conductance (COND) scaling
+        factor is 1. A linear- or cubic-scaling is used to scale the drain conductance (COND) when the
+        Standard or Newton-Raphson Formulation is used, respectively.  This discharge scaling option is
+        described in more detail in Chapter 3 of the Supplemental Technical Information.
+      reader: urword
+      optional: true
+      longname: name of auxiliary variable for drainage depth
+      type: string
+    print_input:
+      block: options
+      description: keyword to indicate that the list of drain information will be written to the listing
+        file immediately after it is read.
+      reader: urword
+      optional: true
+      longname: print input to listing file
+      mf6internal: iprpak
+      type: keyword
+    print_flows:
+      block: options
+      description: keyword to indicate that the list of drain flow rates will be printed to the listing
+        file for every stress period time step in which 'BUDGET PRINT' is specified in Output Control.  If
+        there is no Output Control option and 'PRINT_FLOWS' is specified, then flow rates are printed
+        for the last time step of each stress period.
+      reader: urword
+      optional: true
+      longname: print calculated flows to listing file
+      mf6internal: iprflow
+      type: keyword
+    save_flows:
+      block: options
+      description: keyword to indicate that drain flow terms will be written to the file specified with
+        'BUDGET FILEOUT' in Output Control.
+      reader: urword
+      optional: true
+      longname: save DRNG flows to budget file
+      mf6internal: ipakcb
+      type: keyword
+    obs_filerecord:
+      block: options
+      reader: urword
+      optional: true
+      type: record
+      children:
+        obs6:
+          block: options
+          description: keyword to specify that record corresponds to an observations file.
+          reader: urword
+          optional: false
+          longname: obs keyword
+          type: keyword
+        filein:
+          block: options
+          description: keyword to specify that an input filename is expected next.
+          reader: urword
+          optional: false
+          longname: file keyword
+          type: keyword
+        obs6_filename:
+          block: options
+          description: name of input file to define observations for the DRN package. See the 'Observation
+            utility' section for instructions for preparing observation input files. Table {#2} lists
+            observation type(s) supported by the DRN package.
+          reader: urword
+          optional: false
+          longname: obs6 input filename
+          type: string
+    obs6:
+      block: options
+      description: keyword to specify that record corresponds to an observations file.
+      reader: urword
+      optional: false
+      longname: obs keyword
+      type: keyword
+    filein:
+      block: options
+      description: keyword to specify that an input filename is expected next.
+      reader: urword
+      optional: false
+      longname: file keyword
+      type: keyword
+    obs6_filename:
+      block: options
+      description: name of input file to define observations for the DRN package. See the 'Observation
+        utility' section for instructions for preparing observation input files. Table {#2} lists observation
+        type(s) supported by the DRN package.
+      reader: urword
+      optional: false
+      longname: obs6 input filename
+      type: string
+    mover:
+      block: options
+      description: keyword to indicate that this instance of the Drain Package can be used with the Water
+        Mover (MVR) Package.  When the MOVER option is specified, additional memory is allocated within
+        the package to store the available, provided, and received water.
+      reader: urword
+      optional: true
+      type: keyword
+    export_array_netcdf:
+      block: options
+      description: keyword that specifies input gridded arrays should be written to the model output NetCDF
+        file with attributes that support using the generated file as a MODFLOW 6 simulation input.  This
+        option only has an effect when an output model NetCDF file is configured and the simulation is
+        run in VALIDATE mode, otherwise it is ignored.
+      reader: urword
+      optional: true
+      mf6internal: export_nc
+      longname: export array variables to netcdf output files.
+      extended: true
+      type: keyword
+    dev_cubic_scaling:
+      block: options
+      description: cubic-scaling is used to scale the drain conductance
+      reader: urword
+      optional: true
+      longname: cubic-scaling
+      mf6internal: icubicsfac
+      type: keyword
+  dimensions:
+    maxbound:
+      block: dimensions
+      description: integer value specifying the maximum number of drains cells that will be specified
+        for use during any stress period.
+      reader: urword
+      optional: true
+      longname: maximum number of drain cells in any stress period
+      type: integer
+  period:
+    iper:
+      shape: (nper)
+      block: period
+      description: integer value specifying the starting stress period number for which the data specified
+        in the PERIOD block apply.  IPER must be less than or equal to NPER in the TDIS Package and greater
+        than zero.  The IPER value assigned to a stress period block must be greater than the IPER value
+        assigned for the previous PERIOD block.  The information specified in the PERIOD block will continue
+        to apply for all subsequent stress periods, unless the program encounters another PERIOD block.
+      block_variable: true
+      reader: urword
+      optional: false
+      longname: stress period number
+      type: integer
+    elev:
+      shape: (nper, nodes)
+      block: period
+      description: is the elevation of the drain.
+      default: 3.e30
+      reader: readarray
+      layered: true
+      netcdf: true
+      longname: drain elevation
+      type: double
+    cond:
+      shape: (nper, nodes)
+      block: period
+      description: is the hydraulic conductance of the interface between the aquifer and the drain.
+      default: 3.e30
+      reader: readarray
+      layered: true
+      netcdf: true
+      longname: drain conductance
+      type: double
+    aux:
+      shape: (nper, nodes)
+      block: period
+      description: is an array of values for auxiliary variable aux(iaux), where iaux is a value from
+        1 to naux, and aux(iaux) must be listed as part of the auxiliary variables.  A separate array
+        can be specified for each auxiliary variable. If the value specified here for the auxiliary variable
+        is the same as auxmultname, then the conductance array will be multiplied by this array.
+      reader: readarray
+      layered: true
+      netcdf: true
+      optional: true
+      longname: drain auxiliary variable iaux
+      mf6internal: auxvar
+      type: double

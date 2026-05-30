@@ -271,3 +271,20 @@ def to_tree(dfns: Dfns) -> Dfn:
         return node
 
     return _build_tree(next(iter(roots.keys())))
+
+
+def to_flat(dfn: Dfn) -> Dfns:
+    """
+    Flatten a MODFLOW 6 input component hierarchy to a flat spec:
+    unlinked DFNs, i.e. without `children` populated, only `parent`.
+
+    Returns a dictionary of all components in the specification.
+    """
+
+    def _flatten(dfn: Dfn) -> Dfns:
+        dfns = {dfn["name"]: {**dfn, "children": None}}
+        for child in (dfn["children"] or {}).values():
+            dfns.update(_flatten(child))  # type: ignore
+        return dfns  # type: ignore
+
+    return _flatten(dfn)
