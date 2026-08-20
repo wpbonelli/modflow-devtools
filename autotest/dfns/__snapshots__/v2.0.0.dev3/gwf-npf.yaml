@@ -233,6 +233,7 @@ blocks:
           be computed as STRT-BOT and held constant.  If the THICKSTRT option is not in effect, then negative
           values provided by the user for ICELLTYPE are automatically reassigned by the program to a value
           of one.
+        optional: true
         default: 0
         netcdf: true
         dtype: integer
@@ -248,6 +249,7 @@ blocks:
           vertical hydraulic conductivity, and K22 and the three rotation angles should not be specified.  When
           more sophisticated anisotropy is required, then K corresponds to the K11 hydraulic conductivity
           axis.  All included cells (IDOMAIN $>$ 0) must have a K value greater than zero.
+        optional: true
         default: 1.0
         netcdf: true
         dtype: double

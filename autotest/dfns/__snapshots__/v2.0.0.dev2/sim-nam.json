@@ -68,6 +68,7 @@
           "type": "string",
           "longname": "name of tdis input file",
           "description": "is the name of the Temporal Discretization (TDIS) Input File.",
+          "optional": true,
           "case_sensitive": true
         }
       }
@@ -78,6 +79,7 @@
           "type": "list",
           "longname": "list of models",
           "description": "is the list of model types, model name files, and model names.",
+          "optional": true,
           "item": {
             "type": "record",
             "description": "is the record of model types, model name files, and model names.",
@@ -112,6 +114,7 @@
           "type": "list",
           "longname": "list of exchanges",
           "description": "is the list of exchange types, exchange files, and model names.",
+          "optional": true,
           "item": {
             "type": "record",
             "description": "is the record of exchange types, exchange files, and model names.",

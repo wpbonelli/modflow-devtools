@@ -93,6 +93,7 @@ blocks:
         type: array
         longname: mannings roughness coefficient
         description: mannings roughness coefficient
+        optional: true
         dtype: double
         shape:
           - nodes

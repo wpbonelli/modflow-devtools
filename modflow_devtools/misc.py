@@ -580,13 +580,22 @@ def try_literal_eval(value: str) -> Any:
 
 
 def try_parse_bool(v: Any, default: bool = False) -> bool:
-    """Try to parse a boolean from a string."""
+    """
+    Try to parse a boolean from a string.
+
+    An empty string is treated as ``True`` rather than ``False``: DFN files
+    allow a bare attribute line with no value (e.g. ``optional`` on its own
+    line, as opposed to ``optional true``/``optional false``) to mean the
+    attribute is set. ``load_dfn`` parses such a line to an empty string, as
+    distinct from ``None``, which indicates the attribute wasn't present at
+    all (and falls through to ``default``).
+    """
     if isinstance(v, bool):
         return v
     if isinstance(v, str):
         s = v.strip().lower()
-        if s == "true":
+        if s in ("true", ""):
             return True
-        if s in ("false", ""):
+        if s == "false":
             return False
     return default
