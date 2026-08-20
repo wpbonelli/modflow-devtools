@@ -57,6 +57,7 @@ This document describes the MODFLOW 6 component definition (DFN) system. This sy
         - [`pk`](#pk-1)
         - [`fk`](#fk-1)
         - [`fk_ref`](#fk_ref-1)
+        - [`node`](#node)
     - [Double](#double)
       - [Type-specific attributes](#type-specific-attributes-4)
         - [`time_series`](#time_series-2)
@@ -356,7 +357,7 @@ Type `string`.
 
 ###### `fk`
 
-`string | null (default: null)`. Marks this scalar as a foreign key. Valid only on integer or string scalars that are columns in a list item record. Three forms: (1) hierarchical path `"block.field"` or `"component.block.field"` — fully static, used without `fk_ref`; (2) sentinel `"node"` — grid cell reference, used without `fk_ref`; (3) bare block name (e.g., `"packagedata"`) — used together with `fk_ref` to name the block within the runtime-resolved target component, leaving only the pk field to be discovered. See "Primary/foreign keys".
+`string | null (default: null)`. Marks this scalar as a foreign key. Valid only on integer or string scalars that are columns in a list item record. Two forms: (1) hierarchical path `"block.field"` or `"component.block.field"` — fully static, used without `fk_ref`; (2) bare block name (e.g., `"packagedata"`) — used together with `fk_ref` to name the block within the runtime-resolved target component, leaving only the pk field to be discovered. See "Primary/foreign keys".
 
 ###### `fk_ref`
 
@@ -386,11 +387,15 @@ Type `integer`.
 
 ###### `fk`
 
-`string | null (default: null)`. Marks this scalar as a foreign key. Valid only on integer or string scalars that are columns in a list item record. Three forms: (1) hierarchical path `"block.field"` or `"component.block.field"` — fully static, used without `fk_ref`; (2) sentinel `"node"` — grid cell reference, used without `fk_ref`; (3) bare block name (e.g., `"packagedata"`) — used together with `fk_ref` to name the block within the runtime-resolved target component, leaving only the pk field to be discovered. See "Primary/foreign keys".
+`string | null (default: null)`. Marks this scalar as a foreign key. Valid only on integer or string scalars that are columns in a list item record. Two forms: (1) hierarchical path `"block.field"` or `"component.block.field"` — fully static, used without `fk_ref`; (2) bare block name (e.g., `"packagedata"`) — used together with `fk_ref` to name the block within the runtime-resolved target component, leaving only the pk field to be discovered. See "Primary/foreign keys".
 
 ###### `fk_ref`
 
 `string | null (default: null)`. For FKs whose target component is only known at runtime. Names a sibling string field whose value identifies the target component. May be set alone (block within target also unknown) or together with `fk` as a bare block name (block known, component not). See "Primary/foreign keys".
+
+###### `node`
+
+`boolean (default: false)`. Marks this scalar as a grid cell reference, resolved from the parent model's grid (DIS/DISV/DISU) at runtime. Valid only on integer scalars that are columns in a list item record — the same placement `fk` requires. A structurally distinct resolution path from `fk`: a grid-cell lookup against model geometry, not a `pk` lookup in another list.
 
 #### Double
 
@@ -641,15 +646,14 @@ Examples:
 
 ### Primary and foreign keys
 
-Sometimes a column in one list identifies a row in another list, or a grid cell. This can be conceptualized as a primary key (PK) / foreign key (FK) relation. Integers and strings may encode PK/FK semantics with attributes `pk`, `fk`, and `fk_ref`.
+Sometimes a column in one list identifies a row in another list. This can be conceptualized as a primary key (PK) / foreign key (FK) relation. Integers and strings may encode PK/FK semantics with attributes `pk`, `fk`, and `fk_ref`. A column referencing a grid cell instead of another list's row is a distinct concern, handled by the `node` attribute (see [Integer](#integer)) rather than `pk`/`fk` — grid cells are resolved from the parent model's grid (DIS/DISV/DISU) at runtime, not looked up via a `pk` column.
 
 **Note**: PK/FK attributes are only valid on integer and string fields appearing as columns in a tabular (i.e. regular) list's record item type.
 
-The `fk` attribute can take one of three forms:
+The `fk` attribute can take one of two forms:
 
 - **Hierarchical path**: A path of the form `"[component.]block.field"`, for use when the primary key field is statically known. The `component` segment is necessary for cross-component references; it may be omitted for within-component references. The hierarchical path form may not be used with `fk_ref`.
-- **Grid cell sentinel**: A value `"node"` indicates a grid cell reference, resolve from the parent model's grid at runtime. This form may not be used with `fk_ref`.
-- **Bare block name**: The name of a block in which there is exactly one `pk` field. In this case, `fk_ref` is required to resolve the target component at runtime. Note that blocks must not be named "node" to avoid interference with the grid cell sentinel.
+- **Bare block name**: The name of a block in which there is exactly one `pk` field. In this case, `fk_ref` is required to resolve the target component at runtime.
 
 The `fk_ref` attribute names a string field whose runtime value identifies the component containing the `pk` field. Two sub-cases exist:
 

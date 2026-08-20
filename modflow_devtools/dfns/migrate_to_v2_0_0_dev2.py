@@ -432,6 +432,55 @@ def _mark_lonely_pk(blocks: dict[str, v2.Block]) -> dict[str, v2.Block]:
     return {**blocks, **updated}
 
 
+# Corpus candidates for the `node` attribute (see index-node-attributes-plan.md
+# Phase 2): Integer columns in a list item record that reference a grid cell,
+# resolved from the parent model's grid (DIS/DISV/DISU) at runtime, rather than
+# a pk/fk relation to another list's row. Unlike `index`, v1 has no attribute
+# that signals this (numeric_index only says "needs 1-based/0-based
+# conversion" — true here too, and already migrated separately — not "is a
+# grid-cell reference"), so these are backfilled by an explicit, audited
+# per-field allowlist rather than derived mechanically. In every entry here the
+# list field's own name matches its enclosing block's name.
+_NODE_REF_FIELDS: dict[str, tuple[str, tuple[str, ...]]] = {
+    "exg-chfgwf": ("exchangedata", ("cellidm1", "cellidm2")),
+    "exg-gwegwe": ("exchangedata", ("cellidm1", "cellidm2")),
+    "exg-gwfgwf": ("exchangedata", ("cellidm1", "cellidm2")),
+    "exg-gwtgwt": ("exchangedata", ("cellidm1", "cellidm2")),
+    "exg-olfgwf": ("exchangedata", ("cellidm1", "cellidm2")),
+    "gwf-gnc": ("gncdata", ("cellidm", "cellidn")),
+}
+
+
+def _mark_node_refs(name: str, blocks: dict[str, v2.Block]) -> dict[str, v2.Block]:
+    """Mark this component's known grid-cell-reference columns `node=True`.
+
+    See `_NODE_REF_FIELDS` for why this is an explicit allowlist rather than a
+    derived/mechanical pass.
+    """
+    entry = _NODE_REF_FIELDS.get(name)
+    if entry is None:
+        return blocks
+    block_name, field_names = entry
+    block = blocks.get(block_name)
+    if block is None:
+        return blocks
+    list_field = block.fields.get(block_name)
+    if not isinstance(list_field, v2.List) or not isinstance(list_field.item, v2.Record):
+        return blocks
+    item = list_field.item
+    updates = {
+        fname: f.model_copy(update={"node": True})
+        for fname in field_names
+        if isinstance(f := item.fields.get(fname), v2.Integer) and not f.node
+    }
+    if not updates:
+        return blocks
+    new_item = item.model_copy(update={"fields": {**item.fields, **updates}})
+    new_list = list_field.model_copy(update={"item": new_item})
+    new_block = block.model_copy(update={"fields": {**block.fields, block_name: new_list}})
+    return {**blocks, block_name: new_block}
+
+
 def _fill_period_list_shapes(
     blocks: dict[str, v2.Block],
     explicit_dims: dict[str, v2.Dim],
@@ -1456,6 +1505,7 @@ def to_v2_0_0_dev2(name: str, fields: OMD, meta: list[str]) -> v2.Component:
     # the original field). No other pass between the old and new call sites
     # reads or depends on `pk`/`fk` state.
     blocks = _mark_lonely_pk(blocks)
+    blocks = _mark_node_refs(name, blocks)
     dims = {**explicit_dims, **array_dims, **derived_dims} or None
 
     d: dict[str, Any] = {

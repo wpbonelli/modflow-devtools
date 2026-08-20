@@ -64,6 +64,7 @@ blocks:
                 file, then CELLIDN is the node number for the cell.
               tagged: false
               index: true
+              node: true
             cellidm:
               type: integer
               longname: GNC cellid n
@@ -74,6 +75,7 @@ blocks:
                 discretization (DISU) input file, then CELLIDM is the node number for the cell.
               tagged: false
               index: true
+              node: true
             cellidsj:
               type: array
               longname: GNC contributing cells

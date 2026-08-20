@@ -151,6 +151,7 @@ blocks:
                 (DISU) input file, then CELLIDM1 is the node number for the cell.
               tagged: false
               index: true
+              node: true
             cellidm2:
               type: integer
               longname: cellid of second cell
@@ -161,6 +162,7 @@ blocks:
                 (DISU) input file, then CELLIDM2 is the node number for the cell.
               tagged: false
               index: true
+              node: true
             ihc:
               type: integer
               longname: integer flag for connection type

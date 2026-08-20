@@ -94,8 +94,8 @@
   fixes the confirmed `gwf-lak.iconn` regression directly (`index=True` now set on that
   field). `schema.json`/`dfnspec.md` updated; full `autotest/dfns/` snapshot suite
   regenerated (306 files, additive-only diff). Phase 2 (`node` attribute, replacing the
-  `fk="node"` sentinel) and Phase 3 (`pk`/`fk` backfill: items (b)/(d)/(e)/(f) below) remain,
-  tracked in `index-node-attributes-plan.md` rather than here.
+  `fk="node"` sentinel) also done — see (e) below. Phase 3 (`pk`/`fk` backfill: items
+  (b)/(d)/(f) below) remains, tracked in `index-node-attributes-plan.md` rather than here.
 
 - [x] **Bare (valueless) boolean attribute lines in v1 DFNs migrated as `False` instead of
   `True`.** v1 syntax allows a boolean attribute's line to carry no value at all (e.g. a
@@ -141,9 +141,19 @@
     `chf-zdg`, `olf-dfw`, `olf-zdg`, `swf-dfw`, `swf-zdg`) never gets `fk` set, because
     `_resolve_relations` only ever sees one component's own `blocks` dict. Schema already
     supports this (`fk = "[component.]block.field"`); migration mapper never attempts it.
-  - [ ] **(e) `fk = "node"` grid-cell sentinel, unused.** `exg-*.cellidm1`/`cellidm2` (6
+  - [x] **(e) `fk = "node"` grid-cell sentinel, unused.** `exg-*.cellidm1`/`cellidm2` (6
     exchange types), `gwf-gnc.cellidm`/`cellidn` look like the schema's existing grid-cell
     sentinel case, already speced and validated in `schema.py`, never populated by the mapper.
+    Resolved by replacing the sentinel entirely with a dedicated `Integer.node` attribute
+    (Phase 2, `index-node-attributes-plan.md`): confirmed the actual corpus count is 5
+    exchange components (`exg-chfgwf`/`exg-gwegwe`/`exg-gwfgwf`/`exg-gwtgwt`/`exg-olfgwf`, each
+    with `exchangedata.cellidm1`/`cellidm2`) plus `gwf-gnc.gncdata.cellidm`/`cellidn` — 6 fields
+    total across those, not "6 exchange types" as the original note implied. Backfilled by a
+    new `_mark_node_refs` pass keyed on an explicit `_NODE_REF_FIELDS` allowlist (audited, not
+    derived — v1 has no attribute this maps from). `fk = "node"` itself is no longer a special
+    sentinel: `_validate_fk_fields` dropped its exemption, so an unqualified `fk = "node"` now
+    just has to resolve to an actual list block like any other bare fk value (in practice
+    meaning nobody sets it — the deprecation is structural, not a hard reject).
   - [x] **(a) Array-typed fields can't take `pk`/`fk` at all.** `irch`, `ievt`, `icvert`, `ja`,
     `ic`, `cellidsj` are `Array`s; `dfnspec.md` restricts `pk`/`fk` to integer/string columns
     in a list item record. v1's `numeric_index` on these likely just means "apply 1-based

@@ -122,7 +122,21 @@ Corpus-identified remaining items, from the earlier scan, each independently sch
   from `todo.md`. Full `autotest/dfns/` suite green; snapshots regenerated (306 files,
   additive-only diff — every change is a bare `"index": true`/`index = true` addition, no
   removals beyond JSON trailing-comma churn).
-- **Phase 2 (now, small)**: `node` — schema + validator + `fk="node"` removal + the handful of
-  exchange/GNC backfills. Well-scoped enough to go in the same pass as Phase 1.
+- **Phase 2 (done, 2026-08-20)**: `node` — schema + validator + `fk="node"` removal + the
+  handful of exchange/GNC backfills. Well-scoped enough to go in the same pass as Phase 1.
+  Landed: `Integer.node` in `schema.py` (no placement validator — same as `pk`/`fk`, this is
+  a documentation-level convention, not schema-enforced); `_validate_fk_fields`'s `fk == "node"`
+  exemption removed, now a single hierarchical-path-vs-fk_ref invariant check (an unqualified
+  `fk = "node"` is no longer special — it must resolve to an actual list block like any other
+  bare fk value, which in practice means nobody will set it, achieving the deprecation without
+  a hard reject); `dfnspec.md` updated (`node` documented under Integer, "Primary and foreign
+  keys" section's grid-cell-sentinel form replaced with a pointer to `node`); `schema.json`
+  regenerated; a new `_mark_node_refs` pass in `migrate_to_v2_0_0_dev2.py` backfills the 6
+  corpus candidates by an explicit per-component allowlist (`_NODE_REF_FIELDS`) — the 5
+  exchange types' `exchangedata.cellidm1`/`cellidm2` and `gwf-gnc.gncdata.cellidm`/`cellidn` —
+  since (unlike `index`) v1 has no attribute this can be migrated from mechanically.
+  `autotest/dfns/test_schema_relations.py`'s node-sentinel-specific test was replaced with one
+  asserting the new (unremarkable) behavior. Full `autotest/dfns/` suite green; snapshots
+  regenerated (36 files, additive-only — 6 components x 2 fields x 2 dev dirs x 3 formats).
 - **Phase 3 (later, incremental, no urgency)**: `pk`/`fk` extensions — lonely-pk allowlist,
   cross-component `idcxs`, SFR `diversions` split.

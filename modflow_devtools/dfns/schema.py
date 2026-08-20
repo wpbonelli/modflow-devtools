@@ -100,6 +100,10 @@ class Integer(FieldBase):
     pk: bool = False
     fk: str | None = None
     fk_ref: str | None = None
+    # Grid-cell reference, resolved from the parent model's grid (DIS/DISV/DISU)
+    # at runtime — a structurally different resolution path than fk (geometry
+    # lookup, not a pk lookup in another list). See docs/md/dfnspec.md.
+    node: bool = False
 
 
 class Double(FieldBase):
@@ -946,21 +950,20 @@ def _validate_fk_fields(component: "ComponentBase", spec: "Dfns") -> None:
     """
     For every Integer/String field with fk or fk_ref set, validate structure.
 
-    Three forms (see docs/md/dfnspec.md, "Primary and foreign keys"):
+    Two forms (see docs/md/dfnspec.md, "Primary and foreign keys"); grid-cell
+    references are a separate mechanism entirely (the `node` attribute, not an
+    `fk` value — see `Integer.node`):
 
     - Hierarchical path fk ("[component.]block.field", no fk_ref): the named
       block must be a list block (in this component, or cross-component if
       qualified) whose item has a pk field.
-    - "node" sentinel fk (no fk_ref): a grid cell reference, resolved from the
-      parent model's grid at runtime — no further structural check is
-      possible here.
     - Bare block name fk + fk_ref, or fk_ref alone: fk_ref must name a sibling
       String field in the same record, whose runtime value identifies the
       target component (and, with fk, the pk field is looked up in the block
       named by fk within that component). The target itself is only known at
       runtime, so no further structural check is possible statically.
 
-    A hierarchical-path or "node" fk may not be combined with fk_ref.
+    A hierarchical-path fk may not be combined with fk_ref.
     """
     if not component.blocks:
         return
@@ -971,7 +974,7 @@ def _validate_fk_fields(component: "ComponentBase", spec: "Dfns") -> None:
             fk_ref: str | None = getattr(field, "fk_ref", None)
 
             if fk_ref is not None:
-                if fk is not None and (fk == "node" or "." in fk):
+                if fk is not None and "." in fk:
                     raise ValueError(
                         f"Field {field.name!r}: fk={fk!r} may not be combined with "
                         f"fk_ref (only a bare block name may be)"
@@ -985,7 +988,7 @@ def _validate_fk_fields(component: "ComponentBase", spec: "Dfns") -> None:
                 # fk (a bare block name, if set) and the component it lives in
                 # are both resolved from fk_ref's runtime value — no further
                 # static check is possible.
-            elif fk is not None and fk != "node":
+            elif fk is not None:
                 block_name = fk.split(".")[0] if "." in fk else fk
                 list_field = _find_list_in_block(component, block_name)
                 if list_field is None:
