@@ -94,8 +94,9 @@
   fixes the confirmed `gwf-lak.iconn` regression directly (`index=True` now set on that
   field). `schema.json`/`dfnspec.md` updated; full `autotest/dfns/` snapshot suite
   regenerated (306 files, additive-only diff). Phase 2 (`node` attribute, replacing the
-  `fk="node"` sentinel) also done — see (e) below. Phase 3 (`pk`/`fk` backfill: items
-  (b)/(d)/(f) below) remains, tracked in `index-node-attributes-plan.md` rather than here.
+  `fk="node"` sentinel) also done — see (e) below. Phase 3 (`pk`/`fk` backfill) also done — see
+  (b)/(d)/(f) below. All decomposed sub-issues (a)–(g) resolved; full detail in
+  `index-node-attributes-plan.md`.
 
 - [x] **Bare (valueless) boolean attribute lines in v1 DFNs migrated as `False` instead of
   `True`.** v1 syntax allows a boolean attribute's line to carry no value at all (e.g. a
@@ -128,7 +129,7 @@
     `_fix_lak_relations` splits it into per-arm `lakeno`/`outletno` fk's; marking it pk first
     leaked a stale `pk=True` into those fk copies via `model_copy`. Full suite green after the
     reorder, only `bndno` changed.
-  - [ ] **(b) Same lonely-pk shape, blocked by a hardcoded name allowlist.** DISU/DISV/DISV1D's
+  - [x] **(b) Same lonely-pk shape, blocked by a hardcoded name allowlist.** DISU/DISV/DISV1D's
     `vertices.iv`, `cell2d.icell2d`, `cell1d.icell1d` (24 occurrences), SFR's
     `diversions.iconr`/`idv`, MAW's `connectiondata.icon`, UZF's `packagedata.ivertcon` are the
     same shape `_mark_lonely_pk` already detects, just under block/field names outside
@@ -136,11 +137,28 @@
     ("a distinct grid-geometry concern") — open question: is `pk=true` still correct/useful
     there even though nothing can carry a matching `fk` back (the only things that reference
     vertex/cell numbers, e.g. `icvert`, are Arrays, which can't hold `fk` at all per (a))?
-  - [ ] **(d) Cross-component FKs unreachable by construction.** `idcxs`: defining side
+    Resolved (Phase 3, `index-node-attributes-plan.md`): yes, `pk=true` is still correct/useful
+    there — it's an honest, if unreferenced, row identifier, same as several `_LONELY_PK_FIELDS`
+    entries already are. `_LONELY_PK_FIELDS` widened to `vertices`/`cell2d`/`cell1d` (12
+    components). The other three named here — SFR `iconr`, MAW `icon`, UZF `ivertcon` — turned
+    out on inspection *not* to be this shape at all (none is the record's leading field, so
+    `_mark_lonely_pk` structurally can't reach them regardless of allowlist); resolved instead
+    under (f) and via a new `_apply_fk_backfill` pass, see below.
+  - [x] **(d) Cross-component FKs unreachable by construction.** `idcxs`: defining side
     (`chf-cxs`/`olf-cxs`/`swf-cxs`) already `pk`'d; referencing side (`chf-dfw`, `chf-cdb`,
     `chf-zdg`, `olf-dfw`, `olf-zdg`, `swf-dfw`, `swf-zdg`) never gets `fk` set, because
     `_resolve_relations` only ever sees one component's own `blocks` dict. Schema already
     supports this (`fk = "[component.]block.field"`); migration mapper never attempts it.
+    Resolved (Phase 3): new `_apply_fk_backfill` pass sets
+    `fk = "<component>.packagedata.idcxs"` on the 4 referencing fields that are actually Integer
+    list columns (`chf-cdb`, `chf-zdg`, `olf-zdg`, `swf-zdg`). Turned up a second, deeper bug
+    while doing this: `_validate_fk_fields` itself mishandled the 3-segment
+    `"component.block.field"` form (`fk.split(".")[0]` only ever took the first segment as the
+    block name, so it would've rejected exactly this case) — nobody had hit it before because
+    no `fk` had ever actually used the cross-component form. Fixed to resolve via
+    `spec.components`. `chf-dfw`/`olf-dfw`/`swf-dfw`'s `idcxs` is the same relation in principle
+    but is an `Array` (`shape=["nodes"]`), which can't carry `fk` at all under the current
+    schema — left alone, documented rather than silently dropped.
   - [x] **(e) `fk = "node"` grid-cell sentinel, unused.** `exg-*.cellidm1`/`cellidm2` (6
     exchange types), `gwf-gnc.cellidm`/`cellidn` look like the schema's existing grid-cell
     sentinel case, already speced and validated in `schema.py`, never populated by the mapper.
@@ -161,8 +179,18 @@
     Resolved: `numeric_index` never meant relational identity here, so it doesn't need
     `pk`/`fk` — it needed `Array.index` (Phase 1, `index-node-attributes-plan.md`), now
     migrated directly for every `Array(dtype="integer")` field.
-  - [ ] **(f) Compound keys — no concept for them.** SFR's `diversions.iconr`/`idv` are unique
+  - [x] **(f) Compound keys — no concept for them.** SFR's `diversions.iconr`/`idv` are unique
     only per-reach, not table-wide; a blind `pk=true` would misrepresent them. `pk`/`fk` as
-    specced has no compound-key notion.
+    specced has no compound-key notion. Resolved (Phase 3): no new concept needed once `pk`/`fk`
+    aren't asked to double as the serialization signal — `idv` correctly gets `index` only (from
+    Phase 1, mechanically; it was never a valid `pk`, compound-scoped or not). `iconr` isn't
+    compound-scoped at all on inspection — its description ("the downstream reach that will
+    receive the diverted water") makes it a real, globally-scoped reference into
+    `packagedata.ifno` (reach numbers), so it gets `fk = "packagedata.ifno"` via
+    `_apply_fk_backfill`, same as any other single-column fk. UZF's `packagedata.ivertcon`
+    (self-referential: a UZF cell may point to another UZF cell below it) turned out to be the
+    same single-column-fk shape and got the same treatment. MAW's `connectiondata.icon` is the
+    one genuine compound-scoped case with no real target (same shape as `gwf-lak.iconn`) —
+    correctly left with `index` only, nothing more to add.
   - [x] **(g) `gwf-mvr.id1`/`id2`, `utl-obs.id`/`id2`** — already independently audited
     (dynamic/name-resolved, not a formal FK). Confirmed by this scan too; no work needed.

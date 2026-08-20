@@ -168,6 +168,7 @@ longname = "vertex number"
 description = "is the vertex number.  Records in the VERTICES block must be listed in consecutive order from 1 to NVERT."
 tagged = false
 index = true
+pk = true
 
 [blocks.vertices.fields.vertices.item.fields.xv]
 type = "double"
@@ -197,6 +198,7 @@ longname = "cell2d number"
 description = "is the CELL2D number.  Records in the CELL2D block must be listed in consecutive order from the first to the last."
 tagged = false
 index = true
+pk = true
 
 [blocks.cell2d.fields.cell2d.item.fields.xc]
 type = "double"

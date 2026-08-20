@@ -131,6 +131,7 @@ blocks:
                 order from 1 to NVERT.
               tagged: false
               index: true
+              pk: true
             xv:
               type: double
               longname: x-coordinate for vertex
@@ -158,6 +159,7 @@ blocks:
                 order from the first to the last.
               tagged: false
               index: true
+              pk: true
             xc:
               type: double
               longname: x-coordinate for cell center

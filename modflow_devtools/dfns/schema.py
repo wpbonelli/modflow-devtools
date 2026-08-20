@@ -955,8 +955,10 @@ def _validate_fk_fields(component: "ComponentBase", spec: "Dfns") -> None:
     `fk` value — see `Integer.node`):
 
     - Hierarchical path fk ("[component.]block.field", no fk_ref): the named
-      block must be a list block (in this component, or cross-component if
-      qualified) whose item has a pk field.
+      block must be a list block whose item has a pk field. Unqualified
+      ("block.field"), the block is looked up in this component; qualified
+      ("component.block.field"), it's looked up in the named component via
+      `spec.components` instead.
     - Bare block name fk + fk_ref, or fk_ref alone: fk_ref must name a sibling
       String field in the same record, whose runtime value identifies the
       target component (and, with fk, the pk field is looked up in the block
@@ -989,12 +991,33 @@ def _validate_fk_fields(component: "ComponentBase", spec: "Dfns") -> None:
                 # are both resolved from fk_ref's runtime value — no further
                 # static check is possible.
             elif fk is not None:
-                block_name = fk.split(".")[0] if "." in fk else fk
-                list_field = _find_list_in_block(component, block_name)
+                parts = fk.split(".")
+                target: ComponentBase
+                if len(parts) == 3:
+                    component_ref, block_name, _fk_field = parts
+                    resolved = spec.components.get(component_ref)
+                    if resolved is None:
+                        raise ValueError(
+                            f"Field {field.name!r} fk={fk!r}: "
+                            f"component {component_ref!r} not found in spec"
+                        )
+                    target = resolved
+                    where = f"component {component_ref!r}"
+                elif len(parts) in (1, 2):
+                    block_name = parts[0]
+                    target = component
+                    where = "this component"
+                else:
+                    raise ValueError(
+                        f"Field {field.name!r} fk={fk!r}: "
+                        f"must be a bare block name, 'block.field', or "
+                        f"'component.block.field'"
+                    )
+                list_field = _find_list_in_block(target, block_name)
                 if list_field is None:
                     raise ValueError(
                         f"Field {field.name!r} fk={fk!r}: "
-                        f"{block_name!r} is not a list block in this component"
+                        f"{block_name!r} is not a list block in {where}"
                     )
                 item = list_field.item
                 item_fields: dict = item.fields if isinstance(item, Record) else item.arms

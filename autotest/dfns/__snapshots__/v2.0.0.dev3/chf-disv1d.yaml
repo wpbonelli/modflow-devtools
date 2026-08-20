@@ -140,6 +140,7 @@ blocks:
                 order from 1 to NVERT.
               tagged: false
               index: true
+              pk: true
             xv:
               type: double
               longname: x-coordinate for vertex
@@ -167,6 +168,7 @@ blocks:
                 order from the first to the last.
               tagged: false
               index: true
+              pk: true
             fdc:
               type: double
               longname: fractional distance to the cell center

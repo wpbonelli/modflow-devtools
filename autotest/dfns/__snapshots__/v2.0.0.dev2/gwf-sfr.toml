@@ -397,6 +397,7 @@ longname = "downstream reach number for diversion"
 description = "integer value that defines the downstream reach that will receive the diverted water. IDV must be greater than zero and less than or equal to NREACHES. Furthermore, reach  ICONR must be a downstream connection for reach IFNO."
 tagged = false
 index = true
+fk = "packagedata.ifno"
 
 [blocks.diversions.fields.diversions.item.fields.cprior]
 type = "string"

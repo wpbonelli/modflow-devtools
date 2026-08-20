@@ -230,7 +230,8 @@
                 "longname": "vertex number",
                 "description": "is the vertex number.  Records in the VERTICES block must be listed in consecutive order from 1 to NVERT.",
                 "tagged": false,
-                "index": true
+                "index": true,
+                "pk": true
               },
               "xv": {
                 "type": "double",
@@ -266,7 +267,8 @@
                 "longname": "cell2d number",
                 "description": "is the cell2d number.  Records in the CELL2D block must be listed in consecutive order from 1 to NODES.",
                 "tagged": false,
-                "index": true
+                "index": true,
+                "pk": true
               },
               "xc": {
                 "type": "double",

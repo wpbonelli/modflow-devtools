@@ -55,26 +55,44 @@ Splitting into three orthogonal attributes:
   `exg-gwtgwt`/`exg-olfgwf`'s `cellidm1`/`cellidm2` (6 exchange types), `gwf-gnc`'s
   `cellidm`/`cellidn`.
 
-## `pk`/`fk`: unchanged type, narrowed job
+## `pk`/`fk`: unchanged type, narrowed job (done, 2026-08-20)
 
-No schema shape change. `_resolve_relations`/`_mark_lonely_pk` keep working as they do today.
-The difference is priority: this is no longer blocking anything (flopy4's conversion need is
-served by `index`), so it becomes incremental, best-effort relational-documentation work.
-Corpus-identified remaining items, from the earlier scan, each independently schedulable:
+No schema shape change to `pk`/`fk` themselves. `_resolve_relations`/`_mark_lonely_pk` keep
+working as they did before. What actually landed, item by item from the original scan:
 
-- **Lonely-pk allowlist extension** — same shape `_mark_lonely_pk` already detects, just
-  outside `_LONELY_PK_FIELDS`: DISU/DISV/DISV1D's `vertices.iv`, `cell2d.icell2d`,
-  `cell1d.icell1d`; SFR's `diversions.iconr`; MAW's `connectiondata.icon`; UZF's
-  `packagedata.ivertcon`. No longer controversial for DISU/DISV now that `pk` doesn't need to
-  "earn its keep" via a matching `fk` — marking it is just honestly documenting a real,
-  if unreferenced, row identifier.
-- **Cross-component fk** — `idcxs`: defining side (`chf-cxs`/`olf-cxs`/`swf-cxs`) already
-  `pk`'d; referencing side (`chf-dfw`, `chf-cdb`, `chf-zdg`, `olf-dfw`, `olf-zdg`, `swf-dfw`,
-  `swf-zdg`) needs `fk`. Requires a pass that can see across component boundaries —
-  `_resolve_relations` currently can't.
+- **Lonely-pk allowlist extension** — `_LONELY_PK_FIELDS` widened to `vertices`, `cell2d`,
+  `cell1d` (DISU/DISV/DISV1D/DISV2D's `iv`/`icell2d`/`icell1d`, 12 components). Genuinely the
+  same shape `_mark_lonely_pk` already detects (leading required Integer, no fk, no existing
+  pk) — no longer controversial now that `pk` doesn't need to "earn its keep" via a matching
+  `fk`. On closer inspection, SFR's `diversions.iconr`, MAW's `connectiondata.icon`, and UZF's
+  `packagedata.ivertcon` — originally bucketed here too — turned out **not** to fit this
+  shape at all: none of them is the record's *leading* field (each follows an `ifno`/similar
+  column that's already `pk`/`fk`'d), so `_mark_lonely_pk`'s single-field heuristic structurally
+  can't reach them regardless of allowlist. Handled separately, below and under "compound-scoped
+  fields."
+- **Cross-component fk** — `idcxs`: defining side (`chf-cxs`/`olf-cxs`/`swf-cxs` packagedata,
+  already `pk`'d) now referenced by `chf-cdb`/`chf-zdg`/`olf-zdg`/`swf-zdg` via
+  `fk = "<component>.packagedata.idcxs"`. Required two fixes, not one: (1) the migration mapper
+  needed a backfill pass, since `_resolve_relations` is single-component-scoped by construction;
+  (2) `_validate_fk_fields` itself turned out to have a **latent bug** — despite `dfnspec.md`
+  documenting `"[component.]block.field"` as a supported hierarchical form, the validator's
+  `fk.split(".")[0]` only ever took the first dot-segment as the block name, so a real
+  3-segment cross-component path like `"chf-cxs.packagedata.idcxs"` would have been
+  misparsed as block name `"chf-cxs"` and rejected. Nobody had hit this before because nothing
+  had ever actually set a cross-component `fk`. Fixed to resolve the target component via
+  `spec.components` when 3 segments are present. `chf-dfw`/`olf-dfw`/`swf-dfw`'s `idcxs` is the
+  same relation in principle but is an `Array` (a per-cell grid field, `shape=["nodes"]`), which
+  cannot carry `fk` under the current schema at all (same limitation as item (a) below, never
+  extended to `pk`/`fk`) — deliberately left alone, not an oversight.
 - **Compound-scoped fields, now with an honest answer** — SFR `diversions.idv` gets `index`
   only (correctly — it's not globally unique, so it was never a valid `pk`). `diversions.iconr`
-  gets `fk = "packagedata.ifno"` (a real reference into reaches) alongside `index`.
+  gets `fk = "packagedata.ifno"` (a real reference into reaches) alongside `index`. UZF's
+  `packagedata.ivertcon` turned out to be the same self-referential-fk shape (a UZF cell can
+  point to another UZF cell in the same list) and got `fk = "packagedata.ifno"` too. MAW's
+  `connectiondata.icon`, by contrast, has no real target at all — it's the same shape as
+  `gwf-lak.iconn` (the field that originally motivated `index` in Phase 1): a per-parent
+  connection sequence number, not globally unique, never referenced by name elsewhere. Correctly
+  left with `index` only, no `pk`/`fk` — nothing to backfill there.
 
 ## Implementation steps (this repo)
 
@@ -138,5 +156,14 @@ Corpus-identified remaining items, from the earlier scan, each independently sch
   `autotest/dfns/test_schema_relations.py`'s node-sentinel-specific test was replaced with one
   asserting the new (unremarkable) behavior. Full `autotest/dfns/` suite green; snapshots
   regenerated (36 files, additive-only — 6 components x 2 fields x 2 dev dirs x 3 formats).
-- **Phase 3 (later, incremental, no urgency)**: `pk`/`fk` extensions — lonely-pk allowlist,
-  cross-component `idcxs`, SFR `diversions` split.
+- **Phase 3 (done, 2026-08-20)**: `pk`/`fk` extensions — lonely-pk allowlist widened
+  (`_LONELY_PK_FIELDS` in `migrate_to_v2_0_0_dev2.py`); a new `_apply_fk_backfill` pass (keyed
+  on an explicit `_FK_BACKFILL` allowlist, same shape as Phase 2's `_mark_node_refs`) sets `fk`
+  for UZF's `ivertcon`, SFR's `iconr`, and the 4 cross-component `idcxs` referencing fields;
+  `_validate_fk_fields`'s cross-component path resolution bug fixed (see above) — a real latent
+  defect, not something this plan anticipated, found only by actually exercising the documented
+  3-segment form for the first time. MAW's `connectiondata.icon` and the 3 `*-dfw` components'
+  `idcxs` (an `Array`, can't carry `fk`) investigated and deliberately left alone, documented
+  above rather than silently skipped. Full `autotest/dfns/` suite green; snapshots regenerated
+  (108 files, additive-only — exactly 12×2 lonely-pk + 1 UZF + 1 SFR + 4 cross-component,
+  ×2 dev dirs ×3 formats).

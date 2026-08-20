@@ -146,7 +146,8 @@
                 "longname": "vertex number",
                 "description": "is the vertex number.  Records in the VERTICES block must be listed in consecutive order from 1 to NVERT.",
                 "tagged": false,
-                "index": true
+                "index": true,
+                "pk": true
               },
               "xv": {
                 "type": "double",
@@ -181,7 +182,8 @@
                 "longname": "cell1d number",
                 "description": "is the cell1d number.  Records in the cell1d block must be listed in consecutive order from the first to the last.",
                 "tagged": false,
-                "index": true
+                "index": true,
+                "pk": true
               },
               "fdc": {
                 "type": "double",

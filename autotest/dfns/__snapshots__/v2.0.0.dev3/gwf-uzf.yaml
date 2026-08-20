@@ -270,6 +270,7 @@ blocks:
                 of 0 indicates the UZF cell is not connected to an underlying UZF cell.
               tagged: false
               index: true
+              fk: packagedata.ifno
             surfdep:
               type: double
               longname: surface depression depth

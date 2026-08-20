@@ -464,6 +464,7 @@ blocks:
                 reach  ICONR must be a downstream connection for reach IFNO.
               tagged: false
               index: true
+              fk: packagedata.ifno
             cprior:
               type: string
               longname: iprior code
