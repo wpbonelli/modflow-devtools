@@ -98,17 +98,20 @@
                 "columns": {
                   "type": "integer",
                   "longname": "number of columns",
-                  "description": "number of columns for writing data."
+                  "description": "number of columns for writing data.",
+                  "optional": true
                 },
                 "width": {
                   "type": "integer",
                   "longname": "width for each number",
-                  "description": "width for writing each number."
+                  "description": "width for writing each number.",
+                  "optional": true
                 },
                 "digits": {
                   "type": "integer",
                   "longname": "number of digits",
-                  "description": "number of digits to use for writing a number."
+                  "description": "number of digits to use for writing a number.",
+                  "optional": true
                 },
                 "format": {
                   "type": "string",

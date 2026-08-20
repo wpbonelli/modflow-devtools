@@ -240,6 +240,7 @@ blocks:
                 will terminate with an error.  The program will also terminate with an error if information
                 for a UZF cell is specified more than once.
               tagged: false
+              index: true
               pk: true
             cellid:
               type: array
@@ -268,6 +269,8 @@ blocks:
                 then water is added to the GWF cell instead of flowing to the underlying UZF cell. A value
                 of 0 indicates the UZF cell is not connected to an underlying UZF cell.
               tagged: false
+              index: true
+              fk: packagedata.ifno
             surfdep:
               type: double
               longname: surface depression depth
@@ -330,6 +333,7 @@ blocks:
               description: integer value that defines the feature (UZF object) number associated with
                 the specified PERIOD data on the line.
               tagged: false
+              index: true
               fk: packagedata.ifno
             finf:
               type: string

@@ -64,6 +64,30 @@
           "title": "Tagged",
           "type": "boolean"
         },
+        "removed": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Removed"
+        },
+        "deprecated": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Deprecated"
+        },
         "type": {
           "const": "array",
           "default": "array",
@@ -93,7 +117,17 @@
           "title": "Time Series",
           "type": "boolean"
         },
-        "repeat": {
+        "layered": {
+          "default": false,
+          "title": "Layered",
+          "type": "boolean"
+        },
+        "index": {
+          "default": false,
+          "title": "Index",
+          "type": "boolean"
+        },
+        "fk": {
           "anyOf": [
             {
               "type": "string"
@@ -103,7 +137,7 @@
             }
           ],
           "default": null,
-          "title": "Repeat"
+          "title": "Fk"
         }
       },
       "required": [
@@ -340,6 +374,30 @@
           "title": "Tagged",
           "type": "boolean"
         },
+        "removed": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Removed"
+        },
+        "deprecated": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Deprecated"
+        },
         "type": {
           "const": "double",
           "default": "double",
@@ -417,6 +475,30 @@
           "default": true,
           "title": "Tagged",
           "type": "boolean"
+        },
+        "removed": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Removed"
+        },
+        "deprecated": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Deprecated"
         },
         "type": {
           "const": "file",
@@ -500,6 +582,30 @@
           "title": "Tagged",
           "type": "boolean"
         },
+        "removed": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Removed"
+        },
+        "deprecated": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Deprecated"
+        },
         "type": {
           "const": "integer",
           "default": "integer",
@@ -524,6 +630,11 @@
         "time_series": {
           "default": false,
           "title": "Time Series",
+          "type": "boolean"
+        },
+        "index": {
+          "default": false,
+          "title": "Index",
           "type": "boolean"
         },
         "pk": {
@@ -554,6 +665,11 @@
           ],
           "default": null,
           "title": "Fk Ref"
+        },
+        "node": {
+          "default": false,
+          "title": "Node",
+          "type": "boolean"
         }
       },
       "required": [
@@ -621,6 +737,30 @@
           "default": true,
           "title": "Tagged",
           "type": "boolean"
+        },
+        "removed": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Removed"
+        },
+        "deprecated": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Deprecated"
         },
         "type": {
           "const": "keyword",
@@ -695,6 +835,30 @@
           "default": false,
           "title": "Tagged",
           "type": "boolean"
+        },
+        "removed": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Removed"
+        },
+        "deprecated": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Deprecated"
         },
         "type": {
           "const": "list",
@@ -1333,6 +1497,30 @@
           "title": "Tagged",
           "type": "boolean"
         },
+        "removed": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Removed"
+        },
+        "deprecated": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Deprecated"
+        },
         "type": {
           "const": "record",
           "default": "record",
@@ -1563,6 +1751,30 @@
           "title": "Tagged",
           "type": "boolean"
         },
+        "removed": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Removed"
+        },
+        "deprecated": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Deprecated"
+        },
         "type": {
           "const": "string",
           "default": "string",
@@ -1689,6 +1901,30 @@
           "default": true,
           "title": "Tagged",
           "type": "boolean"
+        },
+        "removed": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Removed"
+        },
+        "deprecated": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Deprecated"
         },
         "type": {
           "const": "union",

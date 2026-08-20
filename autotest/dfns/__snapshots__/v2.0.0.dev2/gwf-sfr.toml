@@ -218,6 +218,7 @@ type = "integer"
 longname = "reach number for this entry"
 description = "integer value that defines the feature (reach) number associated with the specified PACKAGEDATA data on the line. IFNO must be greater than zero and less than or equal to NREACHES. Reach information must be specified for every reach or the program will terminate with an error.  The program will also terminate with an error if information for a reach is specified more than once."
 tagged = false
+index = true
 pk = true
 
 [blocks.packagedata.fields.packagedata.item.fields.cellid]
@@ -323,6 +324,7 @@ type = "integer"
 longname = "reach number for this entry"
 description = "integer value that defines the feature (reach) number associated with the specified cross-section table file on the line. IFNO must be greater than zero and less than or equal to NREACHES. The program will also terminate with an error if table information for a reach is specified more than once."
 tagged = false
+index = true
 fk = "packagedata.ifno"
 
 [blocks.crosssections.fields.crosssections.item.fields.tab6]
@@ -353,6 +355,7 @@ type = "integer"
 longname = "reach number for this entry"
 description = "integer value that defines the feature (reach) number associated with the specified CONNECTIONDATA data on the line. IFNO must be greater than zero and less than or equal to NREACHES. Reach connection information must be specified for every reach or the program will terminate with an error.  The program will also terminate with an error if connection information for a reach is specified more than once."
 tagged = false
+index = true
 fk = "packagedata.ifno"
 
 [blocks.connectiondata.fields.connectiondata.item.fields.ic]
@@ -362,6 +365,7 @@ description = "integer value that defines the reach number of the reach connecte
 optional = true
 tagged = false
 dtype = "integer"
+index = true
 shape = [
     "packagedata.ncon(ifno)",
 ]
@@ -377,6 +381,7 @@ type = "integer"
 longname = "reach number for this entry"
 description = "integer value that defines the feature (reach) number associated with the specified DIVERSIONS data on the line. IFNO must be greater than zero and less than or equal to NREACHES.  Reach diversion information must be specified for every reach with a NDV value greater than 0 or the program will terminate with an error.  The program will also terminate with an error if diversion information for a given reach diversion is specified more than once."
 tagged = false
+index = true
 fk = "packagedata.ifno"
 
 [blocks.diversions.fields.diversions.item.fields.idv]
@@ -384,12 +389,15 @@ type = "integer"
 longname = "downstream diversion number"
 description = "integer value that defines the downstream diversion number for the diversion for reach IFNO. IDV must be greater than zero and less than or equal to NDV for reach IFNO."
 tagged = false
+index = true
 
 [blocks.diversions.fields.diversions.item.fields.iconr]
 type = "integer"
 longname = "downstream reach number for diversion"
 description = "integer value that defines the downstream reach that will receive the diverted water. IDV must be greater than zero and less than or equal to NREACHES. Furthermore, reach  ICONR must be a downstream connection for reach IFNO."
 tagged = false
+index = true
+fk = "packagedata.ifno"
 
 [blocks.diversions.fields.diversions.item.fields.cprior]
 type = "string"
@@ -408,6 +416,7 @@ type = "integer"
 longname = "reach number for this entry"
 description = "integer value that defines the feature (reach) number associated with the specified initial stage. Initial stage data must be specified for every reach or the program will terminate with an error. The program will also terminate with a error if IFNO is less than one or greater than NREACHES."
 tagged = false
+index = true
 fk = "packagedata.ifno"
 
 [blocks.initialstages.fields.initialstages.item.fields.initialstage]
@@ -427,6 +436,7 @@ type = "integer"
 longname = "reach number for this entry"
 description = "integer value that defines the feature (reach) number associated with the specified PERIOD data on the line. IFNO must be greater than zero and less than or equal to NREACHES."
 tagged = false
+index = true
 fk = "packagedata.ifno"
 
 [blocks.period.fields.perioddata.item.fields.sfrsetting]
@@ -493,6 +503,7 @@ type = "integer"
 longname = "diversion number"
 description = "an integer value specifying which diversion of reach IFNO that DIVFLOW is being specified for.  Must be less or equal to ndv for the current reach (IFNO)."
 tagged = false
+index = true
 
 [blocks.period.fields.perioddata.item.fields.sfrsetting.arms.diversionrecord.fields.divflow]
 type = "double"

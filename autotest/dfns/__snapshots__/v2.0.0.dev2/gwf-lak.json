@@ -241,6 +241,7 @@
                 "longname": "lake number for this entry",
                 "description": "integer value that defines the feature (lake) number associated with the specified PACKAGEDATA data on the line. IFNO must be greater than zero and less than or equal to NLAKES. Lake information must be specified for every lake or the program will terminate with an error.  The program will also terminate with an error if information for a lake is specified more than once.",
                 "tagged": false,
+                "index": true,
                 "pk": true
               },
               "strt": {
@@ -294,13 +295,15 @@
                 "longname": "lake number for this entry",
                 "description": "integer value that defines the feature (lake) number associated with the specified CONNECTIONDATA data on the line. IFNO must be greater than zero and less than or equal to NLAKES. Lake connection information must be specified for every lake connection to the GWF model (NLAKECONN) or the program will terminate with an error.  The program will also terminate with an error if connection information for a lake connection to the GWF model is specified more than once.",
                 "tagged": false,
+                "index": true,
                 "fk": "packagedata.ifno"
               },
               "iconn": {
                 "type": "integer",
                 "longname": "connection number for this entry",
                 "description": "integer value that defines the GWF connection number for this lake connection entry. ICONN must be greater than zero and less than or equal to NLAKECONN for lake IFNO.",
-                "tagged": false
+                "tagged": false,
+                "index": true
               },
               "cellid": {
                 "type": "array",
@@ -368,6 +371,7 @@
                 "longname": "lake number for this entry",
                 "description": "integer value that defines the feature (lake) number associated with the specified TABLES data on the line. IFNO must be greater than zero and less than or equal to NLAKES. The program will terminate with an error if table information for a lake is specified more than once or the number of specified tables is less than NTABLES.",
                 "tagged": false,
+                "index": true,
                 "fk": "packagedata.ifno"
               },
               "tab6": {
@@ -407,6 +411,7 @@
                 "longname": "outlet number for this entry",
                 "description": "integer value that defines the outlet number associated with the specified OUTLETS data on the line. OUTLETNO must be greater than zero and less than or equal to NOUTLETS. Outlet information must be specified for every outlet or the program will terminate with an error. The program will also terminate with an error if information for a outlet is specified more than once.",
                 "tagged": false,
+                "index": true,
                 "pk": true
               },
               "lakein": {
@@ -414,6 +419,7 @@
                 "longname": "lake number for upstream lake",
                 "description": "integer value that defines the lake number that outlet is connected to. LAKEIN must be greater than zero and less than or equal to NLAKES.",
                 "tagged": false,
+                "index": true,
                 "fk": "packagedata.ifno"
               },
               "lakeout": {
@@ -421,6 +427,7 @@
                 "longname": "lake number for downstream lake",
                 "description": "integer value that defines the lake number that outlet discharge from lake outlet OUTLETNO is routed to. LAKEOUT must be greater than or equal to zero and less than or equal to NLAKES. If LAKEOUT is zero, outlet discharge from lake outlet OUTLETNO is discharged to an external boundary.",
                 "tagged": false,
+                "index": true,
                 "fk": "packagedata.ifno"
               },
               "couttype": {
@@ -484,6 +491,7 @@
                         "longname": "lake or outlet number for this entry",
                         "description": "integer value that defines the lake or outlet number associated with the specified PERIOD data on the line.  NUMBER must be greater than zero and less than or equal to NLAKES for a lake number and less than or equal to NOUTLETS for an outlet number.",
                         "tagged": false,
+                        "index": true,
                         "fk": "packagedata.ifno"
                       },
                       "status": {
@@ -501,6 +509,7 @@
                         "longname": "lake or outlet number for this entry",
                         "description": "integer value that defines the lake or outlet number associated with the specified PERIOD data on the line.  NUMBER must be greater than zero and less than or equal to NLAKES for a lake number and less than or equal to NOUTLETS for an outlet number.",
                         "tagged": false,
+                        "index": true,
                         "fk": "packagedata.ifno"
                       },
                       "stage": {
@@ -519,6 +528,7 @@
                         "longname": "lake or outlet number for this entry",
                         "description": "integer value that defines the lake or outlet number associated with the specified PERIOD data on the line.  NUMBER must be greater than zero and less than or equal to NLAKES for a lake number and less than or equal to NOUTLETS for an outlet number.",
                         "tagged": false,
+                        "index": true,
                         "fk": "packagedata.ifno"
                       },
                       "rainfall": {
@@ -537,6 +547,7 @@
                         "longname": "lake or outlet number for this entry",
                         "description": "integer value that defines the lake or outlet number associated with the specified PERIOD data on the line.  NUMBER must be greater than zero and less than or equal to NLAKES for a lake number and less than or equal to NOUTLETS for an outlet number.",
                         "tagged": false,
+                        "index": true,
                         "fk": "packagedata.ifno"
                       },
                       "evaporation": {
@@ -555,6 +566,7 @@
                         "longname": "lake or outlet number for this entry",
                         "description": "integer value that defines the lake or outlet number associated with the specified PERIOD data on the line.  NUMBER must be greater than zero and less than or equal to NLAKES for a lake number and less than or equal to NOUTLETS for an outlet number.",
                         "tagged": false,
+                        "index": true,
                         "fk": "packagedata.ifno"
                       },
                       "runoff": {
@@ -573,6 +585,7 @@
                         "longname": "lake or outlet number for this entry",
                         "description": "integer value that defines the lake or outlet number associated with the specified PERIOD data on the line.  NUMBER must be greater than zero and less than or equal to NLAKES for a lake number and less than or equal to NOUTLETS for an outlet number.",
                         "tagged": false,
+                        "index": true,
                         "fk": "packagedata.ifno"
                       },
                       "inflow": {
@@ -591,6 +604,7 @@
                         "longname": "lake or outlet number for this entry",
                         "description": "integer value that defines the lake or outlet number associated with the specified PERIOD data on the line.  NUMBER must be greater than zero and less than or equal to NLAKES for a lake number and less than or equal to NOUTLETS for an outlet number.",
                         "tagged": false,
+                        "index": true,
                         "fk": "packagedata.ifno"
                       },
                       "withdrawal": {
@@ -609,6 +623,7 @@
                         "longname": "lake or outlet number for this entry",
                         "description": "integer value that defines the lake or outlet number associated with the specified PERIOD data on the line.  NUMBER must be greater than zero and less than or equal to NLAKES for a lake number and less than or equal to NOUTLETS for an outlet number.",
                         "tagged": false,
+                        "index": true,
                         "fk": "outlets.outletno"
                       },
                       "rate": {
@@ -627,6 +642,7 @@
                         "longname": "lake or outlet number for this entry",
                         "description": "integer value that defines the lake or outlet number associated with the specified PERIOD data on the line.  NUMBER must be greater than zero and less than or equal to NLAKES for a lake number and less than or equal to NOUTLETS for an outlet number.",
                         "tagged": false,
+                        "index": true,
                         "fk": "outlets.outletno"
                       },
                       "invert": {
@@ -645,6 +661,7 @@
                         "longname": "lake or outlet number for this entry",
                         "description": "integer value that defines the lake or outlet number associated with the specified PERIOD data on the line.  NUMBER must be greater than zero and less than or equal to NLAKES for a lake number and less than or equal to NOUTLETS for an outlet number.",
                         "tagged": false,
+                        "index": true,
                         "fk": "outlets.outletno"
                       },
                       "width": {
@@ -663,6 +680,7 @@
                         "longname": "lake or outlet number for this entry",
                         "description": "integer value that defines the lake or outlet number associated with the specified PERIOD data on the line.  NUMBER must be greater than zero and less than or equal to NLAKES for a lake number and less than or equal to NOUTLETS for an outlet number.",
                         "tagged": false,
+                        "index": true,
                         "fk": "outlets.outletno"
                       },
                       "slope": {
@@ -681,6 +699,7 @@
                         "longname": "lake or outlet number for this entry",
                         "description": "integer value that defines the lake or outlet number associated with the specified PERIOD data on the line.  NUMBER must be greater than zero and less than or equal to NLAKES for a lake number and less than or equal to NOUTLETS for an outlet number.",
                         "tagged": false,
+                        "index": true,
                         "fk": "outlets.outletno"
                       },
                       "rough": {
@@ -699,6 +718,7 @@
                         "longname": "lake or outlet number for this entry",
                         "description": "integer value that defines the lake or outlet number associated with the specified PERIOD data on the line.  NUMBER must be greater than zero and less than or equal to NLAKES for a lake number and less than or equal to NOUTLETS for an outlet number.",
                         "tagged": false,
+                        "index": true,
                         "fk": "packagedata.ifno"
                       },
                       "auxiliary": {

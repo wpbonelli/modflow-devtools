@@ -164,6 +164,7 @@ blocks:
                 with an error.  The program will also terminate with an error if information for a well
                 is specified more than once.
               tagged: false
+              index: true
               pk: true
             strt:
               type: double
@@ -206,6 +207,7 @@ blocks:
               description: integer value that defines the feature (well) number associated with the specified
                 PERIOD data on the line. IFNO must be greater than zero and less than or equal to NMAWWELLS.
               tagged: false
+              index: true
               fk: packagedata.ifno
             mwtsetting:
               type: union

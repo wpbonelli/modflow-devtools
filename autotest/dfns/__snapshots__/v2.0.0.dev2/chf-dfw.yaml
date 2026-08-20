@@ -90,6 +90,7 @@ blocks:
         type: array
         longname: mannings roughness coefficient
         description: mannings roughness coefficient
+        optional: true
         dtype: double
         shape:
           - nodes
@@ -100,5 +101,7 @@ blocks:
           that applies to the reach.  If not provided then reach will be treated as hydraulically wide.
         optional: true
         dtype: integer
+        index: true
+        fk: chf-cxs.packagedata.idcxs
         shape:
           - nodes

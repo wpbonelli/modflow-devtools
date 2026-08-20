@@ -115,6 +115,7 @@ blocks:
         optional: true
         netcdf: true
         dtype: integer
+        index: true
         shape:
           - ncpl
       surface:

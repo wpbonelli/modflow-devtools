@@ -25,8 +25,7 @@ from typing import Literal
 from boltons.dictutils import OMD
 
 from modflow_devtools.dfns import schema as v2
-from modflow_devtools.dfns.migrate_to_v2_0_0_dev2 import to_v2_0_0_dev2
-from modflow_devtools.misc import try_parse_bool
+from modflow_devtools.dfns.migrate_to_v2_0_0_dev2 import to_v2_0_0_dev2, try_parse_bool
 
 # ---------------------------------------------------------------------------
 # dtype translation

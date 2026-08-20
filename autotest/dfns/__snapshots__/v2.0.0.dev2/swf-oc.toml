@@ -88,16 +88,19 @@ type = "record"
 type = "integer"
 longname = "number of columns"
 description = "number of columns for writing data."
+optional = true
 
 [blocks.options.fields.qoutflowprintrecord.fields.formatrecord.fields.width]
 type = "integer"
 longname = "width for each number"
 description = "width for writing each number."
+optional = true
 
 [blocks.options.fields.qoutflowprintrecord.fields.formatrecord.fields.digits]
 type = "integer"
 longname = "number of digits"
 description = "number of digits to use for writing a number."
+optional = true
 
 [blocks.options.fields.qoutflowprintrecord.fields.formatrecord.fields.format]
 type = "string"

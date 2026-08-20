@@ -577,16 +577,3 @@ def try_literal_eval(value: str) -> Any:
         return literal_eval(value)
     except (SyntaxError, ValueError):
         return value
-
-
-def try_parse_bool(v: Any, default: bool = False) -> bool:
-    """Try to parse a boolean from a string."""
-    if isinstance(v, bool):
-        return v
-    if isinstance(v, str):
-        s = v.strip().lower()
-        if s == "true":
-            return True
-        if s in ("false", ""):
-            return False
-    return default

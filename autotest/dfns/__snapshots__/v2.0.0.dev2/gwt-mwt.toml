@@ -147,6 +147,7 @@ type = "integer"
 longname = "well number for this entry"
 description = "integer value that defines the feature (well) number associated with the specified PACKAGEDATA data on the line. IFNO must be greater than zero and less than or equal to NMAWWELLS. Well information must be specified for every well or the program will terminate with an error.  The program will also terminate with an error if information for a well is specified more than once."
 tagged = false
+index = true
 pk = true
 
 [blocks.packagedata.fields.packagedata.item.fields.strt]
@@ -185,6 +186,7 @@ type = "integer"
 longname = "well number for this entry"
 description = "integer value that defines the feature (well) number associated with the specified PERIOD data on the line. IFNO must be greater than zero and less than or equal to NMAWWELLS."
 tagged = false
+index = true
 fk = "packagedata.ifno"
 
 [blocks.period.fields.mwtperioddata.item.fields.mwtsetting]

@@ -163,6 +163,7 @@ blocks:
                 program will also terminate with an error if information for a reach is specified more
                 than once.
               tagged: false
+              index: true
               pk: true
             strt:
               type: double
@@ -217,6 +218,7 @@ blocks:
               description: integer value that defines the reach number associated with the specified PERIOD
                 data on the line. RNO must be greater than zero and less than or equal to NREACHES.
               tagged: false
+              index: true
               fk: packagedata.rno
             reachsetting:
               type: union

@@ -59,12 +59,14 @@ direction = "in"
 type = "string"
 longname = "name of tdis input file"
 description = "is the name of the Temporal Discretization (TDIS) Input File."
+optional = true
 case_sensitive = true
 
 [blocks.models.fields.models]
 type = "list"
 longname = "list of models"
 description = "is the list of model types, model name files, and model names."
+optional = true
 
 [blocks.models.fields.models.item]
 type = "record"
@@ -93,6 +95,7 @@ tagged = false
 type = "list"
 longname = "list of exchanges"
 description = "is the list of exchange types, exchange files, and model names."
+optional = true
 
 [blocks.exchanges.fields.exchanges.item]
 type = "record"

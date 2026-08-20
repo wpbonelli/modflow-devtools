@@ -7,11 +7,34 @@ from boltons.dictutils import OMD
 
 from modflow_devtools.dfn import schema as v1
 from modflow_devtools.dfns import schema as v2
-from modflow_devtools.misc import try_literal_eval, try_parse_bool
+from modflow_devtools.misc import try_literal_eval
 
 _IDENT_RE = re.compile(r"^[A-Za-z_]\w*$")
 _LOOKUP_RE = re.compile(r"^(\w+)\.(\w+)\((\w+)\)$")
 _COL_FK_RE = re.compile(r"^([A-Za-z_]\w*)\(([A-Za-z_]\w*)\)$")
+
+
+def try_parse_bool(v: Any, default: bool = False) -> bool:
+    """
+    Try to parse a boolean from a string.
+
+    An empty string is treated as ``True`` rather than ``False``: DFN files
+    allow a bare attribute line with no value (e.g. ``optional`` on its own
+    line, as opposed to ``optional true``/``optional false``) to mean the
+    attribute is set. ``load_dfn`` parses such a line to an empty string, as
+    distinct from ``None``, which indicates the attribute wasn't present at
+    all (and falls through to ``default``).
+    """
+    if isinstance(v, bool):
+        return v
+    if isinstance(v, str):
+        s = v.strip().lower()
+        if s in ("true", ""):
+            return True
+        if s == "false":
+            return False
+    return default
+
 
 _DEPENDENT_VARS: dict[str, str] = {
     "gwf": "head",
@@ -375,31 +398,53 @@ def _resolve_relations(blocks: dict[str, v2.Block]) -> dict[str, v2.Block]:
     }
 
 
-_LONELY_PK_BLOCKS = ("packagedata", "perioddata")
+_LONELY_PK_FIELDS = (
+    "packagedata",
+    "perioddata",
+    # DISU/DISV/DISV1D/DISV2D geometry lists: row identifiers by construction
+    # (MF6 requires consecutive numbering from 1), never referenced by name
+    # elsewhere in their own component (the things that reference cell/vertex
+    # numbers, e.g. `icvert`, are Arrays, which can't carry `pk`/`fk` at all —
+    # see index-node-attributes-plan.md Phase 3, item (b)). Distinct field
+    # names because MF6 names the block/list field after the geometry it
+    # holds, same idiom as period/perioddata above.
+    "vertices",
+    "cell2d",
+    "cell1d",
+)
 
 
 def _mark_lonely_pk(blocks: dict[str, v2.Block]) -> dict[str, v2.Block]:
     """
-    Mark the leading identifier column of a self-titled ``packagedata`` or
-    ``perioddata`` recarray as ``pk`` even when nothing else in the component
-    names the same field, so ``_resolve_relations``'s cross-block signal
-    never fires (e.g. BUY's ``irhospec``, CSUB's ``icsubno``, ATS's
-    ``iperats``). These are still genuine row identifiers by construction
-    (MODFLOW rejects a repeated one) — they're just never referenced by name
-    anywhere else in their own component, unlike SFR/MAW/LAK/UZF's `ifno`
-    columns, which repeat across multiple blocks.
+    Mark the leading identifier column of a ``packagedata``/``perioddata``/
+    geometry (``vertices``/``cell2d``/``cell1d``) recarray as ``pk`` even when
+    nothing else in the component names the same field, so
+    ``_resolve_relations``'s cross-block signal never fires (e.g. BUY's
+    ``irhospec``, CSUB's ``icsubno``, ATS's ``iperats``, SPC's ``bndno``,
+    DISV's ``icell2d``). These are still genuine row identifiers by
+    construction (MODFLOW rejects a repeated one, or requires consecutive
+    numbering) — they're just never referenced by name anywhere else in their
+    own component, unlike SFR/MAW/LAK/UZF's `ifno` columns, which repeat
+    across multiple blocks.
 
-    Conservative by design: only fires on a block literally named
-    ``packagedata``/``perioddata`` whose same-named list field's item record
+    Matches on the *list field's* name, not the enclosing block's. MF6's own
+    convention names the period block ``period`` but its list field
+    ``perioddata`` — the two are never the same string, so matching on the
+    block name (as this used to) silently never fired for the ``perioddata``
+    case at all, for any component.
+
+    Conservative by design: only fires when the list field's item record
     leads with a required Integer column carrying no ``fk`` and no existing
-    ``pk`` anywhere in the record. This deliberately excludes lookalikes like
-    DISU/DISV's ``vertices``/``cell2d`` (row identifiers, but a distinct
-    grid-geometry concern) and the FK side of relations like
-    ``gwf-mvr.period.perioddata`` (block name doesn't match the list name).
+    ``pk`` anywhere in the record. This deliberately excludes the FK side of
+    relations like ``gwf-mvr.period.perioddata`` (leads with ``mname1``, a
+    String — not an Integer identifier at all).
     """
     updated: dict[str, v2.Block] = {}
     for block_name, block in blocks.items():
-        field = block.fields.get(block_name) if block_name in _LONELY_PK_BLOCKS else None
+        field_name = next((n for n in _LONELY_PK_FIELDS if n in block.fields), None)
+        if field_name is None:
+            continue
+        field = block.fields[field_name]
         if not isinstance(field, v2.List) or not isinstance(field.item, v2.Record):
             continue
         record = field.item
@@ -418,9 +463,163 @@ def _mark_lonely_pk(blocks: dict[str, v2.Block]) -> dict[str, v2.Block]:
         )
         new_field = field.model_copy(update={"item": new_record})
         updated[block_name] = block.model_copy(
-            update={"fields": {**block.fields, block_name: new_field}}
+            update={"fields": {**block.fields, field_name: new_field}}
         )
     return {**blocks, **updated}
+
+
+# Corpus candidates for the `node` attribute (see index-node-attributes-plan.md
+# Phase 2): Integer columns in a list item record that reference a grid cell,
+# resolved from the parent model's grid (DIS/DISV/DISU) at runtime, rather than
+# a pk/fk relation to another list's row. Unlike `index`, v1 has no attribute
+# that signals this (numeric_index only says "needs 1-based/0-based
+# conversion" — true here too, and already migrated separately — not "is a
+# grid-cell reference"), so these are backfilled by an explicit, audited
+# per-field allowlist rather than derived mechanically. In every entry here the
+# list field's own name matches its enclosing block's name.
+_NODE_REF_FIELDS: dict[str, tuple[str, tuple[str, ...]]] = {
+    "exg-chfgwf": ("exchangedata", ("cellidm1", "cellidm2")),
+    "exg-gwegwe": ("exchangedata", ("cellidm1", "cellidm2")),
+    "exg-gwfgwf": ("exchangedata", ("cellidm1", "cellidm2")),
+    "exg-gwtgwt": ("exchangedata", ("cellidm1", "cellidm2")),
+    "exg-olfgwf": ("exchangedata", ("cellidm1", "cellidm2")),
+    "gwf-gnc": ("gncdata", ("cellidm", "cellidn")),
+}
+
+
+def _mark_node_refs(name: str, blocks: dict[str, v2.Block]) -> dict[str, v2.Block]:
+    """Mark this component's known grid-cell-reference columns `node=True`.
+
+    See `_NODE_REF_FIELDS` for why this is an explicit allowlist rather than a
+    derived/mechanical pass.
+    """
+    entry = _NODE_REF_FIELDS.get(name)
+    if entry is None:
+        return blocks
+    block_name, field_names = entry
+    block = blocks.get(block_name)
+    if block is None:
+        return blocks
+    list_field = block.fields.get(block_name)
+    if not isinstance(list_field, v2.List) or not isinstance(list_field.item, v2.Record):
+        return blocks
+    item = list_field.item
+    updates = {
+        fname: f.model_copy(update={"node": True})
+        for fname in field_names
+        if isinstance(f := item.fields.get(fname), v2.Integer) and not f.node
+    }
+    if not updates:
+        return blocks
+    new_item = item.model_copy(update={"fields": {**item.fields, **updates}})
+    new_list = list_field.model_copy(update={"item": new_item})
+    new_block = block.model_copy(update={"fields": {**block.fields, block_name: new_list}})
+    return {**blocks, block_name: new_block}
+
+
+# Corpus candidates for pk/fk backfill (index-node-attributes-plan.md Phase 3):
+# real relational facts the general `_resolve_relations`/`_mark_lonely_pk`
+# passes can't infer, backfilled by an explicit, audited allowlist rather than
+# derived. Each entry: component -> (block name, list field name, {column:
+# fk target}). Unlike `_NODE_REF_FIELDS`, block name and list field name
+# aren't assumed equal (MF6's period/perioddata idiom applies to two of these).
+#
+# - UZF's `ivertcon` is a self-referential fk (a UZF cell may point to another
+#   UZF cell below it) -- a same-block relation `_resolve_relations`
+#   explicitly never looks for, and the field isn't named `ifno` so its
+#   name-match signal wouldn't catch it either way.
+# - SFR's `iconr` is the downstream reach receiving diverted water -- a real
+#   reference into `packagedata`'s reach numbers, not the record's leading
+#   field (so `_mark_lonely_pk` doesn't apply) and not named `ifno` (so
+#   `_resolve_relations`'s name-match doesn't fire). `diversions.idv` is a
+#   genuinely different case -- a diversion number scoped *within* reach
+#   IFNO, not globally unique -- so it correctly gets no pk/fk, only the
+#   `index` Phase 1 already set mechanically.
+# - `chf/olf/swf-zdg` and `chf-cdb`'s `idcxs` reference the cross-section
+#   defined by the sibling `*-cxs` component's `packagedata.idcxs` (already
+#   `pk`'d there since a838d84) -- a cross-component fk `_resolve_relations`
+#   structurally can't reach (single-component scope). `chf/olf/swf-dfw`'s
+#   `idcxs` is the same relation but is an `Array` (a per-cell grid field, not
+#   a list column) -- see `_ARRAY_FK_BACKFILL` below, not here.
+#
+# MAW's `connectiondata.icon` (also flagged as a lonely-pk lookalike in
+# earlier scans) is, on inspection, the same compound-scoped shape as SFR's
+# `idv`: a per-well connection sequence number, not globally unique and never
+# referenced by fk elsewhere -- already fully handled by `index` alone,
+# deliberately excluded from this allowlist, not an oversight.
+_FK_BACKFILL: dict[str, tuple[str, str, dict[str, str]]] = {
+    "gwf-uzf": ("packagedata", "packagedata", {"ivertcon": "packagedata.ifno"}),
+    "gwf-sfr": ("diversions", "diversions", {"iconr": "packagedata.ifno"}),
+    "chf-cdb": ("period", "stress_period_data", {"idcxs": "chf-cxs.packagedata.idcxs"}),
+    "chf-zdg": ("period", "stress_period_data", {"idcxs": "chf-cxs.packagedata.idcxs"}),
+    "olf-zdg": ("period", "stress_period_data", {"idcxs": "olf-cxs.packagedata.idcxs"}),
+    "swf-zdg": ("period", "stress_period_data", {"idcxs": "swf-cxs.packagedata.idcxs"}),
+}
+
+
+def _apply_fk_backfill(name: str, blocks: dict[str, v2.Block]) -> dict[str, v2.Block]:
+    """Set `fk` on this component's known-good backfill targets.
+
+    See `_FK_BACKFILL` for why this is an explicit allowlist rather than a
+    derived/mechanical pass.
+    """
+    entry = _FK_BACKFILL.get(name)
+    if entry is None:
+        return blocks
+    block_name, list_field_name, field_targets = entry
+    block = blocks.get(block_name)
+    if block is None:
+        return blocks
+    list_field = block.fields.get(list_field_name)
+    if not isinstance(list_field, v2.List) or not isinstance(list_field.item, v2.Record):
+        return blocks
+    item = list_field.item
+    updates = {
+        fname: f.model_copy(update={"fk": target})
+        for fname, target in field_targets.items()
+        if isinstance(f := item.fields.get(fname), v2.Integer) and f.fk is None
+    }
+    if not updates:
+        return blocks
+    new_item = item.model_copy(update={"fields": {**item.fields, **updates}})
+    new_list = list_field.model_copy(update={"item": new_item})
+    new_block = block.model_copy(update={"fields": {**block.fields, list_field_name: new_list}})
+    return {**blocks, block_name: new_block}
+
+
+# `chf/olf/swf-dfw`'s `idcxs` is a per-cell grid array (`griddata` block,
+# dtype="integer", shape=["nodes"]), not a list column, so it can't go through
+# `_apply_fk_backfill` above (which targets a List item's Record). It's the
+# same cross-section relation as `_FK_BACKFILL`'s `*-zdg`/`chf-cdb` entries,
+# now expressible directly since `Array.fk` exists (index-node-attributes-plan.md
+# Phase 3 addendum). Each entry: component -> (block name, field name, fk target).
+_ARRAY_FK_BACKFILL: dict[str, tuple[str, str, str]] = {
+    "chf-dfw": ("griddata", "idcxs", "chf-cxs.packagedata.idcxs"),
+    "olf-dfw": ("griddata", "idcxs", "olf-cxs.packagedata.idcxs"),
+    "swf-dfw": ("griddata", "idcxs", "swf-cxs.packagedata.idcxs"),
+}
+
+
+def _apply_array_fk_backfill(name: str, blocks: dict[str, v2.Block]) -> dict[str, v2.Block]:
+    """Set `fk` on this component's known-good Array backfill target.
+
+    See `_ARRAY_FK_BACKFILL` for why this is a separate, explicit allowlist
+    rather than folded into `_apply_fk_backfill`.
+    """
+    entry = _ARRAY_FK_BACKFILL.get(name)
+    if entry is None:
+        return blocks
+    block_name, field_name, target = entry
+    block = blocks.get(block_name)
+    if block is None:
+        return blocks
+    field = block.fields.get(field_name)
+    if not isinstance(field, v2.Array) or field.fk is not None:
+        return blocks
+    new_block = block.model_copy(
+        update={"fields": {**block.fields, field_name: field.model_copy(update={"fk": target})}}
+    )
+    return {**blocks, block_name: new_block}
 
 
 def _fill_period_list_shapes(
@@ -877,9 +1076,10 @@ def _fix_mvr_relations(name: str, blocks: dict[str, v2.Block]) -> dict[str, v2.B
       participating in the mover, but nothing else in the component repeats
       the field name `pname` (the period block's `pname1`/`pname2` are
       renamed), so neither `_resolve_relations` nor `_mark_lonely_pk` finds
-      it — the former needs a name match, and the latter's `packages` block
-      isn't in `_LONELY_PK_BLOCKS`, plus `pname` isn't `packages`' leading
-      column (`mname` is, and it's optional, so it can't be the pk anyway).
+      it — the former needs a name match, and the latter only fires on a
+      `packagedata`/`perioddata` list field, which `packages` isn't, plus
+      `pname` isn't `packages`' leading column (`mname` is, and it's
+      optional, so it can't be the pk anyway).
     - Marks `period.perioddata`'s `pname1`/`pname2` as
       `fk: "packages.pname"`, since each identifies the provider/receiver
       package by name.
@@ -1039,6 +1239,10 @@ def to_v2_0_0_dev2(name: str, fields: OMD, meta: list[str]) -> v2.Component:
         preserve_case: bool = try_parse_bool(f.get("preserve_case"), False)
         time_series: bool = try_parse_bool(f.get("time_series"), False)
         layered: bool = try_parse_bool(f.get("layered"), False)
+        # Pure serialization fact (1-based/0-based conversion), orthogonal to pk/fk
+        # relational identity. Direct copy from v1: valid on Integer/Array(dtype=
+        # "integer") only, never on String (see index-node-attributes-plan.md).
+        numeric_index: bool = try_parse_bool(f.get("numeric_index"), False)
         removed: str | None = f.get("removed") or None
         deprecated: str | None = f.get("deprecated") or None
         valid = f.get("valid")
@@ -1130,6 +1334,7 @@ def to_v2_0_0_dev2(name: str, fields: OMD, meta: list[str]) -> v2.Component:
                     tagged=tagged,
                     valid=_parse_valid(valid, int),
                     time_series=time_series,
+                    index=numeric_index,
                 )
             if _type in ("double", "double precision"):
                 return v2.Double(
@@ -1399,6 +1604,7 @@ def to_v2_0_0_dev2(name: str, fields: OMD, meta: list[str]) -> v2.Component:
                         layered=layered,
                         dtype=dtype,
                         shape=parsed_shape,
+                        index=numeric_index if dtype == "integer" else False,
                     )
 
         return _to_scalar()
@@ -1420,7 +1626,6 @@ def to_v2_0_0_dev2(name: str, fields: OMD, meta: list[str]) -> v2.Component:
 
     blocks, array_dims = _resolve_dimensions(blocks)
     blocks = _resolve_relations(blocks)
-    blocks = _mark_lonely_pk(blocks)
     raw_dim_names = _raw_dim_names(blocks)
     blocks = _normalize_n_prefix_shapes(blocks, raw_dim_names)
     explicit_dims = _build_explicit_dims(parent, blocks)
@@ -1434,6 +1639,16 @@ def to_v2_0_0_dev2(name: str, fields: OMD, meta: list[str]) -> v2.Component:
     blocks = _patch_oc_rtype(name, blocks)
     blocks = _fix_lak_relations(name, blocks)
     blocks = _fix_mvr_relations(name, blocks)
+    # Must run after `_fix_lak_relations`: LAK's period `number` field looks
+    # exactly like a lonely pk (leading required Integer, no fk) before it's
+    # split into per-arm `lakeno`/`outletno` fk's — marking it pk here first
+    # would carry a stale `pk=True` into those fk copies (`model_copy` off
+    # the original field). No other pass between the old and new call sites
+    # reads or depends on `pk`/`fk` state.
+    blocks = _mark_lonely_pk(blocks)
+    blocks = _mark_node_refs(name, blocks)
+    blocks = _apply_fk_backfill(name, blocks)
+    blocks = _apply_array_fk_backfill(name, blocks)
     dims = {**explicit_dims, **array_dims, **derived_dims} or None
 
     d: dict[str, Any] = {

@@ -238,6 +238,7 @@ blocks:
                 with an error.  The program will also terminate with an error if information for a lake
                 is specified more than once.
               tagged: false
+              index: true
               pk: true
             strt:
               type: double
@@ -293,6 +294,7 @@ blocks:
                 also terminate with an error if connection information for a lake connection to the GWF
                 model is specified more than once.
               tagged: false
+              index: true
               fk: packagedata.ifno
             iconn:
               type: integer
@@ -300,6 +302,7 @@ blocks:
               description: integer value that defines the GWF connection number for this lake connection
                 entry. ICONN must be greater than zero and less than or equal to NLAKECONN for lake IFNO.
               tagged: false
+              index: true
             cellid:
               type: array
               longname: cell identifier
@@ -391,6 +394,7 @@ blocks:
                 The program will terminate with an error if table information for a lake is specified
                 more than once or the number of specified tables is less than NTABLES.
               tagged: false
+              index: true
               fk: packagedata.ifno
             tab6:
               type: keyword
@@ -429,6 +433,7 @@ blocks:
                 with an error. The program will also terminate with an error if information for a outlet
                 is specified more than once.
               tagged: false
+              index: true
               pk: true
             lakein:
               type: integer
@@ -436,6 +441,7 @@ blocks:
               description: integer value that defines the lake number that outlet is connected to. LAKEIN
                 must be greater than zero and less than or equal to NLAKES.
               tagged: false
+              index: true
               fk: packagedata.ifno
             lakeout:
               type: integer
@@ -445,6 +451,7 @@ blocks:
                 or equal to NLAKES. If LAKEOUT is zero, outlet discharge from lake outlet OUTLETNO is
                 discharged to an external boundary.
               tagged: false
+              index: true
               fk: packagedata.ifno
             couttype:
               type: string
@@ -519,6 +526,7 @@ blocks:
                         than or equal to NLAKES for a lake number and less than or equal to NOUTLETS for
                         an outlet number.
                       tagged: false
+                      index: true
                       fk: packagedata.ifno
                     status:
                       type: string
@@ -536,6 +544,7 @@ blocks:
                         than or equal to NLAKES for a lake number and less than or equal to NOUTLETS for
                         an outlet number.
                       tagged: false
+                      index: true
                       fk: packagedata.ifno
                     stage:
                       type: string
@@ -557,6 +566,7 @@ blocks:
                         than or equal to NLAKES for a lake number and less than or equal to NOUTLETS for
                         an outlet number.
                       tagged: false
+                      index: true
                       fk: packagedata.ifno
                     rainfall:
                       type: string
@@ -578,6 +588,7 @@ blocks:
                         than or equal to NLAKES for a lake number and less than or equal to NOUTLETS for
                         an outlet number.
                       tagged: false
+                      index: true
                       fk: packagedata.ifno
                     evaporation:
                       type: string
@@ -599,6 +610,7 @@ blocks:
                         than or equal to NLAKES for a lake number and less than or equal to NOUTLETS for
                         an outlet number.
                       tagged: false
+                      index: true
                       fk: packagedata.ifno
                     runoff:
                       type: string
@@ -620,6 +632,7 @@ blocks:
                         than or equal to NLAKES for a lake number and less than or equal to NOUTLETS for
                         an outlet number.
                       tagged: false
+                      index: true
                       fk: packagedata.ifno
                     inflow:
                       type: string
@@ -641,6 +654,7 @@ blocks:
                         than or equal to NLAKES for a lake number and less than or equal to NOUTLETS for
                         an outlet number.
                       tagged: false
+                      index: true
                       fk: packagedata.ifno
                     withdrawal:
                       type: string
@@ -662,6 +676,7 @@ blocks:
                         than or equal to NLAKES for a lake number and less than or equal to NOUTLETS for
                         an outlet number.
                       tagged: false
+                      index: true
                       fk: outlets.outletno
                     rate:
                       type: string
@@ -686,6 +701,7 @@ blocks:
                         than or equal to NLAKES for a lake number and less than or equal to NOUTLETS for
                         an outlet number.
                       tagged: false
+                      index: true
                       fk: outlets.outletno
                     invert:
                       type: string
@@ -707,6 +723,7 @@ blocks:
                         than or equal to NLAKES for a lake number and less than or equal to NOUTLETS for
                         an outlet number.
                       tagged: false
+                      index: true
                       fk: outlets.outletno
                     width:
                       type: string
@@ -728,6 +745,7 @@ blocks:
                         than or equal to NLAKES for a lake number and less than or equal to NOUTLETS for
                         an outlet number.
                       tagged: false
+                      index: true
                       fk: outlets.outletno
                     slope:
                       type: string
@@ -749,6 +767,7 @@ blocks:
                         than or equal to NLAKES for a lake number and less than or equal to NOUTLETS for
                         an outlet number.
                       tagged: false
+                      index: true
                       fk: outlets.outletno
                     rough:
                       type: string
@@ -770,6 +789,7 @@ blocks:
                         than or equal to NLAKES for a lake number and less than or equal to NOUTLETS for
                         an outlet number.
                       tagged: false
+                      index: true
                       fk: packagedata.ifno
                     auxiliary:
                       type: keyword

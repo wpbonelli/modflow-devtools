@@ -86,6 +86,7 @@
           "type": "array",
           "longname": "mannings roughness coefficient",
           "description": "mannings roughness coefficient",
+          "optional": true,
           "dtype": "double",
           "shape": [
             "nodes"
@@ -97,6 +98,8 @@
           "description": "integer value indication the cross section identifier in the Cross Section Package that applies to the reach.  If not provided then reach will be treated as hydraulically wide.",
           "optional": true,
           "dtype": "integer",
+          "index": true,
+          "fk": "olf-cxs.packagedata.idcxs",
           "shape": [
             "nodes"
           ]

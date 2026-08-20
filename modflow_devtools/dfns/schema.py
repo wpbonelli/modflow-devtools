@@ -93,9 +93,11 @@ class Integer(FieldBase):
     type: Literal["integer"] = PydanticField(default="integer", frozen=True)
     valid: list[int] | None = None
     time_series: bool = False
+    index: bool = False
     pk: bool = False
     fk: str | None = None
     fk_ref: str | None = None
+    node: bool = False
 
 
 class Double(FieldBase):
@@ -105,8 +107,6 @@ class Double(FieldBase):
 
 class File(FieldBase):
     type: Literal["file"] = PydanticField(default="file", frozen=True)
-    # Whether MF6 reads ("in") or writes ("out") the file. Independent of any
-    # particular serialization's keyword vocabulary (v1 text uses FILEIN/FILEOUT).
     direction: Literal["in", "out"]
 
 
@@ -122,7 +122,20 @@ class Array(FieldBase):
     shape: list[str] = []
     time_series: bool = False
     layered: bool = False
-    repeat: str | None = None
+    index: bool = False
+    fk: str | None = None
+
+    @model_validator(mode="after")
+    def _check_index_dtype(self) -> "Array":
+        if self.index and self.dtype != "integer":
+            raise ValueError(
+                f"Array {self.name!r}: index=True requires dtype='integer', got {self.dtype!r}"
+            )
+        if self.fk is not None and self.dtype != "integer":
+            raise ValueError(
+                f"Array {self.name!r}: fk requires dtype='integer', got {self.dtype!r}"
+            )
+        return self
 
 
 class Record(FieldBase):
@@ -169,7 +182,6 @@ class List(FieldBase):
 
     @property
     def children(self) -> "dict[str, Field]":
-        # item.name duplicates the List's own name, so it's not a useful key here.
         return self.item.children
 
 
@@ -187,7 +199,6 @@ List.model_rebuild()
 def _collect_fields(
     fields: "dict[str, Field]", items: "list[tuple[str, Field]]", *, recurse: bool
 ) -> None:
-    """Append `fields` to `items`, descending into Record/Union/List children if `recurse`."""
     for name, field in fields.items():
         items.append((name, field))
         if recurse and isinstance(field, (Record, Union, List)):
@@ -206,23 +217,14 @@ def _render_file(field: "File") -> str:
 
 
 def _tag(field: "Field", inner: str) -> str:
-    """Prefix `inner` with the field's uppercased name if it's tagged."""
     return f"{field.name.upper()} {inner}" if field.tagged else inner
 
 
 def _ts_token(token: str, *, time_series: bool) -> str:
-    """Wrap a bare `<token>` in `@...@` time-series markers if flagged."""
     return f"<@{token}@>" if time_series else f"<{token}>"
 
 
 def _render_rows(item: "Record | Union") -> list[str]:
-    """Return one or more rendered row strings for a List item.
-
-    A Union whose arms are all Records produces one row per arm (each wrapped
-    in [...] since arms are mutually exclusive alternatives).  A Union whose
-    arms are scalars/keywords collapses to a single <name> placeholder — listing
-    every option inline would be noise.
-    """
     if isinstance(item, Record):
         return [" ".join(_render_field(f, inline=True) for f in item.fields.values())]
     if all(isinstance(arm, Record) for arm in item.arms.values()):
@@ -235,14 +237,6 @@ def _render_rows(item: "Record | Union") -> list[str]:
 
 
 def _render_field(field: "Field", *, inline: bool = False) -> str:
-    """Render a field's own text, relative to its own first line (no block indent).
-
-    Backs ``FieldBase.render()`` — see that docstring for the ``inline``
-    semantics. Kept as a free function (rather than inlined per-subclass)
-    so ``Record``/``Union``/``List`` can recurse over arbitrary child field
-    types via a single ``match``.
-    """
-
     def _wrap(token: str) -> str:
         return f"[{token}]" if field.optional else token
 
@@ -291,30 +285,21 @@ def _render_field(field: "Field", *, inline: bool = False) -> str:
             return f"{rows[0]}\n{rows[0]}\n..."
 
 
-def _field_is_current(field: "Field", *, developmode: bool) -> bool:
-    """Whether a field belongs in render() output.
-
-    Removed/deprecated fields are never current syntax, so they're always
-    excluded (MF6 no longer parses a removed field at all, and a deprecated one
-    is discouraged even where still accepted) — there's no flag to see them in
-    render() output, matching mf6io.pdf. Fields flagged `Field.developmode`
-    (which subsumes v1's `dev_`-name convention; see `_map_field` in the
-    migration) are internal/undocumented and excluded by default, but callers
-    doing internal tooling can opt in via the `developmode` parameter.
-    """
+def _should_render(field: "Field", *, developmode: bool) -> bool:
+    # always omit removed/deprecated fields
     if field.removed is not None or field.deprecated is not None:
         return False
+    # optionally omit developmode fields
     return developmode or not field.developmode
 
 
 def _render_block(block: "Block", indent: str = "  ", *, developmode: bool = False) -> str:
-    """Render a Block as a BEGIN/END template string."""
     begin = f"BEGIN {block.name.upper()}"
     if block.header is not None:
         begin = f"{begin} {block.header.render(inline=True)}"
     lines = [begin]
     for field in block.fields.values():
-        if not _field_is_current(field, developmode=developmode):
+        if not _should_render(field, developmode=developmode):
             continue
         lines.extend(f"{indent}{line}" for line in field.render().split("\n"))
     lines.append(f"END {block.name.upper()}")
@@ -322,12 +307,6 @@ def _render_block(block: "Block", indent: str = "  ", *, developmode: bool = Fal
 
 
 def _names_in_expr(expr: str) -> set[str]:
-    """Return dim-reference Name identifiers from expr.
-
-    Excluded from the result:
-    - Names in function-call position (never a dim ref, e.g. ``abs``, ``math``)
-    - Arguments of ``sum()`` and ``len()`` calls (domain-specific, handled separately)
-    """
     try:
         tree = ast.parse(expr, mode="eval")
     except SyntaxError as e:
@@ -353,7 +332,6 @@ def _names_in_expr(expr: str) -> set[str]:
 
 
 def _validate_sum_call(call: ast.Call, component: "ComponentBase", expr: str) -> None:
-    """Validate a sum(list.col) or sum(block.list.col) call in a derived_dims expression."""
     if len(call.args) != 1:
         raise ValueError(f"sum() in derived_dims must have exactly one argument in {expr!r}")
     arg = call.args[0]
@@ -401,7 +379,6 @@ def _validate_sum_call(call: ast.Call, component: "ComponentBase", expr: str) ->
 
 
 def _validate_len_call(call: ast.Call, component: "ComponentBase", expr: str) -> None:
-    """Validate a len(field_name) call in a dims value expression."""
     if len(call.args) != 1:
         raise ValueError(f"len() in dims must have exactly one argument in {expr!r}")
     if not isinstance(call.args[0], ast.Name):
@@ -414,18 +391,18 @@ _Hook = Literal["ar", "mc", "rp", "ad", "fc", "ca", "cq"]
 class Dim(BaseModel):
     """A named dimension backed by a field reference or derived from an expression.
 
-    ``value`` is a Python expression string:
-      - bare identifier ``nlay``         → integer field reference
-      - ``len(auxiliary)``               → self-sizing array field reference
-      - anything else, e.g. ``nlay * ncol`` → derived arithmetic expression
+    ``value`` specifies the dimension size, directly or indirectly, and can be:
+      - ``nlay``: an integer field
+      - ``len(auxiliary)``: the runtime length of a self-sizing array field
+      - ``nlay * ncol``: the result of an arithmetic expression, e.g. of other dims
 
     If ``value`` is None, the dimension is runtime-only: its value cannot be
     derived from DFN input fields. ``set_in`` then indicates the simulation hook
-    in which the value is first established by MODFLOW (e.g. ``"ar"`` for dims
+    in which the value is first set by MODFLOW (e.g. ``"ar"`` for dims that are
     set during grid allocation, ``"rp"`` for dims reset each stress period).
 
-    Runtime dims are valid in memory variable shapes but not in input field shapes,
-    since a sequential parser must know an array's size before reading it.
+    Runtime dims may appear in memory variable shape expressions but not in input
+    field shapes expressions.
     """
 
     value: str | None = None
@@ -439,26 +416,17 @@ def _parents_as_set(parent: "str | list[str] | None") -> set[str]:
     return {parent} if isinstance(parent, str) else set(parent)
 
 
-def _can_share_model(
-    req_parent: "str | list[str] | None",
-    dim_parent: "str | list[str] | None",
+def _receives_from(
+    requester_parent: "str | list[str] | None",
+    provider_parent: "str | list[str] | None",
 ) -> bool:
-    """
-    Return True if the requesting component (req_parent) can be in the same
-    model as the dim-defining component (dim_parent).
-
-    The dim-provider's parent identifies which model it belongs to (a concrete
-    ``<type>-nam`` name, e.g. ``"gwf-nam"``).  The requesting component's parent
-    determines whether it can be in that model: an explicit match, or a generic
-    type like ``"model"`` or ``"package"`` meaning any model.
-    """
-    dim_parents = _parents_as_set(dim_parent)
-    model_contexts = {p for p in dim_parents if p.endswith("-nam") and p != "sim-nam"}
+    provider_parents = _parents_as_set(provider_parent)
+    model_contexts = {p for p in provider_parents if p.endswith("-nam") and p != "sim-nam"}
     if not model_contexts:
         return False
 
-    req_parents = _parents_as_set(req_parent)
-    for rp in req_parents:
+    requester_parents = _parents_as_set(requester_parent)
+    for rp in requester_parents:
         if rp in ("model", "package", "*"):
             return True
         if rp in model_contexts:
@@ -469,10 +437,7 @@ def _can_share_model(
 def _resolve_derived_dims(component: "ComponentBase", known_dims: set[str]) -> list[str]:
     """
     Validate all dim value expressions and return dim names in topological order.
-    Raises ValueError on cycles, unresolvable operands, or invalid field references.
-
-    ``known_dims`` is the full set of dim names visible to this component;
-    pass ``spec.dims(name)`` or an explicit set in tests.
+    Raise ValueError on cycles, unresolvable operands, or invalid field references.
     """
     all_dims = component.dims or {}
     if not all_dims:
@@ -700,7 +665,7 @@ class Model(ComponentBase):
 
 class Package(ComponentBase):
     type: Literal["package"] = "package"
-    multi: bool = False  # whether multiple instances per parent are allowed
+    multi: bool = False
     subtype: Literal["solution", "exchange", "stress", "advanced", "utility"] | None = None
 
 
@@ -929,23 +894,27 @@ def _validate_list_shape_element(
 
 def _validate_fk_fields(component: "ComponentBase", spec: "Dfns") -> None:
     """
-    For every Integer/String field with fk or fk_ref set, validate structure.
+    For every Integer/String/Array field with fk or fk_ref set, validate
+    structure. Array's `fk` (per-grid-cell rather than per-list-row) only
+    ever uses the hierarchical-path form below — it has no `pk`/`fk_ref`
+    counterpart (see `Array.fk`).
 
-    Three forms (see docs/md/dfnspec.md, "Primary and foreign keys"):
+    Two forms (see docs/md/dfnspec.md, "Primary and foreign keys"); grid-cell
+    references are a separate mechanism entirely (the `node` attribute, not an
+    `fk` value — see `Integer.node`):
 
     - Hierarchical path fk ("[component.]block.field", no fk_ref): the named
-      block must be a list block (in this component, or cross-component if
-      qualified) whose item has a pk field.
-    - "node" sentinel fk (no fk_ref): a grid cell reference, resolved from the
-      parent model's grid at runtime — no further structural check is
-      possible here.
+      block must be a list block whose item has a pk field. Unqualified
+      ("block.field"), the block is looked up in this component; qualified
+      ("component.block.field"), it's looked up in the named component via
+      `spec.components` instead.
     - Bare block name fk + fk_ref, or fk_ref alone: fk_ref must name a sibling
       String field in the same record, whose runtime value identifies the
       target component (and, with fk, the pk field is looked up in the block
       named by fk within that component). The target itself is only known at
       runtime, so no further structural check is possible statically.
 
-    A hierarchical-path or "node" fk may not be combined with fk_ref.
+    A hierarchical-path fk may not be combined with fk_ref.
     """
     if not component.blocks:
         return
@@ -956,7 +925,7 @@ def _validate_fk_fields(component: "ComponentBase", spec: "Dfns") -> None:
             fk_ref: str | None = getattr(field, "fk_ref", None)
 
             if fk_ref is not None:
-                if fk is not None and (fk == "node" or "." in fk):
+                if fk is not None and "." in fk:
                     raise ValueError(
                         f"Field {field.name!r}: fk={fk!r} may not be combined with "
                         f"fk_ref (only a bare block name may be)"
@@ -970,13 +939,34 @@ def _validate_fk_fields(component: "ComponentBase", spec: "Dfns") -> None:
                 # fk (a bare block name, if set) and the component it lives in
                 # are both resolved from fk_ref's runtime value — no further
                 # static check is possible.
-            elif fk is not None and fk != "node":
-                block_name = fk.split(".")[0] if "." in fk else fk
-                list_field = _find_list_in_block(component, block_name)
+            elif fk is not None:
+                parts = fk.split(".")
+                target: ComponentBase
+                if len(parts) == 3:
+                    component_ref, block_name, _fk_field = parts
+                    resolved = spec.components.get(component_ref)
+                    if resolved is None:
+                        raise ValueError(
+                            f"Field {field.name!r} fk={fk!r}: "
+                            f"component {component_ref!r} not found in spec"
+                        )
+                    target = resolved
+                    where = f"component {component_ref!r}"
+                elif len(parts) in (1, 2):
+                    block_name = parts[0]
+                    target = component
+                    where = "this component"
+                else:
+                    raise ValueError(
+                        f"Field {field.name!r} fk={fk!r}: "
+                        f"must be a bare block name, 'block.field', or "
+                        f"'component.block.field'"
+                    )
+                list_field = _find_list_in_block(target, block_name)
                 if list_field is None:
                     raise ValueError(
                         f"Field {field.name!r} fk={fk!r}: "
-                        f"{block_name!r} is not a list block in this component"
+                        f"{block_name!r} is not a list block in {where}"
                     )
                 item = list_field.item
                 item_fields: dict = item.fields if isinstance(item, Record) else item.arms
@@ -1229,7 +1219,7 @@ class Dfns(BaseModel):
                     case "simulation":
                         inherited.add(dim_name)
                     case "model":
-                        if _can_share_model(req_parent, c.parent):
+                        if _receives_from(req_parent, c.parent):
                             inherited.add(dim_name)
                     case "component":
                         if cname in _parents_as_set(req_parent):
@@ -1262,7 +1252,7 @@ class Dfns(BaseModel):
                     case "simulation":
                         inherited.add(dim_name)
                     case "model":
-                        if _can_share_model(req_parent, c.parent):
+                        if _receives_from(req_parent, c.parent):
                             inherited.add(dim_name)
                     case "component":
                         if cname in _parents_as_set(req_parent):

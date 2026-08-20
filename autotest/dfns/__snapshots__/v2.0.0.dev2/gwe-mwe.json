@@ -165,6 +165,7 @@
                 "longname": "well number for this entry",
                 "description": "integer value that defines the well number associated with the specified PACKAGEDATA data on the line. MAWNO must be greater than zero and less than or equal to NMAWWELLS. Well information must be specified for every well or the program will terminate with an error.  The program will also terminate with an error if information for a well is specified more than once.",
                 "tagged": false,
+                "index": true,
                 "pk": true
               },
               "strt": {
@@ -221,6 +222,7 @@
                 "longname": "well number for this entry",
                 "description": "integer value that defines the well number associated with the specified PERIOD data on the line. MAWNO must be greater than zero and less than or equal to NMAWWELLS.",
                 "tagged": false,
+                "index": true,
                 "fk": "packagedata.mawno"
               },
               "mwesetting": {

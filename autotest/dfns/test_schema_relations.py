@@ -97,10 +97,14 @@ def test_dfns_validate_fk_fields_fk_ref_with_hierarchical_fk_rejected():
         Dfns(components={"gwf-nam": gwf, "gwf-mvr": mvr})
 
 
-def test_dfns_validate_fk_fields_fk_ref_with_node_rejected():
+def test_dfns_validate_fk_fields_fk_ref_with_node_not_special_cased():
+    # "node" was formerly a reserved fk sentinel for grid-cell references (now
+    # replaced by the dedicated `Integer.node` attribute); as a bare fk value
+    # it's just an ordinary (if oddly named) block name like any other, so
+    # combining it with fk_ref is unremarkable and must not raise.
     mvr, gwf = _mvr_id_ctx(fk_val="node")
-    with pytest.raises(ValueError, match="may not be combined with fk_ref"):
-        Dfns(components={"gwf-nam": gwf, "gwf-mvr": mvr})
+    spec = Dfns(components={"gwf-nam": gwf, "gwf-mvr": mvr})
+    assert "gwf-mvr" in spec.components
 
 
 def test_dfns_validate_fk_fields_no_fk_set():

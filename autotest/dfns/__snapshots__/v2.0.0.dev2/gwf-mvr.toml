@@ -116,6 +116,7 @@ type = "integer"
 longname = "provider reach"
 description = "is the identifier for the provider.  For the standard boundary packages, the provider identifier is the number of the boundary as it is listed in the package input file. (Note that the order of these boundaries may change by stress period, which must be accounted for in the Mover Package.)  So the first well has an identifier of one.  The second is two, and so forth.  For the advanced packages, the identifier is the reach number (SFR Package), well number (MAW Package), or UZF cell number.  For the Lake Package, ID1 is the lake outlet number.  Thus, outflows from a single lake can be routed to different streams, for example."
 tagged = false
+index = true
 
 [blocks.period.fields.perioddata.item.fields.mname2]
 type = "string"
@@ -135,6 +136,7 @@ type = "integer"
 longname = "receiver reach"
 description = "is the identifier for the receiver.  The receiver identifier is the reach number (SFR Package), Lake number (LAK Package), well number (MAW Package), or UZF cell number."
 tagged = false
+index = true
 
 [blocks.period.fields.perioddata.item.fields.mvrtype]
 type = "string"

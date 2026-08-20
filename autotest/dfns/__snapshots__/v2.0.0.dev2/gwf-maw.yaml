@@ -225,6 +225,7 @@ blocks:
                 or the program will terminate with an error.  The program will also terminate with an
                 error if information for a multi-aquifer well is specified more than once.
               tagged: false
+              index: true
               pk: true
             radius:
               type: double
@@ -319,6 +320,7 @@ blocks:
                 program will also terminate with an error if connection information for a multi-aquifer
                 well connection to the GWF model is specified more than once.
               tagged: false
+              index: true
               fk: packagedata.ifno
             icon:
               type: integer
@@ -327,6 +329,7 @@ blocks:
                 well connection entry. ICONN must be greater than zero and less than or equal to NGWFNODES
                 for multi-aquifer well IFNO.
               tagged: false
+              index: true
             cellid:
               type: array
               longname: cell identifier
@@ -397,6 +400,7 @@ blocks:
               description: integer value that defines the well number associated with the specified PERIOD
                 data on the line. IFNO must be greater than zero and less than or equal to NMAWWELLS.
               tagged: false
+              index: true
               fk: packagedata.ifno
             mawsetting:
               type: union
