@@ -148,6 +148,7 @@ blocks:
                 number and CELL2D number for the two cells.  If the model uses the unstructured discretization
                 (DISU) input file, then CELLIDM1 is the node number for the cell.
               tagged: false
+              index: true
             cellidm2:
               type: integer
               longname: cellid of second cell
@@ -157,6 +158,7 @@ blocks:
                 number and CELL2D number for the two cells.  If the model uses the unstructured discretization
                 (DISU) input file, then CELLIDM2 is the node number for the cell.
               tagged: false
+              index: true
             ihc:
               type: integer
               longname: integer flag for connection type

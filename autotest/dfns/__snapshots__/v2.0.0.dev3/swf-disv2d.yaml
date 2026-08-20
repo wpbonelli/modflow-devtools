@@ -130,6 +130,7 @@ blocks:
               description: is the vertex number.  Records in the VERTICES block must be listed in consecutive
                 order from 1 to NVERT.
               tagged: false
+              index: true
             xv:
               type: double
               longname: x-coordinate for vertex
@@ -156,6 +157,7 @@ blocks:
               description: is the CELL2D number.  Records in the CELL2D block must be listed in consecutive
                 order from the first to the last.
               tagged: false
+              index: true
             xc:
               type: double
               longname: x-coordinate for cell center
@@ -180,6 +182,7 @@ blocks:
                 connected must share vertices.
               tagged: false
               dtype: integer
+              index: true
               shape:
                 - ncvert
         shape:

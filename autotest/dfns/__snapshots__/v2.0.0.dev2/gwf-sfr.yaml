@@ -244,6 +244,7 @@ blocks:
                 with an error.  The program will also terminate with an error if information for a reach
                 is specified more than once.
               tagged: false
+              index: true
               pk: true
             cellid:
               type: array
@@ -372,6 +373,7 @@ blocks:
                 equal to NREACHES. The program will also terminate with an error if table information
                 for a reach is specified more than once.
               tagged: false
+              index: true
               fk: packagedata.ifno
             tab6:
               type: keyword
@@ -407,6 +409,7 @@ blocks:
                 will terminate with an error.  The program will also terminate with an error if connection
                 information for a reach is specified more than once.
               tagged: false
+              index: true
               fk: packagedata.ifno
             ic:
               type: array
@@ -421,6 +424,7 @@ blocks:
               optional: true
               tagged: false
               dtype: integer
+              index: true
               shape:
                 - packagedata.ncon(ifno)
   diversions:
@@ -440,6 +444,7 @@ blocks:
                 with an error if diversion information for a given reach diversion is specified more than
                 once.
               tagged: false
+              index: true
               fk: packagedata.ifno
             idv:
               type: integer
@@ -448,6 +453,7 @@ blocks:
                 for reach IFNO. IDV must be greater than zero and less than or equal to NDV for reach
                 IFNO.
               tagged: false
+              index: true
             iconr:
               type: integer
               longname: downstream reach number for diversion
@@ -455,6 +461,7 @@ blocks:
                 water. IDV must be greater than zero and less than or equal to NREACHES. Furthermore,
                 reach  ICONR must be a downstream connection for reach IFNO.
               tagged: false
+              index: true
             cprior:
               type: string
               longname: iprior code
@@ -493,6 +500,7 @@ blocks:
                 terminate with an error. The program will also terminate with a error if IFNO is less
                 than one or greater than NREACHES.
               tagged: false
+              index: true
               fk: packagedata.ifno
             initialstage:
               type: double
@@ -516,6 +524,7 @@ blocks:
               description: integer value that defines the feature (reach) number associated with the specified
                 PERIOD data on the line. IFNO must be greater than zero and less than or equal to NREACHES.
               tagged: false
+              index: true
               fk: packagedata.ifno
             sfrsetting:
               type: union
@@ -621,6 +630,7 @@ blocks:
                       description: an integer value specifying which diversion of reach IFNO that DIVFLOW
                         is being specified for.  Must be less or equal to ndv for the current reach (IFNO).
                       tagged: false
+                      index: true
                     divflow:
                       type: double
                       longname: volumetric diversion flow rate

@@ -111,8 +111,17 @@ Corpus-identified remaining items, from the earlier scan, each independently sch
 
 ## Sequencing
 
-- **Phase 1 (now)**: `index` — schema + validator + direct migration. This is the piece that
-  actually unblocks flopy4 and closes gap #2's practical urgency. Small, mechanical, low-risk.
+- **Phase 1 (done, 2026-08-20)**: `index` — schema + validator + direct migration. This is
+  the piece that actually unblocks flopy4 and closes gap #2's practical urgency. Small,
+  mechanical, low-risk. Landed: `Integer.index`/`Array.index` in `schema.py` (validator bars
+  `index=True` off `dtype != "integer"` Arrays; `String` never gets the field at all),
+  `dfnspec.md` documented, `schema.json` regenerated (also picked up pre-existing unrelated
+  drift — `removed`/`deprecated`/`layered` on `Array` — as anticipated above),
+  `migrate_to_v2_0_0_dev2.py` populates `index` directly from v1 `numeric_index` for every
+  `Integer`/`Array(dtype="integer")` field. Confirmed fixes the `gwf-lak.iconn` regression
+  from `todo.md`. Full `autotest/dfns/` suite green; snapshots regenerated (306 files,
+  additive-only diff — every change is a bare `"index": true`/`index = true` addition, no
+  removals beyond JSON trailing-comma churn).
 - **Phase 2 (now, small)**: `node` — schema + validator + `fk="node"` removal + the handful of
   exchange/GNC backfills. Well-scoped enough to go in the same pass as Phase 1.
 - **Phase 3 (later, incremental, no urgency)**: `pk`/`fk` extensions — lonely-pk allowlist,

@@ -116,6 +116,7 @@ blocks:
                 of zero indicates the zero-depth-gradient calculation will use parameters for a hydraulically
                 wide channel.
               tagged: false
+              index: true
             width:
               type: double
               longname: width of the zero-depth gradient boundary

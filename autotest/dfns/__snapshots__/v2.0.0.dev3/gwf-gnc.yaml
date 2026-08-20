@@ -63,6 +63,7 @@ blocks:
                 number for the two cells.  If the model uses the unstructured discretization (DISU) input
                 file, then CELLIDN is the node number for the cell.
               tagged: false
+              index: true
             cellidm:
               type: integer
               longname: GNC cellid n
@@ -72,6 +73,7 @@ blocks:
                 layer number and CELL2D number for the two cells.  If the model uses the unstructured
                 discretization (DISU) input file, then CELLIDM is the node number for the cell.
               tagged: false
+              index: true
             cellidsj:
               type: array
               longname: GNC contributing cells
@@ -86,6 +88,7 @@ blocks:
                 CELLID is the node number for the cell.
               tagged: false
               dtype: integer
+              index: true
               shape:
                 - numalphaj
             alphasj:

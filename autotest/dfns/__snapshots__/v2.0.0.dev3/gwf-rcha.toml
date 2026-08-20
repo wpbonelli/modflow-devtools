@@ -105,6 +105,7 @@ description = "IRCH is the layer number that defines the layer in each vertical 
 optional = true
 netcdf = true
 dtype = "integer"
+index = true
 shape = [
     "ncpl",
 ]

@@ -93,6 +93,10 @@ class Integer(FieldBase):
     type: Literal["integer"] = PydanticField(default="integer", frozen=True)
     valid: list[int] | None = None
     time_series: bool = False
+    # Pure serialization fact: does this value need MF6's 1-based (file) <->
+    # 0-based (Python) translation on read/write? Orthogonal to pk/fk, which
+    # are about relational identity, not serialization. See docs/md/dfnspec.md.
+    index: bool = False
     pk: bool = False
     fk: str | None = None
     fk_ref: str | None = None
@@ -122,6 +126,18 @@ class Array(FieldBase):
     shape: list[str] = []
     time_series: bool = False
     layered: bool = False
+    # Whether the array's elements are 1-based indices needing MF6's
+    # 1-based (file) <-> 0-based (Python) translation. Only meaningful when
+    # dtype == "integer"; see docs/md/dfnspec.md.
+    index: bool = False
+
+    @model_validator(mode="after")
+    def _check_index_dtype(self) -> "Array":
+        if self.index and self.dtype != "integer":
+            raise ValueError(
+                f"Array {self.name!r}: index=True requires dtype='integer', got {self.dtype!r}"
+            )
+        return self
 
 
 class Record(FieldBase):

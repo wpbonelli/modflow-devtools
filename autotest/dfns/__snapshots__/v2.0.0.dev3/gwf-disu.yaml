@@ -179,6 +179,7 @@ blocks:
           cell whose connectivity is subsequently listed, may be expressed as a negative number, the sign
           of which is subsequently converted to positive by the code.
         dtype: integer
+        index: true
         shape:
           - nja
       ihc:
@@ -248,6 +249,7 @@ blocks:
               description: is the vertex number.  Records in the VERTICES block must be listed in consecutive
                 order from 1 to NVERT.
               tagged: false
+              index: true
             xv:
               type: double
               longname: x-coordinate for vertex
@@ -275,6 +277,7 @@ blocks:
               description: is the cell2d number.  Records in the CELL2D block must be listed in consecutive
                 order from 1 to NODES.
               tagged: false
+              index: true
             xc:
               type: double
               longname: x-coordinate for cell center
@@ -298,6 +301,7 @@ blocks:
                 used to define the cell.  Vertices must be listed in clockwise order.
               tagged: false
               dtype: integer
+              index: true
               shape:
                 - ncvert
         shape:

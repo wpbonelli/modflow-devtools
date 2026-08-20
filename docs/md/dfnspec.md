@@ -53,6 +53,7 @@ This document describes the MODFLOW 6 component definition (DFN) system. This sy
       - [Type-specific attributes](#type-specific-attributes-3)
         - [`valid`](#valid-1)
         - [`time_series`](#time_series-1)
+        - [`index`](#index)
         - [`pk`](#pk-1)
         - [`fk`](#fk-1)
         - [`fk_ref`](#fk_ref-1)
@@ -68,6 +69,7 @@ This document describes the MODFLOW 6 component definition (DFN) system. This sy
         - [`dtype`](#dtype)
         - [`shape`](#shape)
         - [`time_series`](#time_series-3)
+        - [`index`](#index-1)
     - [Record](#record)
       - [Type-specific attributes](#type-specific-attributes-7)
         - [`fields`](#fields-2)
@@ -374,6 +376,10 @@ Type `integer`.
 
 `boolean (default: false)`. Marks fields where the parser accepts either a numeric literal or a time-series name (referencing a `utl-ts` object). Not inferable from structural type. Also appears on array fields (where it references a `utl-tas` object instead). Note that `utl-tas` currently only works with layered arrays, not full-grid arrays, though generalizing has been considered.
 
+###### `index`
+
+`boolean (default: false)`. Marks this scalar's value as a 1-based index requiring MF6's 1-based (file) <-> 0-based (Python) translation on read/write. A pure serialization fact, orthogonal to `pk`/`fk`: it does not claim the value identifies or points at a list row, only that it needs the numeric-base conversion. Not valid on `String` scalars — such fields (e.g. dynamic, name-resolved identifiers) never need this conversion.
+
 ###### `pk`
 
 `boolean (default: false)`. Marks this scalar as the primary key of its containing list's item record. Valid only on integer or string scalars that are columns in a list item record. Exactly one column per list item may be marked pk.
@@ -437,6 +443,10 @@ A 1D array appearing as a subfield of a record is called an **inline array**. In
 ###### `time_series`
 
 `boolean (default: false)`. Marks fields where the READARRAY invocation may be replaced by a TAS name referencing a `utl-tas` time-array series object. At any model time, the TAS provides an interpolated grid-shaped array. Distinct from the scalar case: references `utl-tas`, not `utl-ts`. Note that `utl-tas` currently only works with layered arrays, not full-grid arrays, though generalizing has been considered.
+
+###### `index`
+
+`boolean (default: false)`. Marks the array's elements as 1-based indices requiring MF6's 1-based (file) <-> 0-based (Python) translation (e.g. `icvert`, `ja`, `irch`, `ievt`). Only valid when `dtype` is `"integer"`.
 
 #### Record
 

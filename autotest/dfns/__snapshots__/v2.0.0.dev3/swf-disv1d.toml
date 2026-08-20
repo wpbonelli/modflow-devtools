@@ -131,6 +131,7 @@ type = "integer"
 longname = "vertex number"
 description = "is the vertex number.  Records in the VERTICES block must be listed in consecutive order from 1 to NVERT."
 tagged = false
+index = true
 
 [blocks.vertices.fields.vertices.item.fields.xv]
 type = "double"
@@ -159,6 +160,7 @@ type = "integer"
 longname = "cell1d number"
 description = "is the cell1d number.  Records in the cell1d block must be listed in consecutive order from the first to the last."
 tagged = false
+index = true
 
 [blocks.cell1d.fields.cell1d.item.fields.fdc]
 type = "double"
@@ -178,6 +180,7 @@ longname = "number of cell vertices"
 description = "is an array of integer values containing vertex numbers (in the VERTICES block) used to define the cell.  Vertices must be listed in the order that defines the line representing the cell.  Cells that are connected must share vertices. The bottom elevation of the cell is calculated using the ZV of the first and last vertex point and FDC."
 tagged = false
 dtype = "integer"
+index = true
 shape = [
     "ncvert",
 ]

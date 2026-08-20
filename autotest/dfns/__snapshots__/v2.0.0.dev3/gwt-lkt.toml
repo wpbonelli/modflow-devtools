@@ -150,6 +150,7 @@ type = "integer"
 longname = "lake number for this entry"
 description = "integer value that defines the feature (lake) number associated with the specified PACKAGEDATA data on the line. IFNO must be greater than zero and less than or equal to NLAKES. Lake information must be specified for every lake or the program will terminate with an error.  The program will also terminate with an error if information for a lake is specified more than once."
 tagged = false
+index = true
 pk = true
 
 [blocks.packagedata.fields.packagedata.item.fields.strt]
@@ -188,6 +189,7 @@ type = "integer"
 longname = "lake number for this entry"
 description = "integer value that defines the feature (lake) number associated with the specified PERIOD data on the line. IFNO must be greater than zero and less than or equal to NLAKES."
 tagged = false
+index = true
 fk = "packagedata.ifno"
 
 [blocks.period.fields.lakeperioddata.item.fields.laksetting]

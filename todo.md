@@ -58,7 +58,7 @@
   `rtype.valid` is populated correctly per component (`['HEAD', 'BUDGET']` for gwf-oc,
   etc.), sourced from the v1 DFN description text. No migration work needed here.
 
-- [ ] **`numeric_index` → `pk`/`fk` backfill (a838d84, #337) covered fewer fields than the
+- [x] **`numeric_index` → `pk`/`fk` backfill (a838d84, #337) covered fewer fields than the
   v1 corpus actually has flagged.** That fix targeted 6 fields (BUY/CSUB/VSC/PRP/ATS/CXS
   self-referential primary keys). A full corpus scan (walking v1 DFNs recursively including
   list/record children, matched by field name against dev3's fully-recursed leaf fields —
@@ -84,6 +84,18 @@
   like the fix's structural-signal net needs to be wider (or a distinct
   "index but not a full pk" concept needs a name), not a new bug — flagging so the full 44
   get audited under the same pass rather than trickling in one flopy4 regression at a time.
+  Resolved by decomposing `pk`/`fk`'s conflated "needs 1-based/0-based conversion" +
+  "is a relational key" concerns into a dedicated `index` attribute — see
+  `index-node-attributes-plan.md`, Phase 1: added `Integer.index`/`Array.index` (the latter
+  gated to `dtype == "integer"` by a validator, and never valid on `String`), and a direct
+  mechanical migration (`index = numeric_index` for every `Integer`/`Array(dtype="integer")`
+  field) in `migrate_to_v2_0_0_dev2.py`. This is a superset of the 44-field gap: it applies
+  unconditionally alongside any existing `pk`/`fk`, not just where those are absent, and
+  fixes the confirmed `gwf-lak.iconn` regression directly (`index=True` now set on that
+  field). `schema.json`/`dfnspec.md` updated; full `autotest/dfns/` snapshot suite
+  regenerated (306 files, additive-only diff). Phase 2 (`node` attribute, replacing the
+  `fk="node"` sentinel) and Phase 3 (`pk`/`fk` backfill: items (b)/(d)/(e)/(f) below) remain,
+  tracked in `index-node-attributes-plan.md` rather than here.
 
 - [x] **Bare (valueless) boolean attribute lines in v1 DFNs migrated as `False` instead of
   `True`.** v1 syntax allows a boolean attribute's line to carry no value at all (e.g. a
@@ -132,10 +144,13 @@
   - [ ] **(e) `fk = "node"` grid-cell sentinel, unused.** `exg-*.cellidm1`/`cellidm2` (6
     exchange types), `gwf-gnc.cellidm`/`cellidn` look like the schema's existing grid-cell
     sentinel case, already speced and validated in `schema.py`, never populated by the mapper.
-  - [ ] **(a) Array-typed fields can't take `pk`/`fk` at all.** `irch`, `ievt`, `icvert`, `ja`,
+  - [x] **(a) Array-typed fields can't take `pk`/`fk` at all.** `irch`, `ievt`, `icvert`, `ja`,
     `ic`, `cellidsj` are `Array`s; `dfnspec.md` restricts `pk`/`fk` to integer/string columns
     in a list item record. v1's `numeric_index` on these likely just means "apply 1-based
     conversion," a concept with no home in v2 outside the relational `pk`/`fk` vocabulary.
+    Resolved: `numeric_index` never meant relational identity here, so it doesn't need
+    `pk`/`fk` — it needed `Array.index` (Phase 1, `index-node-attributes-plan.md`), now
+    migrated directly for every `Array(dtype="integer")` field.
   - [ ] **(f) Compound keys — no concept for them.** SFR's `diversions.iconr`/`idv` are unique
     only per-reach, not table-wide; a blind `pk=true` would misrepresent them. `pk`/`fk` as
     specced has no compound-key notion.

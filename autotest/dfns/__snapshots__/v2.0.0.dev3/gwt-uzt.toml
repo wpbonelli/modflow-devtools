@@ -150,6 +150,7 @@ type = "integer"
 longname = "UZF cell number for this entry"
 description = "integer value that defines the feature (UZF object) number associated with the specified PACKAGEDATA data on the line. IFNO must be greater than zero and less than or equal to NUZFCELLS. Unsaturated zone flow information must be specified for every UZF cell or the program will terminate with an error.  The program will also terminate with an error if information for a UZF cell is specified more than once."
 tagged = false
+index = true
 pk = true
 
 [blocks.packagedata.fields.packagedata.item.fields.strt]
@@ -188,6 +189,7 @@ type = "integer"
 longname = "unsaturated zone flow cell number for this entry"
 description = "integer value that defines the feature (UZF object) number associated with the specified PERIOD data on the line. IFNO must be greater than zero and less than or equal to NUZFCELLS."
 tagged = false
+index = true
 fk = "packagedata.ifno"
 
 [blocks.period.fields.uztperioddata.item.fields.uztsetting]

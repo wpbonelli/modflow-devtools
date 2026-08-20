@@ -69,6 +69,7 @@ blocks:
                 number and CELL2D number for the two cells.  If the model uses the unstructured discretization
                 (DISU) input file, then CELLIDM1 is the node number for the cell.
               tagged: false
+              index: true
             cellidm2:
               type: integer
               longname: cellid of cell in groundwater model
@@ -78,6 +79,7 @@ blocks:
                 number and CELL2D number for the two cells.  If the model uses the unstructured discretization
                 (DISU) input file, then CELLIDM2 is the node number for the cell.
               tagged: false
+              index: true
             bedleak:
               type: double
               longname: bed leakance

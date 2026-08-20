@@ -139,6 +139,7 @@ blocks:
               description: is the vertex number.  Records in the VERTICES block must be listed in consecutive
                 order from 1 to NVERT.
               tagged: false
+              index: true
             xv:
               type: double
               longname: x-coordinate for vertex
@@ -165,6 +166,7 @@ blocks:
               description: is the cell1d number.  Records in the cell1d block must be listed in consecutive
                 order from the first to the last.
               tagged: false
+              index: true
             fdc:
               type: double
               longname: fractional distance to the cell center
@@ -189,6 +191,7 @@ blocks:
                 is calculated using the ZV of the first and last vertex point and FDC.
               tagged: false
               dtype: integer
+              index: true
               shape:
                 - ncvert
         shape:

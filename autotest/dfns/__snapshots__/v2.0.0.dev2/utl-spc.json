@@ -61,6 +61,7 @@
                 "longname": "bound number for this entry",
                 "description": "integer value that defines the boundary package feature number associated with the specified PERIOD data on the line. BNDNO must be greater than zero and less than or equal to MAXBOUND.",
                 "tagged": false,
+                "index": true,
                 "pk": true
               },
               "spcsetting": {

@@ -164,6 +164,7 @@ blocks:
                 program will also terminate with an error if information for a lake is specified more
                 than once.
               tagged: false
+              index: true
               pk: true
             strt:
               type: double
@@ -218,6 +219,7 @@ blocks:
               description: integer value that defines the lake number associated with the specified PERIOD
                 data on the line. LAKENO must be greater than zero and less than or equal to NLAKES.
               tagged: false
+              index: true
               fk: packagedata.lakeno
             laksetting:
               type: union

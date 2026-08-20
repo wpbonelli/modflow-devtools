@@ -93,6 +93,7 @@
           "description": "integer value indication the cross section identifier in the Cross Section Package that applies to the reach.  If not provided then reach will be treated as hydraulically wide.",
           "optional": true,
           "dtype": "integer",
+          "index": true,
           "shape": [
             "nodes"
           ]

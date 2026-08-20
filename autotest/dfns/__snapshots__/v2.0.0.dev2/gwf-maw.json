@@ -219,6 +219,7 @@
                 "longname": "well number for this entry",
                 "description": "integer value that defines the feature (well) number associated with the specified PACKAGEDATA data on the line. IFNO must be greater than zero and less than or equal to NMAWWELLS. Multi-aquifer well information must be specified for every multi-aquifer well or the program will terminate with an error.  The program will also terminate with an error if information for a multi-aquifer well is specified more than once.",
                 "tagged": false,
+                "index": true,
                 "pk": true
               },
               "radius": {
@@ -290,13 +291,15 @@
                 "longname": "well number for this entry",
                 "description": "integer value that defines the feature (well) number associated with the specified CONNECTIONDATA data on the line. IFNO must be greater than zero and less than or equal to NMAWWELLS. Multi-aquifer well connection information must be specified for every multi-aquifer well connection to the GWF model (NGWFNODES) or the program will terminate with an error.  The program will also terminate with an error if connection information for a multi-aquifer well connection to the GWF model is specified more than once.",
                 "tagged": false,
+                "index": true,
                 "fk": "packagedata.ifno"
               },
               "icon": {
                 "type": "integer",
                 "longname": "connection number",
                 "description": "integer value that defines the GWF connection number for this multi-aquifer well connection entry. ICONN must be greater than zero and less than or equal to NGWFNODES for multi-aquifer well IFNO.",
-                "tagged": false
+                "tagged": false,
+                "index": true
               },
               "cellid": {
                 "type": "array",
@@ -349,6 +352,7 @@
                 "longname": "well number for this entry",
                 "description": "integer value that defines the well number associated with the specified PERIOD data on the line. IFNO must be greater than zero and less than or equal to NMAWWELLS.",
                 "tagged": false,
+                "index": true,
                 "fk": "packagedata.ifno"
               },
               "mawsetting": {

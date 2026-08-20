@@ -165,6 +165,7 @@ blocks:
                 program will terminate with an error.  The program also will terminate with an error if
                 information for a UZF cell is specified more than once.
               tagged: false
+              index: true
               pk: true
             strt:
               type: double
@@ -208,6 +209,7 @@ blocks:
               description: integer value that defines the UZF cell number associated with the specified
                 PERIOD data on the line. UZFNO must be greater than zero and less than or equal to NUZFCELLS.
               tagged: false
+              index: true
               fk: packagedata.uzfno
             uzesetting:
               type: union

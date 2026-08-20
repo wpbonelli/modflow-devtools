@@ -1049,6 +1049,10 @@ def to_v2_0_0_dev2(name: str, fields: OMD, meta: list[str]) -> v2.Component:
         preserve_case: bool = try_parse_bool(f.get("preserve_case"), False)
         time_series: bool = try_parse_bool(f.get("time_series"), False)
         layered: bool = try_parse_bool(f.get("layered"), False)
+        # Pure serialization fact (1-based/0-based conversion), orthogonal to pk/fk
+        # relational identity. Direct copy from v1: valid on Integer/Array(dtype=
+        # "integer") only, never on String (see index-node-attributes-plan.md).
+        numeric_index: bool = try_parse_bool(f.get("numeric_index"), False)
         removed: str | None = f.get("removed") or None
         deprecated: str | None = f.get("deprecated") or None
         valid = f.get("valid")
@@ -1140,6 +1144,7 @@ def to_v2_0_0_dev2(name: str, fields: OMD, meta: list[str]) -> v2.Component:
                     tagged=tagged,
                     valid=_parse_valid(valid, int),
                     time_series=time_series,
+                    index=numeric_index,
                 )
             if _type in ("double", "double precision"):
                 return v2.Double(
@@ -1409,6 +1414,7 @@ def to_v2_0_0_dev2(name: str, fields: OMD, meta: list[str]) -> v2.Component:
                         layered=layered,
                         dtype=dtype,
                         shape=parsed_shape,
+                        index=numeric_index if dtype == "integer" else False,
                     )
 
         return _to_scalar()
