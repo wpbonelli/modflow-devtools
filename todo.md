@@ -157,8 +157,14 @@
     block name, so it would've rejected exactly this case) — nobody had hit it before because
     no `fk` had ever actually used the cross-component form. Fixed to resolve via
     `spec.components`. `chf-dfw`/`olf-dfw`/`swf-dfw`'s `idcxs` is the same relation in principle
-    but is an `Array` (`shape=["nodes"]`), which can't carry `fk` at all under the current
-    schema — left alone, documented rather than silently dropped.
+    but is an `Array` (`shape=["nodes"]`) — initially left alone since `Array` couldn't carry
+    `fk` at all, then resolved in a follow-up pass the same day: added `Array.fk` (dtype=
+    "integer" only; no `pk`/`fk_ref` counterpart — an array has no rows of its own to key, and
+    no sibling record for a runtime component selector), which `_validate_fk_fields` already
+    validates for free via its `getattr`-based field walk. Backfilled via a new
+    `_apply_array_fk_backfill` pass (`_ARRAY_FK_BACKFILL` allowlist) on all 3 `*-dfw`
+    components. MAW's `connectiondata.icon` (below, under (f)) reconfirmed as permanently out
+    of scope in the same pass — not a parallel gap, just double-checked.
   - [x] **(e) `fk = "node"` grid-cell sentinel, unused.** `exg-*.cellidm1`/`cellidm2` (6
     exchange types), `gwf-gnc.cellidm`/`cellidn` look like the schema's existing grid-cell
     sentinel case, already speced and validated in `schema.py`, never populated by the mapper.

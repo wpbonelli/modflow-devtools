@@ -126,6 +126,18 @@
           "default": false,
           "title": "Index",
           "type": "boolean"
+        },
+        "fk": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Fk"
         }
       },
       "required": [

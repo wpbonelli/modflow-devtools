@@ -102,5 +102,6 @@ blocks:
         optional: true
         dtype: integer
         index: true
+        fk: olf-cxs.packagedata.idcxs
         shape:
           - nodes

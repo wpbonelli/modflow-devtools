@@ -516,15 +516,14 @@ def _mark_node_refs(name: str, blocks: dict[str, v2.Block]) -> dict[str, v2.Bloc
 #   defined by the sibling `*-cxs` component's `packagedata.idcxs` (already
 #   `pk`'d there since a838d84) -- a cross-component fk `_resolve_relations`
 #   structurally can't reach (single-component scope). `chf/olf/swf-dfw`'s
-#   `idcxs` is the same relation in principle but is an `Array` (a per-cell
-#   grid field, not a list column), which cannot carry `fk` at all under the
-#   current schema (same limitation as index-node-attributes-plan.md's item
-#   (a), never extended to `pk`/`fk`) -- deliberately excluded here, not an
-#   oversight. MAW's `connectiondata.icon` (also flagged as a lonely-pk
-#   lookalike in earlier scans) is, on inspection, the same compound-scoped
-#   shape as SFR's `idv`: a per-well connection sequence number, not globally
-#   unique and never referenced by fk elsewhere -- already fully handled by
-#   `index` alone, correctly excluded here too.
+#   `idcxs` is the same relation but is an `Array` (a per-cell grid field, not
+#   a list column) -- see `_ARRAY_FK_BACKFILL` below, not here.
+#
+# MAW's `connectiondata.icon` (also flagged as a lonely-pk lookalike in
+# earlier scans) is, on inspection, the same compound-scoped shape as SFR's
+# `idv`: a per-well connection sequence number, not globally unique and never
+# referenced by fk elsewhere -- already fully handled by `index` alone,
+# deliberately excluded from this allowlist, not an oversight.
 _FK_BACKFILL: dict[str, tuple[str, str, dict[str, str]]] = {
     "gwf-uzf": ("packagedata", "packagedata", {"ivertcon": "packagedata.ifno"}),
     "gwf-sfr": ("diversions", "diversions", {"iconr": "packagedata.ifno"}),
@@ -562,6 +561,41 @@ def _apply_fk_backfill(name: str, blocks: dict[str, v2.Block]) -> dict[str, v2.B
     new_item = item.model_copy(update={"fields": {**item.fields, **updates}})
     new_list = list_field.model_copy(update={"item": new_item})
     new_block = block.model_copy(update={"fields": {**block.fields, list_field_name: new_list}})
+    return {**blocks, block_name: new_block}
+
+
+# `chf/olf/swf-dfw`'s `idcxs` is a per-cell grid array (`griddata` block,
+# dtype="integer", shape=["nodes"]), not a list column, so it can't go through
+# `_apply_fk_backfill` above (which targets a List item's Record). It's the
+# same cross-section relation as `_FK_BACKFILL`'s `*-zdg`/`chf-cdb` entries,
+# now expressible directly since `Array.fk` exists (index-node-attributes-plan.md
+# Phase 3 addendum). Each entry: component -> (block name, field name, fk target).
+_ARRAY_FK_BACKFILL: dict[str, tuple[str, str, str]] = {
+    "chf-dfw": ("griddata", "idcxs", "chf-cxs.packagedata.idcxs"),
+    "olf-dfw": ("griddata", "idcxs", "olf-cxs.packagedata.idcxs"),
+    "swf-dfw": ("griddata", "idcxs", "swf-cxs.packagedata.idcxs"),
+}
+
+
+def _apply_array_fk_backfill(name: str, blocks: dict[str, v2.Block]) -> dict[str, v2.Block]:
+    """Set `fk` on this component's known-good Array backfill target.
+
+    See `_ARRAY_FK_BACKFILL` for why this is a separate, explicit allowlist
+    rather than folded into `_apply_fk_backfill`.
+    """
+    entry = _ARRAY_FK_BACKFILL.get(name)
+    if entry is None:
+        return blocks
+    block_name, field_name, target = entry
+    block = blocks.get(block_name)
+    if block is None:
+        return blocks
+    field = block.fields.get(field_name)
+    if not isinstance(field, v2.Array) or field.fk is not None:
+        return blocks
+    new_block = block.model_copy(
+        update={"fields": {**block.fields, field_name: field.model_copy(update={"fk": target})}}
+    )
     return {**blocks, block_name: new_block}
 
 
@@ -1591,6 +1625,7 @@ def to_v2_0_0_dev2(name: str, fields: OMD, meta: list[str]) -> v2.Component:
     blocks = _mark_lonely_pk(blocks)
     blocks = _mark_node_refs(name, blocks)
     blocks = _apply_fk_backfill(name, blocks)
+    blocks = _apply_array_fk_backfill(name, blocks)
     dims = {**explicit_dims, **array_dims, **derived_dims} or None
 
     d: dict[str, Any] = {

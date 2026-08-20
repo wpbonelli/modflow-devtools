@@ -134,12 +134,24 @@ class Array(FieldBase):
     # 1-based (file) <-> 0-based (Python) translation. Only meaningful when
     # dtype == "integer"; see docs/md/dfnspec.md.
     index: bool = False
+    # Foreign key: nonzero elements reference a row (by pk) in another list,
+    # per-grid-cell rather than per-list-row (e.g. a per-cell cross-section
+    # id). Only meaningful when dtype == "integer". Hierarchical path form
+    # only ("[component.]block.field") — no `pk` or `fk_ref` counterpart, since
+    # an array has no rows of its own to be a key of, and there's no sibling
+    # String field to carry a runtime component reference. See dfnspec.md,
+    # "Primary and foreign keys".
+    fk: str | None = None
 
     @model_validator(mode="after")
     def _check_index_dtype(self) -> "Array":
         if self.index and self.dtype != "integer":
             raise ValueError(
                 f"Array {self.name!r}: index=True requires dtype='integer', got {self.dtype!r}"
+            )
+        if self.fk is not None and self.dtype != "integer":
+            raise ValueError(
+                f"Array {self.name!r}: fk requires dtype='integer', got {self.dtype!r}"
             )
         return self
 
@@ -948,7 +960,10 @@ def _validate_list_shape_element(
 
 def _validate_fk_fields(component: "ComponentBase", spec: "Dfns") -> None:
     """
-    For every Integer/String field with fk or fk_ref set, validate structure.
+    For every Integer/String/Array field with fk or fk_ref set, validate
+    structure. Array's `fk` (per-grid-cell rather than per-list-row) only
+    ever uses the hierarchical-path form below — it has no `pk`/`fk_ref`
+    counterpart (see `Array.fk`).
 
     Two forms (see docs/md/dfnspec.md, "Primary and foreign keys"); grid-cell
     references are a separate mechanism entirely (the `node` attribute, not an

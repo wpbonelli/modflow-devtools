@@ -81,9 +81,9 @@ working as they did before. What actually landed, item by item from the original
   misparsed as block name `"chf-cxs"` and rejected. Nobody had hit this before because nothing
   had ever actually set a cross-component `fk`. Fixed to resolve the target component via
   `spec.components` when 3 segments are present. `chf-dfw`/`olf-dfw`/`swf-dfw`'s `idcxs` is the
-  same relation in principle but is an `Array` (a per-cell grid field, `shape=["nodes"]`), which
-  cannot carry `fk` under the current schema at all (same limitation as item (a) below, never
-  extended to `pk`/`fk`) — deliberately left alone, not an oversight.
+  same relation in principle but is an `Array` (a per-cell grid field, `shape=["nodes"]`) —
+  see the Phase 3 addendum below: `Array` now carries `fk` too, so this is resolved as well,
+  not left alone.
 - **Compound-scoped fields, now with an honest answer** — SFR `diversions.idv` gets `index`
   only (correctly — it's not globally unique, so it was never a valid `pk`). `diversions.iconr`
   gets `fk = "packagedata.ifno"` (a real reference into reaches) alongside `index`. UZF's
@@ -163,7 +163,26 @@ working as they did before. What actually landed, item by item from the original
   `_validate_fk_fields`'s cross-component path resolution bug fixed (see above) — a real latent
   defect, not something this plan anticipated, found only by actually exercising the documented
   3-segment form for the first time. MAW's `connectiondata.icon` and the 3 `*-dfw` components'
-  `idcxs` (an `Array`, can't carry `fk`) investigated and deliberately left alone, documented
-  above rather than silently skipped. Full `autotest/dfns/` suite green; snapshots regenerated
-  (108 files, additive-only — exactly 12×2 lonely-pk + 1 UZF + 1 SFR + 4 cross-component,
-  ×2 dev dirs ×3 formats).
+  `idcxs` (an `Array`, can't carry `fk`) investigated and initially left alone (documented
+  rather than silently skipped) — see the addendum immediately below for `idcxs`; MAW's `icon`
+  remains correctly out of scope permanently, not a follow-up. Full `autotest/dfns/` suite
+  green; snapshots regenerated (108 files, additive-only — exactly 12×2 lonely-pk + 1 UZF +
+  1 SFR + 4 cross-component, ×2 dev dirs ×3 formats).
+
+**Phase 3 addendum (done, 2026-08-20)**: revisited the two cases left alone above.
+`connectiondata.icon` (MAW) reconfirmed as permanently out of scope — same no-real-target
+shape as `gwf-lak.iconn`, `index` alone is the complete, correct answer, no code change
+possible or needed. `chf/olf/swf-dfw`'s `idcxs`, by contrast, was a genuine gap, not a
+permanent limitation: added `fk: str | None = None` to `Array` (integer-`dtype`-only, via the
+same `_check_index_dtype`-style validator `index` already used), which `_validate_fk_fields`
+picks up for free — its `_check_fields` walker reads `fk`/`fk_ref` via `getattr` on every
+field regardless of type, so no validator code change was needed beyond the attribute
+existing. No `pk` or `fk_ref` counterpart added to `Array`: an array has no rows of its own to
+be a key of, and no sibling record to carry a runtime component-selector field for `fk_ref`.
+Backfilled via a new `_apply_array_fk_backfill` pass (`_ARRAY_FK_BACKFILL` allowlist,
+structurally simpler than `_apply_fk_backfill` since it targets a bare block field, not a list
+item column) — `fk = "<component>-cxs.packagedata.idcxs"` on all 3 `*-dfw` components.
+`dfnspec.md` updated (`fk` documented under Array's type-specific attributes; "Primary and
+foreign keys" section's scope note widened). `schema.json` regenerated. Full `autotest/dfns/`
+suite green; snapshots regenerated (18 files — 3 components × 2 dev dirs × 3 formats,
+additive-only).

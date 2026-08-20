@@ -71,6 +71,7 @@ This document describes the MODFLOW 6 component definition (DFN) system. This sy
         - [`shape`](#shape)
         - [`time_series`](#time_series-3)
         - [`index`](#index-1)
+        - [`fk`](#fk-2)
     - [Record](#record)
       - [Type-specific attributes](#type-specific-attributes-7)
         - [`fields`](#fields-2)
@@ -453,6 +454,10 @@ A 1D array appearing as a subfield of a record is called an **inline array**. In
 
 `boolean (default: false)`. Marks the array's elements as 1-based indices requiring MF6's 1-based (file) <-> 0-based (Python) translation (e.g. `icvert`, `ja`, `irch`, `ievt`). Only valid when `dtype` is `"integer"`.
 
+###### `fk`
+
+`string | null (default: null)`. Marks the array's (nonzero) elements as a foreign key: a per-grid-cell reference to a row (by `pk`) in another list, rather than the per-list-row reference a scalar `fk` expresses (e.g. a grid-wide array giving each cell's cross-section id, referencing the cross-section package's `packagedata`). Only valid when `dtype` is `"integer"`. Hierarchical path form only (`"[component.]block.field"`) — an array has no `fk_ref` counterpart, since it has no sibling record to carry a runtime component-selector field, and no `pk` counterpart, since it has no rows of its own to be a key of. See "Primary/foreign keys".
+
 #### Record
 
 Type `record`. Product type. In MF6 input files, records appear on a single line. Record subfields may or may not be `tagged`. While blocks can be considered product types also, in the DFN specification only records are considered fields; blocks are considered named collections of related fields.
@@ -648,7 +653,7 @@ Examples:
 
 Sometimes a column in one list identifies a row in another list. This can be conceptualized as a primary key (PK) / foreign key (FK) relation. Integers and strings may encode PK/FK semantics with attributes `pk`, `fk`, and `fk_ref`. A column referencing a grid cell instead of another list's row is a distinct concern, handled by the `node` attribute (see [Integer](#integer)) rather than `pk`/`fk` — grid cells are resolved from the parent model's grid (DIS/DISV/DISU) at runtime, not looked up via a `pk` column.
 
-**Note**: PK/FK attributes are only valid on integer and string fields appearing as columns in a tabular (i.e. regular) list's record item type.
+**Note**: `pk`/`fk_ref` are only valid on integer and string fields appearing as columns in a tabular (i.e. regular) list's record item type. `fk` is valid there too, and additionally on integer-`dtype` `Array` fields (see [Array](#array)) — there it references another list's row per grid cell rather than per list row, and only the hierarchical-path form applies (no `fk_ref` counterpart, since an array has no sibling record to carry a runtime component selector).
 
 The `fk` attribute can take one of two forms:
 
