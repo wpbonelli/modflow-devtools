@@ -122,7 +122,6 @@ class Array(FieldBase):
     shape: list[str] = []
     time_series: bool = False
     layered: bool = False
-    repeat: str | None = None
 
 
 class Record(FieldBase):

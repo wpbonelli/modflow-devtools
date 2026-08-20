@@ -68,7 +68,6 @@ This document describes the MODFLOW 6 component definition (DFN) system. This sy
         - [`dtype`](#dtype)
         - [`shape`](#shape)
         - [`time_series`](#time_series-3)
-        - [`repeat`](#repeat)
     - [Record](#record)
       - [Type-specific attributes](#type-specific-attributes-7)
         - [`fields`](#fields-2)
@@ -438,10 +437,6 @@ A 1D array appearing as a subfield of a record is called an **inline array**. In
 ###### `time_series`
 
 `boolean (default: false)`. Marks fields where the READARRAY invocation may be replaced by a TAS name referencing a `utl-tas` time-array series object. At any model time, the TAS provides an interpolated grid-shaped array. Distinct from the scalar case: references `utl-tas`, not `utl-ts`. Note that `utl-tas` currently only works with layered arrays, not full-grid arrays, though generalizing has been considered.
-
-###### `repeat`
-
-`string | null (default: null)`. Names the field (within the same component) whose runtime length determines how many times this field is read sequentially within an array block, with each reading appended to an accumulated sequence. See `repeat` section below.
 
 #### Record
 

@@ -92,18 +92,6 @@
           "default": false,
           "title": "Time Series",
           "type": "boolean"
-        },
-        "repeat": {
-          "anyOf": [
-            {
-              "type": "string"
-            },
-            {
-              "type": "null"
-            }
-          ],
-          "default": null,
-          "title": "Repeat"
         }
       },
       "required": [
