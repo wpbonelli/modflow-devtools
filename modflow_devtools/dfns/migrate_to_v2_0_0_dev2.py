@@ -375,31 +375,40 @@ def _resolve_relations(blocks: dict[str, v2.Block]) -> dict[str, v2.Block]:
     }
 
 
-_LONELY_PK_BLOCKS = ("packagedata", "perioddata")
+_LONELY_PK_FIELDS = ("packagedata", "perioddata")
 
 
 def _mark_lonely_pk(blocks: dict[str, v2.Block]) -> dict[str, v2.Block]:
     """
-    Mark the leading identifier column of a self-titled ``packagedata`` or
-    ``perioddata`` recarray as ``pk`` even when nothing else in the component
-    names the same field, so ``_resolve_relations``'s cross-block signal
-    never fires (e.g. BUY's ``irhospec``, CSUB's ``icsubno``, ATS's
-    ``iperats``). These are still genuine row identifiers by construction
+    Mark the leading identifier column of a ``packagedata`` or ``perioddata``
+    recarray as ``pk`` even when nothing else in the component names the same
+    field, so ``_resolve_relations``'s cross-block signal never fires (e.g.
+    BUY's ``irhospec``, CSUB's ``icsubno``, ATS's ``iperats``, SPC's
+    ``bndno``). These are still genuine row identifiers by construction
     (MODFLOW rejects a repeated one) — they're just never referenced by name
     anywhere else in their own component, unlike SFR/MAW/LAK/UZF's `ifno`
     columns, which repeat across multiple blocks.
 
-    Conservative by design: only fires on a block literally named
-    ``packagedata``/``perioddata`` whose same-named list field's item record
+    Matches on the *list field's* name, not the enclosing block's. MF6's own
+    convention names the period block ``period`` but its list field
+    ``perioddata`` — the two are never the same string, so matching on the
+    block name (as this used to) silently never fired for the ``perioddata``
+    case at all, for any component.
+
+    Conservative by design: only fires when the list field's item record
     leads with a required Integer column carrying no ``fk`` and no existing
     ``pk`` anywhere in the record. This deliberately excludes lookalikes like
     DISU/DISV's ``vertices``/``cell2d`` (row identifiers, but a distinct
     grid-geometry concern) and the FK side of relations like
-    ``gwf-mvr.period.perioddata`` (block name doesn't match the list name).
+    ``gwf-mvr.period.perioddata`` (leads with ``mname1``, a String — not an
+    Integer identifier at all).
     """
     updated: dict[str, v2.Block] = {}
     for block_name, block in blocks.items():
-        field = block.fields.get(block_name) if block_name in _LONELY_PK_BLOCKS else None
+        field_name = next((n for n in _LONELY_PK_FIELDS if n in block.fields), None)
+        if field_name is None:
+            continue
+        field = block.fields[field_name]
         if not isinstance(field, v2.List) or not isinstance(field.item, v2.Record):
             continue
         record = field.item
@@ -418,7 +427,7 @@ def _mark_lonely_pk(blocks: dict[str, v2.Block]) -> dict[str, v2.Block]:
         )
         new_field = field.model_copy(update={"item": new_record})
         updated[block_name] = block.model_copy(
-            update={"fields": {**block.fields, block_name: new_field}}
+            update={"fields": {**block.fields, field_name: new_field}}
         )
     return {**blocks, **updated}
 
@@ -877,9 +886,10 @@ def _fix_mvr_relations(name: str, blocks: dict[str, v2.Block]) -> dict[str, v2.B
       participating in the mover, but nothing else in the component repeats
       the field name `pname` (the period block's `pname1`/`pname2` are
       renamed), so neither `_resolve_relations` nor `_mark_lonely_pk` finds
-      it — the former needs a name match, and the latter's `packages` block
-      isn't in `_LONELY_PK_BLOCKS`, plus `pname` isn't `packages`' leading
-      column (`mname` is, and it's optional, so it can't be the pk anyway).
+      it — the former needs a name match, and the latter only fires on a
+      `packagedata`/`perioddata` list field, which `packages` isn't, plus
+      `pname` isn't `packages`' leading column (`mname` is, and it's
+      optional, so it can't be the pk anyway).
     - Marks `period.perioddata`'s `pname1`/`pname2` as
       `fk: "packages.pname"`, since each identifies the provider/receiver
       package by name.
@@ -1420,7 +1430,6 @@ def to_v2_0_0_dev2(name: str, fields: OMD, meta: list[str]) -> v2.Component:
 
     blocks, array_dims = _resolve_dimensions(blocks)
     blocks = _resolve_relations(blocks)
-    blocks = _mark_lonely_pk(blocks)
     raw_dim_names = _raw_dim_names(blocks)
     blocks = _normalize_n_prefix_shapes(blocks, raw_dim_names)
     explicit_dims = _build_explicit_dims(parent, blocks)
@@ -1434,6 +1443,13 @@ def to_v2_0_0_dev2(name: str, fields: OMD, meta: list[str]) -> v2.Component:
     blocks = _patch_oc_rtype(name, blocks)
     blocks = _fix_lak_relations(name, blocks)
     blocks = _fix_mvr_relations(name, blocks)
+    # Must run after `_fix_lak_relations`: LAK's period `number` field looks
+    # exactly like a lonely pk (leading required Integer, no fk) before it's
+    # split into per-arm `lakeno`/`outletno` fk's — marking it pk here first
+    # would carry a stale `pk=True` into those fk copies (`model_copy` off
+    # the original field). No other pass between the old and new call sites
+    # reads or depends on `pk`/`fk` state.
+    blocks = _mark_lonely_pk(blocks)
     dims = {**explicit_dims, **array_dims, **derived_dims} or None
 
     d: dict[str, Any] = {

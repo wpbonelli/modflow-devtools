@@ -54,6 +54,7 @@ blocks:
                 the specified PERIOD data on the line. BNDNO must be greater than zero and less than or
                 equal to MAXBOUND.
               tagged: false
+              pk: true
             spcsetting:
               type: union
               description: 'line of information that is parsed into a keyword and values.  Keyword values
