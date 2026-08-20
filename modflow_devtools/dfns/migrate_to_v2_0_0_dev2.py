@@ -7,11 +7,33 @@ from boltons.dictutils import OMD
 
 from modflow_devtools.dfn import schema as v1
 from modflow_devtools.dfns import schema as v2
-from modflow_devtools.misc import try_literal_eval, try_parse_bool
+from modflow_devtools.misc import try_literal_eval
 
 _IDENT_RE = re.compile(r"^[A-Za-z_]\w*$")
 _LOOKUP_RE = re.compile(r"^(\w+)\.(\w+)\((\w+)\)$")
 _COL_FK_RE = re.compile(r"^([A-Za-z_]\w*)\(([A-Za-z_]\w*)\)$")
+
+
+def try_parse_bool(v: Any, default: bool = False) -> bool:
+    """
+    Try to parse a boolean from a string.
+
+    An empty string is treated as ``True`` rather than ``False``: DFN files
+    allow a bare attribute line with no value (e.g. ``optional`` on its own
+    line, as opposed to ``optional true``/``optional false``) to mean the
+    attribute is set. ``load_dfn`` parses such a line to an empty string, as
+    distinct from ``None``, which indicates the attribute wasn't present at
+    all (and falls through to ``default``).
+    """
+    if isinstance(v, bool):
+        return v
+    if isinstance(v, str):
+        s = v.strip().lower()
+        if s in ("true", ""):
+            return True
+        if s == "false":
+            return False
+    return default
 
 _DEPENDENT_VARS: dict[str, str] = {
     "gwf": "head",
