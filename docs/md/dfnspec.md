@@ -396,7 +396,7 @@ Type `integer`.
 
 ###### `node`
 
-`boolean (default: false)`. Marks this scalar as a grid cell reference, resolved from the parent model's grid (DIS/DISV/DISU) at runtime. Valid only on integer scalars that are columns in a list item record — the same placement `fk` requires. A structurally distinct resolution path from `fk`: a grid-cell lookup against model geometry, not a `pk` lookup in another list.
+`boolean (default: false)`. Marks this scalar as a grid cell reference, resolved from the parent model's grid (DIS/DISV/DISU) at runtime. Valid only on integer scalars that are columns in a list item record.
 
 #### Double
 

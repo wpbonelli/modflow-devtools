@@ -577,5 +577,3 @@ def try_literal_eval(value: str) -> Any:
         return literal_eval(value)
     except (SyntaxError, ValueError):
         return value
-
-

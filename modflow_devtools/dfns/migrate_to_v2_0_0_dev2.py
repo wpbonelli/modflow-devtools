@@ -35,6 +35,7 @@ def try_parse_bool(v: Any, default: bool = False) -> bool:
             return False
     return default
 
+
 _DEPENDENT_VARS: dict[str, str] = {
     "gwf": "head",
     "gwt": "concentration",
