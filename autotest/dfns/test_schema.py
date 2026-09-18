@@ -367,6 +367,22 @@ def test_memory_output_attributes_rcha(dev3_spec):
     assert simvals.output is True
 
 
+@pytest.mark.parametrize("name", ["chf-sto", "gwf-sto", "olf-sto", "swf-sto"])
+def test_sto_storage_field_is_untagged(dev3_spec, name):
+    """STO's PERIOD block writes a bare STEADY-STATE/TRANSIENT line, no STORAGE prefix."""
+    storage = dev3_spec.components[name].blocks["period"].fields["storage"]
+    assert storage.tagged is False
+    assert storage.valid == ["steady-state", "transient"]
+
+
+def test_tas_array_is_per_layer_model_attached(dev3_spec):
+    """tas_array is a U2DREL control record of one layer's worth of cells (ncpl), so
+    utl-tas must be model-attached for the model-scoped ncpl dim to be visible."""
+    tas = dev3_spec.components["utl-tas"]
+    assert tas.parent == "package"
+    assert tas.blocks["time"].fields["tas_array"].shape == ["ncpl"]
+
+
 def test_render_respects_tagged_scalars_in_record(dev3_spec):
     """Tagged Integer/String subfields of a Record must keep their keyword on render()."""
     render = dev3_spec.components["gwf-oc"].blocks["options"].render()
