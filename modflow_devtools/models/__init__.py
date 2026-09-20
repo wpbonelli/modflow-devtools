@@ -1036,10 +1036,21 @@ class PoochRegistry(ModelRegistry):
 
     def _fetcher(self, model_name, file_names) -> Callable:
         def _fetch_files():
+            # Pooch creates a file's parent directory with a bare
+            # check-then-makedirs, which raises FileExistsError if
+            # concurrent workers (e.g. pytest-xdist) fetch into the
+            # same new subdirectory. Creating it first, tolerantly,
+            # means pooch's existence check passes and it skips it.
+            for fname in file_names:
+                (self.pooch.abspath / fname).parent.mkdir(parents=True, exist_ok=True)
             return [Path(self.pooch.fetch(fname)) for fname in file_names]
 
         def _fetch_zip(zip_name):
-            with FileLock(f"{zip_name}.lock"):
+            # Keep the lock in the cache next to the zip it protects, so it
+            # excludes processes regardless of cwd and doesn't litter it.
+            lock_path = self.pooch.abspath / f"{zip_name}.lock"
+            lock_path.parent.mkdir(parents=True, exist_ok=True)
+            with FileLock(str(lock_path)):
                 return [
                     Path(f)
                     for f in self.pooch.fetch(
