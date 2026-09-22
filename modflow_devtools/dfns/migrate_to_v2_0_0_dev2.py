@@ -1638,7 +1638,14 @@ def to_v2_0_0_dev2(name: str, fields: OMD, meta: list[str]) -> v2.Component:
             # PERIOD <iper>`) rather than appearing as a body row. Must be checked
             # before the in_record skip below: block-attached scalars are marked
             # in_record=true in v1 even though they aren't a record subfield.
-            block.header = _map_field(field)
+            #
+            # No v1 tag for `fill_forward`, so it's hardcoded by block name:
+            # `period` is the only repeating-block header in the v1 corpus that
+            # fill-forwards (confirmed against MF6 source; see
+            # repeating-block-fill-forward-plan.md).
+            block.header = v2.BlockHeader(
+                field=_map_field(field), fill_forward=field["block"] == "period"
+            )
             continue
         if try_parse_bool(field.get("in_record", False)):
             continue  # record subfields are handled recursively

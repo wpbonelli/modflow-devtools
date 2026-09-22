@@ -246,9 +246,13 @@ Blocks are treated differently depending on the structural composition of their 
 
 #### `header`
 
-`InputField | null (default: null)`. A field whose token attaches directly to the block's `begin <name>` line instead of appearing as a body row, e.g. `BEGIN PERIOD <iper>`. Its presence means the block may appear multiple times, each occurrence labeled by the header field's value. The canonical repeating block is the period block, whose header is the stress period number `iper`.
+`BlockHeader | null (default: null)`. Wraps a field (`header.field`) whose token attaches directly to the block's `begin <name>` line instead of appearing as a body row, e.g. `BEGIN PERIOD <iper>`. Its presence means the block may appear multiple times, each occurrence labeled by the header field's value (`Block.repeats` is `True` iff `header is not None`). The canonical repeating block is the period block, whose header field is the stress period number `iper`.
 
-Unlike `fields`, which is a `{string: InputField}` mapping keyed by field name, `header` holds a single `InputField` directly since there is at most one per block.
+Unlike `fields`, which is a `{string: InputField}` mapping keyed by field name, `header.field` holds a single `InputField` directly since there is at most one per block.
+
+`header.fill_forward` (`bool`, default `False`) says whether a *missing* occurrence means "reuse the prior occurrence's values" — `True` only for the period block. It's a Fortran-level fact verified per block against MF6 source, not inferred from the header field's type — `solutiongroup`'s `group_num` and `period`'s `iper` are both `Integer`, but only the latter fill-forwards.
+
+An `Integer` header is inherently a sequential key: `group_num` and `iper` are both documented as monotonically increasing across occurrences, whether or not they fill forward. Only the meaning of a *gap* in that sequence varies — which is what `fill_forward` distinguishes.
 
 A block has no explicit `optional` attribute. Its optionality is derived from its fields: a block is optional if and only if all of its fields are optional (vacuously true for an empty block).
 
