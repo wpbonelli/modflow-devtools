@@ -489,7 +489,8 @@ def _mark_lonely_pk(blocks: dict[str, v2.Block]) -> dict[str, v2.Block]:
     return {**blocks, **updated}
 
 
-# Integer columns in a list item record that reference a grid cell, resolved
+# Integer columns (scalars, or arrays of cellids like GNC's `cellidsj`) in a
+# list item record that reference a grid cell, resolved
 # from the parent model's grid (DIS/DISV/DISU) at runtime, rather than a pk/fk
 # relation to another list's row. v1 has no attribute that signals this
 # (`numeric_index` only means "needs 1-based/0-based conversion", not "is a
@@ -502,7 +503,7 @@ _NODE_REF_FIELDS: dict[str, tuple[str, tuple[str, ...]]] = {
     "exg-gwfgwf": ("exchangedata", ("cellidm1", "cellidm2")),
     "exg-gwtgwt": ("exchangedata", ("cellidm1", "cellidm2")),
     "exg-olfgwf": ("exchangedata", ("cellidm1", "cellidm2")),
-    "gwf-gnc": ("gncdata", ("cellidm", "cellidn")),
+    "gwf-gnc": ("gncdata", ("cellidm", "cellidn", "cellidsj")),
 }
 
 
@@ -526,7 +527,9 @@ def _mark_node_refs(name: str, blocks: dict[str, v2.Block]) -> dict[str, v2.Bloc
     updates = {
         fname: f.model_copy(update={"node": True})
         for fname in field_names
-        if isinstance(f := item.fields.get(fname), v2.Integer) and not f.node
+        if isinstance(f := item.fields.get(fname), (v2.Integer, v2.Array))
+        and (isinstance(f, v2.Integer) or f.dtype == "integer")
+        and not f.node
     }
     if not updates:
         return blocks

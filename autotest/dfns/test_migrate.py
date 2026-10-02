@@ -281,3 +281,15 @@ def test_migrate_ts_shapes(dfn_dir):
 def test_migrate_auxiliary_stays_self_sizing(dfn_dir):
     component = _migrate_dev3(dfn_dir, "gwf-chd")
     assert component.blocks["options"].fields["auxiliary"].shape == []
+
+
+def test_migrate_gnc_node_refs(dfn_dir):
+    component = _migrate_dev3(dfn_dir, "gwf-gnc")
+    item = component.blocks["gncdata"].fields["gncdata"].item
+    assert item.fields["cellidn"].node
+    assert item.fields["cellidm"].node
+    cellidsj = item.fields["cellidsj"]
+    assert isinstance(cellidsj, v2.Array)
+    assert cellidsj.node
+    assert cellidsj.shape == ["numalphaj"]
+    assert not item.fields["alphasj"].node

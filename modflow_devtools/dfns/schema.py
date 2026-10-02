@@ -125,12 +125,20 @@ class Array(InputFieldBase):
     layered: bool = False
     index: bool = False
     fk: str | None = None
+    # Each element is a grid-cell reference (see `Integer.node`), so the field
+    # spans `prod(shape) * ncelldim` tokens, the cell width coming from the
+    # grid referred to rather than from the shape.
+    node: bool = False
 
     @model_validator(mode="after")
     def _check_index_dtype(self) -> "Array":
         if self.index and self.dtype != "integer":
             raise ValueError(
                 f"Array {self.name!r}: index=True requires dtype='integer', got {self.dtype!r}"
+            )
+        if self.node and self.dtype != "integer":
+            raise ValueError(
+                f"Array {self.name!r}: node=True requires dtype='integer', got {self.dtype!r}"
             )
         if self.fk is not None and self.dtype != "integer":
             raise ValueError(
@@ -1234,6 +1242,34 @@ def _validate_fk_fields(component: "ComponentBase", spec: "Dfns") -> None:
         _check_fields(block.fields)
 
 
+def _validate_node_fields(component: "ComponentBase") -> None:
+    """
+    A grid-cell reference (`node=True`, see `Integer.node`/`Array.node`) is
+    only meaningful as a column in a list item record, where each row names
+    its cell(s). The dtype constraint on arrays is checked by `Array` itself.
+    """
+    if not component.blocks:
+        return
+
+    def _check(field: "InputField", in_item: bool) -> None:
+        if getattr(field, "node", False) and not in_item:
+            raise ValueError(
+                f"Field {field.name!r}: node=True is only valid on a column in a list item record"
+            )
+        if isinstance(field, List):
+            _check(field.item, True)
+        elif isinstance(field, Record):
+            for subfield in field.fields.values():
+                _check(subfield, in_item)
+        elif isinstance(field, Union):
+            for arm in field.arms.values():
+                _check(arm, in_item)
+
+    for block in component.blocks.values():
+        for field in block.fields.values():
+            _check(field, False)
+
+
 def _validate_array_shapes(
     component: "ComponentBase",
     component_name: str,
@@ -1516,6 +1552,8 @@ class Dfns(BaseModel):
                 _resolve_derived_dims(component, self.dims(name))
         for name, component in self.components.items():
             _validate_fk_fields(component, self)
+        for name, component in self.components.items():
+            _validate_node_fields(component)
         for name, component in self.components.items():
             _validate_array_shapes(component, name, self)
         for name, component in self.components.items():

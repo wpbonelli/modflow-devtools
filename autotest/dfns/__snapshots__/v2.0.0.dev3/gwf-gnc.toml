@@ -71,6 +71,7 @@ description = "is the array of CELLIDS for the contributing j cells, which contr
 tagged = false
 dtype = "integer"
 index = true
+node = true
 shape = [
     "numalphaj",
 ]

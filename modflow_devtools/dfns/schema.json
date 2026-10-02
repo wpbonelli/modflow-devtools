@@ -138,6 +138,11 @@
           ],
           "default": null,
           "title": "Fk"
+        },
+        "node": {
+          "default": false,
+          "title": "Node",
+          "type": "boolean"
         }
       },
       "required": [

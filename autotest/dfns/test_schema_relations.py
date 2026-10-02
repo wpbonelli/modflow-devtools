@@ -186,3 +186,45 @@ def test_dfns_validate_fk_in_union_item_scalar_arm():
     arm = Integer(name="lakeno", fk="nosuchblock.lakeno")
     with pytest.raises(ValueError, match="is not a list block"):
         Dfns(components=_union_ctx(arm))
+
+
+def _node_ctx(field):
+    item = Record(name="item", fields={field.name: field})
+    lst = List(name="gncdata", item=item)
+    block = Block(name="gncdata", fields={"gncdata": lst})
+    pkg = Package(name="gwf-gnc", parent="gwf-nam", blocks={"gncdata": block})
+    gwf = Model(name="gwf-nam", blocks=None)
+    return pkg, gwf
+
+
+@pytest.mark.parametrize(
+    "field",
+    [
+        Integer(name="cellidn", node=True),
+        Array(name="cellidsj", dtype="integer", node=True),
+    ],
+)
+def test_dfns_validate_node_in_list_item(field):
+    gnc, gwf = _node_ctx(field)
+    spec = Dfns(components={"gwf-nam": gwf, "gwf-gnc": gnc})
+    assert "gwf-gnc" in spec.components
+
+
+def test_array_node_requires_integer_dtype():
+    with pytest.raises(ValueError, match="node=True requires dtype='integer'"):
+        Array(name="alphasj", dtype="double", node=True)
+
+
+@pytest.mark.parametrize(
+    "field",
+    [
+        Integer(name="cellid", node=True),
+        Array(name="cellids", dtype="integer", node=True),
+    ],
+)
+def test_dfns_validate_node_outside_list_item(field):
+    block = Block(name="options", fields={field.name: field})
+    pkg = Package(name="gwf-gnc", parent="gwf-nam", blocks={"options": block})
+    gwf = Model(name="gwf-nam", blocks=None)
+    with pytest.raises(ValueError, match="only valid on a column in a list item record"):
+        Dfns(components={"gwf-nam": gwf, "gwf-gnc": pkg})

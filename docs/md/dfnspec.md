@@ -72,6 +72,7 @@ This document describes the MODFLOW 6 component definition (DFN) system. This sy
         - [`time_series`](#time_series-3)
         - [`index`](#index-1)
         - [`fk`](#fk-2)
+        - [`node`](#node-1)
     - [Record](#record)
       - [Type-specific attributes](#type-specific-attributes-7)
         - [`fields`](#fields-2)
@@ -406,7 +407,7 @@ Type `integer`.
 
 ###### `node`
 
-`boolean (default: false)`. Marks this scalar as a grid cell reference, resolved from the parent model's grid (DIS/DISV/DISU) at runtime. Valid only on integer scalars that are columns in a list item record.
+`boolean (default: false)`. Marks this scalar as a grid cell reference, resolved from the parent model's grid (DIS/DISV/DISU) at runtime. Valid only on integer scalars or integer arrays (see [Array `node`](#node-1)) that are columns in a list item record.
 
 #### Double
 
@@ -467,6 +468,10 @@ A 1D array appearing as a subfield of a record is called an **inline array**. In
 ###### `fk`
 
 `string | null (default: null)`. Marks the array's (nonzero) elements as a foreign key: a per-grid-cell reference to a row (by `pk`) in another list, rather than the per-list-row reference a scalar `fk` expresses (e.g. a grid-wide array giving each cell's cross-section id, referencing the cross-section package's `packagedata`). Only valid when `dtype` is `"integer"`. Hierarchical path form only (`"[component.]block.field"`) — an array has no `fk_ref` counterpart, since it has no sibling record to carry a runtime component-selector field, and no `pk` counterpart, since it has no rows of its own to be a key of. See "Primary/foreign keys".
+
+###### `node`
+
+`boolean (default: false)`. Marks each of the array's elements as a grid cell reference, like the scalar [`node`](#node) (e.g. GNC's `cellidsj`, `numalphaj` cellids). Each element is one cellid, so the field spans `prod(shape) * ncelldim` values in the input file, where `ncelldim` is that of the grid referred to (3 for DIS, 2 for DISV, 1 for DISU) rather than part of `shape`. Only valid when `dtype` is `"integer"` and the array is a column in a list item record.
 
 #### Record
 
