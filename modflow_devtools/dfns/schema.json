@@ -499,6 +499,41 @@
           ],
           "title": "Direction",
           "type": "string"
+        },
+        "mode_keyword": {
+          "default": true,
+          "title": "Mode Keyword",
+          "type": "boolean"
+        },
+        "component": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Component"
+        },
+        "component_ref": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Component Ref"
         }
       },
       "required": [

@@ -115,6 +115,15 @@ class Double(InputFieldBase):
 class File(InputFieldBase):
     type: Literal["file"] = PydanticField(default="file", frozen=True)
     direction: Literal["in", "out"]
+    # Whether a FILEIN/FILEOUT keyword precedes the path. Name-file entries
+    # (`TDIS6 <file>`, `GWF6 <file> <name>`) have none.
+    mode_keyword: bool = True
+    # The component the file is input for: a selector (see `admits`), resolved
+    # among this component's children. See `_validate_file_links`.
+    component: str | list[str] | None = None
+    # A sibling String whose value is the target's ftype token (e.g. `DIS6`),
+    # picking one family among the selector's matches. See `Dfns.ftype_family`.
+    component_ref: str | None = None
 
 
 Scalar = Annotated[
@@ -323,10 +332,10 @@ def _render_shape(field: "Array") -> str:
 
 
 def _render_file(field: "File") -> str:
-    keyword = "FILEIN" if field.direction == "in" else "FILEOUT"
-    if not field.tagged:
-        return f"{keyword} <{field.name}>"
-    return f"{field.name.upper()} {keyword} <{field.name}>"
+    path = f"<{field.name}>"
+    if field.mode_keyword:
+        path = f"{'FILEIN' if field.direction == 'in' else 'FILEOUT'} {path}"
+    return _tag(field, path)
 
 
 def _tag(field: "InputField", inner: str) -> str:
@@ -573,6 +582,61 @@ def _parents_as_set(parent: "str | list[str] | None") -> set[str]:
     if parent is None:
         return set()
     return {parent} if isinstance(parent, str) else set(parent)
+
+
+def admits(selector: "str | list[str] | None", component: "ComponentBase") -> bool:
+    """
+    Whether a selector admits a component.
+
+    A selector is a term or a list of terms, as in ``Component.parent`` and
+    ``File.component``. A term admits a component if it equals the component's
+    name, its type (``"model"``, ``"package"``) or its subtype (``"exchange"``,
+    ``"utility"``, ...). ``"*"`` admits every component.
+    """
+    names = {component.name, getattr(component, "type", None), getattr(component, "subtype", None)}
+    return any(t == "*" or t in names for t in _parents_as_set(selector))
+
+
+def _term_rank(term: str, components: "Mapping[str, ComponentBase]") -> int:
+    """How broad a selector term is: a concrete name, then a subtype, then a type."""
+    if term in components:
+        return 0
+    if term in ("model", "package", "simulation"):
+        return 2
+    return 1
+
+
+def covering_selector(
+    linkers: "list[ComponentBase]", components: "Mapping[str, ComponentBase]"
+) -> "str | list[str]":
+    """
+    The simplest selector that admits every linker: fewest terms first, then
+    the narrowest terms (see `_term_rank`). Used to derive a linked
+    component's ``parent`` from the components that link to it.
+    """
+    from itertools import combinations
+
+    if not linkers:
+        raise ValueError("No linkers to cover")
+    terms = sorted(
+        {
+            t
+            for c in linkers
+            for t in (c.name, getattr(c, "subtype", None), getattr(c, "type", None))
+            if t is not None
+        },
+        key=lambda t: (_term_rank(t, components), t),
+    )
+    for k in range(1, len(terms) + 1):
+        covers = [
+            combo
+            for combo in combinations(terms, k)
+            if all(admits(list(combo), c) for c in linkers)
+        ]
+        if covers:
+            best = min(covers, key=lambda combo: sorted(_term_rank(t, components) for t in combo))
+            return best[0] if k == 1 else list(best)
+    raise AssertionError("unreachable: the linkers' own names always cover them")
 
 
 def _receives_from(
@@ -1256,6 +1320,63 @@ def _validate_fk_fields(component: "ComponentBase", spec: "Dfns") -> None:
         _check_fields(block.fields)
 
 
+def _iter_files(fields: "Mapping[str, InputField]"):
+    """Yield every File among ``fields`` (recursively) with its sibling fields."""
+    for field in fields.values():
+        match field:
+            case File():
+                yield field, fields
+            case Record():
+                yield from _iter_files(field.fields)
+            case Union():
+                yield from _iter_files(field.arms)
+            case List():
+                yield from _iter_files({field.item.name: field.item})
+
+
+def _validate_file_links(component: "ComponentBase", spec: "Dfns") -> None:
+    """
+    For every File with ``component`` or ``component_ref`` set:
+
+    - it must be an input file;
+    - ``component`` must resolve to at least one of this component's
+      children (see `Dfns.children`);
+    - without ``component_ref``, it must resolve to one ftype family (a base
+      and its array-based variants, see `Dfns.ftype`);
+    - ``component_ref`` must name a sibling String in the same record.
+    """
+    blocks = list((component.blocks or {}).values())
+    for block in blocks:
+        for file, siblings in _iter_files(block.fields):
+            if file.component is None and file.component_ref is None:
+                continue
+            where = f"{component.name}: File {file.name!r}"
+            if file.direction != "in":
+                raise ValueError(f"{where}: only an input file may link a component")
+            if file.component is None:
+                raise ValueError(f"{where}: component_ref without component")
+            targets = [
+                n for n, c in spec.children(component.name).items() if admits(file.component, c)
+            ]
+            if not targets:
+                raise ValueError(
+                    f"{where}: component={file.component!r} matches none of this "
+                    f"component's children"
+                )
+            if file.component_ref is None:
+                families = {spec.ftype(n) for n in targets}
+                if len(families) > 1:
+                    raise ValueError(
+                        f"{where}: component={file.component!r} matches several "
+                        f"components {sorted(targets)} and has no component_ref"
+                    )
+            elif not isinstance(siblings.get(file.component_ref), String):
+                raise ValueError(
+                    f"{where}: component_ref={file.component_ref!r} is not a sibling "
+                    f"String field in the same record"
+                )
+
+
 def _validate_cellid_fields(component: "ComponentBase") -> None:
     """
     A cellid array (`cellid=True`, see `Array.cellid`) is only meaningful as a
@@ -1482,8 +1603,57 @@ class Dfns(BaseModel):
         return None
 
     def children(self, name: str) -> "dict[str, Component]":
-        """Components whose parent matches ``name``."""
-        return {n: c for n, c in self.components.items() if c.parent == name}
+        """Components whose parent admits ``name`` (see `admits`)."""
+        component = self.components[name]
+        return {
+            n: c for n, c in self.components.items() if n != name and admits(c.parent, component)
+        }
+
+    def ftype(self, name: str) -> str:
+        """
+        The ftype token naming a component's family in name files: ``gwf-nam``
+        → ``GWF6``, ``gwf-dis`` → ``DIS6``, ``exg-gwfgwf`` → ``GWF6-GWF6``,
+        ``sln-ims`` → ``IMS6``. An array-based variant (``gwf-rcha``,
+        ``gwf-chdg``, ``utl-spca``) shares its base's token: mf6 picks the
+        variant from the file's own ``READASARRAYS``/``READARRAYGRID`` option.
+        """
+        prefix, _, suffix = name.partition("-")
+        if suffix == "nam":
+            return f"{prefix.upper()}6"
+        if prefix == "exg":
+            # model type prefixes are all three letters
+            return f"{suffix[:3].upper()}6-{suffix[3:].upper()}6"
+        if suffix[-1:] in ("a", "g") and f"{prefix}-{suffix[:-1]}" in self.components:
+            suffix = suffix[:-1]
+        return f"{suffix.upper()}6"
+
+    def ftype_family(self, token: str, context: str) -> list[str]:
+        """
+        The components a name-file ftype token can mean among ``context``'s
+        children: ``DIS6`` in ``gwf-nam`` → ``["gwf-dis"]``, ``RCH6`` →
+        ``["gwf-rch", "gwf-rcha"]``. More than one is a variant family, which
+        the target file's own options pick between.
+        """
+        token = token.upper()
+        return sorted(n for n in self.children(context) if self.ftype(n) == token)
+
+    def _parents_in_models(self, parent: "str | list[str] | None") -> set[str]:
+        """
+        ``parent``'s terms, plus, for a concrete package term (``utl-tvk``'s
+        ``gwf-npf``), that package's own parents, transitively. A subpackage
+        sits in whatever model its parent package does.
+        """
+        result: set[str] = set()
+        todo = list(_parents_as_set(parent))
+        while todo:
+            p = todo.pop()
+            if p in result:
+                continue
+            result.add(p)
+            c = self.components.get(p)
+            if isinstance(c, Package):
+                todo.extend(_parents_as_set(c.parent))
+        return result
 
     def local_dims(self, component_name: str) -> set[str]:
         """All dim names declared in this component, both input and runtime."""
@@ -1503,6 +1673,7 @@ class Dfns(BaseModel):
         inherited: set[str] = set()
         component = self.components[component_name]
         req_parent = component.parent
+        req_model_parents = list(self._parents_in_models(req_parent))
         for cname, c in self.components.items():
             if cname == component_name:
                 continue
@@ -1511,7 +1682,9 @@ class Dfns(BaseModel):
                     case "simulation":
                         inherited.add(dim_name)
                     case "model":
-                        if _receives_from(req_parent, c.parent, requester_name=component_name):
+                        if _receives_from(
+                            req_model_parents, c.parent, requester_name=component_name
+                        ):
                             inherited.add(dim_name)
                     case "component":
                         if cname in _parents_as_set(req_parent):
@@ -1571,6 +1744,8 @@ class Dfns(BaseModel):
         for name, component in self.components.items():
             _validate_fk_fields(component, self)
         for name, component in self.components.items():
+            _validate_file_links(component, self)
+        for name, component in self.components.items():
             _validate_cellid_fields(component)
         for name, component in self.components.items():
             _validate_array_shapes(component, name, self)
@@ -1601,6 +1776,7 @@ class Dfns(BaseModel):
         dfns: dict = {}
         if dfn_paths:
             from modflow_devtools.dfn import schema as v1
+            from modflow_devtools.dfns.migrate_to_v2_0_0_dev2 import migrate_corpus
             from modflow_devtools.dfns.migrate_to_v2_0_0_dev3 import to_v2_0_0_dev3
 
             common_path = path / "common.dfn"
@@ -1609,22 +1785,13 @@ class Dfns(BaseModel):
                 with common_path.open() as f:
                     common, _ = v1.Dfn.load_dfn(f)  # type: ignore[attr-defined]
 
+            raw = {}
             for stem, dfn_path in dfn_paths.items():
                 with dfn_path.open() as f:
-                    fields, meta = v1.Dfn.load_dfn(f, common=common)  # type: ignore[attr-defined]
-                # to_v2_0_0_dev3() runs to_v2_0_0_dev2() itself as its own first
-                # step (same raw (name, fields, meta) input) -- this was calling
-                # to_v2_0_0_dev2() directly and stopping there, silently leaving
-                # every component one schema version behind CURRENT_SCHEMA_VERSION
-                # (still true as of MODFLOW-ORG/modflow-devtools@develop). Confirmed
-                # directly: Dfns.load() on a freshly-synced raw-.dfn directory (the
-                # exact path a live RemoteDfnRegistry.spec(schema_version=
-                # CURRENT_SCHEMA_VERSION) call takes) returned components with
-                # schema_version == "2.0.0.dev2", not "2.0.0.dev3", with no error or
-                # warning -- e.g. gwf-chdg's now-removed vestigial `maxbound`
-                # DIMENSIONS field (see the dev3 migration fix in this same branch)
-                # was still present, because the dev3-only fix never ran.
-                dfns[stem] = to_v2_0_0_dev3(name=stem, fields=fields, meta=meta)
+                    raw[stem] = v1.Dfn.load_dfn(f, common=common)  # type: ignore[attr-defined]
+            # to_v2_0_0_dev3 runs to_v2_0_0_dev2 itself as its first step, so this
+            # yields CURRENT_SCHEMA_VERSION components, not dev2 ones.
+            dfns = dict(migrate_corpus(raw, to_v2_0_0_dev3))
         elif toml_paths:
             import tomli
 
