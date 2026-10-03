@@ -89,7 +89,7 @@ _KEYWORD_LINKS: dict[tuple[str, str], str | list[str]] = {
     ("gwe-ssm", "spc6"): ["utl-spc", "utl-spca"],
 }
 
-# Name-file filename columns: (component, field) -> (selector, component_ref).
+# Name-file filename columns: (component, field) -> (selector, component_ftype).
 # `*-nam` means every model name file.
 _NAMEFILE_LINKS: dict[tuple[str, str], tuple[str, str | None]] = {
     ("sim-nam", "tdis6"): ("sim-tdis", None),
@@ -630,7 +630,7 @@ def _link_namefile_fields(name: str, blocks: dict[str, v2.Block]) -> dict[str, v
 
     def _link(field: Any) -> Any:
         if isinstance(field, v2.String) and field.name in links:
-            selector, component_ref = links[field.name]
+            selector, component_ftype = links[field.name]
             optional = field.optional and (name, field.name) not in _V1_REQUIRED
             data = {k: getattr(field, k) for k in v2.InputFieldBase.model_fields}
             return v2.File(
@@ -638,7 +638,7 @@ def _link_namefile_fields(name: str, blocks: dict[str, v2.Block]) -> dict[str, v
                 direction="in",
                 mode_keyword=False,
                 component=selector,
-                component_ref=component_ref,
+                component_ftype=component_ftype,
             )
         if isinstance(field, v2.Record):
             return field.model_copy(

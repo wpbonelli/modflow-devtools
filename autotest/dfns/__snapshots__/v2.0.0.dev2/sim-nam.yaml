@@ -95,7 +95,7 @@ blocks:
               direction: in
               mode_keyword: false
               component: model
-              component_ref: mtype
+              component_ftype: mtype
             mname:
               type: string
               longname: name of model
@@ -127,7 +127,7 @@ blocks:
               direction: in
               mode_keyword: false
               component: exchange
-              component_ref: exgtype
+              component_ftype: exgtype
             exgmnamea:
               type: string
               longname: name of model A
@@ -171,7 +171,7 @@ blocks:
               direction: in
               mode_keyword: false
               component: solution
-              component_ref: slntype
+              component_ftype: slntype
             slnmnames:
               type: array
               longname: array of model names in this solution

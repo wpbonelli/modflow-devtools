@@ -248,7 +248,7 @@ def test_dfns_validate_cellid_outside_list_item():
         Dfns(components={"gwf-nam": gwf, "gwf-gnc": pkg})
 
 
-# --- file links (File.component / component_ref) ---
+# --- file links (File.component / component_ftype) ---
 
 
 def _file_block(file: File, **siblings) -> dict:
@@ -278,13 +278,13 @@ def test_file_link_fixed_target():
     Dfns(components=_link_spec(file))
 
 
-def test_file_link_variant_family_without_component_ref():
+def test_file_link_variant_family_without_component_ftype():
     file = File(name="f", direction="in", component=["gwf-rch", "gwf-rcha"])
     Dfns(components=_link_spec(file, owner="gwf-nam"))
 
 
-def test_file_link_component_ref():
-    file = File(name="fname", direction="in", component="package", component_ref="ftype")
+def test_file_link_component_ftype():
+    file = File(name="fname", direction="in", component="package", component_ftype="ftype")
     Dfns(components=_link_spec(file, owner="gwf-nam", ftype=String(name="ftype")))
 
 
@@ -307,14 +307,14 @@ def test_file_link_not_a_child_rejected():
         Dfns(components=_link_spec(file, owner="gwf-nam"))
 
 
-def test_file_link_ambiguous_without_component_ref_rejected():
+def test_file_link_ambiguous_without_component_ftype_rejected():
     file = File(name="f", direction="in", component="package")
-    with pytest.raises(ValueError, match="no component_ref"):
+    with pytest.raises(ValueError, match="no component_ftype"):
         Dfns(components=_link_spec(file, owner="gwf-nam"))
 
 
-def test_file_link_component_ref_not_sibling_rejected():
-    file = File(name="f", direction="in", component="package", component_ref="ftype")
+def test_file_link_component_ftype_not_sibling_rejected():
+    file = File(name="f", direction="in", component="package", component_ftype="ftype")
     with pytest.raises(ValueError, match="not a sibling String"):
         Dfns(components=_link_spec(file, owner="gwf-nam"))
 

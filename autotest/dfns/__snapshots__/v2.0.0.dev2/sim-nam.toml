@@ -88,7 +88,7 @@ tagged = false
 direction = "in"
 mode_keyword = false
 component = "model"
-component_ref = "mtype"
+component_ftype = "mtype"
 
 [blocks.models.fields.models.item.fields.mname]
 type = "string"
@@ -120,7 +120,7 @@ tagged = false
 direction = "in"
 mode_keyword = false
 component = "exchange"
-component_ref = "exgtype"
+component_ftype = "exgtype"
 
 [blocks.exchanges.fields.exchanges.item.fields.exgmnamea]
 type = "string"
@@ -167,7 +167,7 @@ tagged = false
 direction = "in"
 mode_keyword = false
 component = "solution"
-component_ref = "slntype"
+component_ftype = "slntype"
 
 [blocks.solutiongroup.fields.solutiongroup.item.fields.slnmnames]
 type = "array"

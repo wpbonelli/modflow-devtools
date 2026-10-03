@@ -83,7 +83,7 @@ blocks:
               direction: in
               mode_keyword: false
               component: package
-              component_ref: ftype
+              component_ftype: ftype
             pname:
               type: string
               longname: user name for package

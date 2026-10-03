@@ -523,7 +523,7 @@
           "default": null,
           "title": "Component"
         },
-        "component_ref": {
+        "component_ftype": {
           "anyOf": [
             {
               "type": "string"
@@ -533,7 +533,7 @@
             }
           ],
           "default": null,
-          "title": "Component Ref"
+          "title": "Component Ftype"
         }
       },
       "required": [

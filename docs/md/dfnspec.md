@@ -164,7 +164,7 @@ A component that other components' input files link (see [File](#file)), such as
 
 #### `ftype`
 
-`string | null (default: null)`. The token naming the component's file type in name files and file records, e.g. `GWF6` for `gwf-nam`, `DIS6` for `gwf-dis`, `IMS6` for `sln-ims`, `GWF6-GWF6` for `exg-gwfgwf`. Array-based variants share their base's token: `gwf-rcha` is `RCH6`, `gwf-chdg` is `CHD6`, and MODFLOW 6 picks the variant from the file's own `READASARRAYS`/`READARRAYGRID` option. Within a component's children, one token names one component, or a base and its variants (an **ftype family**). `null` only for the simulation name file. See [`component_ref`](#component_ref).
+`string | null (default: null)`. The token naming the component's file type in name files and file records, e.g. `GWF6` for `gwf-nam`, `DIS6` for `gwf-dis`, `IMS6` for `sln-ims`, `GWF6-GWF6` for `exg-gwfgwf`. Array-based variants share their base's token: `gwf-rcha` is `RCH6`, `gwf-chdg` is `CHD6`, and MODFLOW 6 picks the variant from the file's own `READASARRAYS`/`READARRAYGRID` option. Within a component's children, one token names one component, or a base and its variants (an **ftype family**). `null` only for the simulation name file. See [`component_ftype`](#component_ftype).
 
 #### `schema_version`
 
@@ -453,9 +453,9 @@ If a file option is introduced by one or more leading keywords (e.g. `CROSS_SECT
 
 `string | [string] | null (default: null)`. The component the file is input for. Valid for components whose `parent` admits this one. Only valid when `direction` is `"in"`.
 
-###### `component_ref`
+###### `component_ftype`
 
-`string | null (default: null)`. Names a sibling `string` field in the same record whose value is the target component's **ftype** (e.g. `GWF6`, `DIS6`, `IMS6`, `GWF6-GWF6`). Behaves like [`fk_ref`](#fk_ref) for keys. The token picks one ftype family among `component`'s matches; the target file's own options then pick the variant, as above. For example, a model name file's `packages` rows have `fname` with `component: "package"` and `component_ref: "ftype"`, and `sim-nam`'s `models` rows have `mfname` with `component: "model"` and `component_ref: "mtype"`.
+`string | null (default: null)`. Names a sibling `string` field in the same record whose value is the target component's **ftype** (e.g. `GWF6`, `DIS6`, `IMS6`, `GWF6-GWF6`). Behaves like [`fk_ref`](#fk_ref) for keys. The token picks one ftype family among `component`'s matches; the target file's own options then pick the variant, as above. For example, a model name file's `packages` rows have `fname` with `component: "package"` and `component_ftype: "ftype"`, and `sim-nam`'s `models` rows have `mfname` with `component: "model"` and `component_ftype: "mtype"`.
 
 Each component declares its token in [`ftype`](#ftype).
 

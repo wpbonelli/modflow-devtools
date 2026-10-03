@@ -475,7 +475,7 @@ def test_migrate_links_sfr_tables(linked_spec):
 
 
 @pytest.mark.parametrize(
-    "field, selector, component_ref",
+    "field, selector, component_ftype",
     [
         ("tdis6", "sim-tdis", None),
         ("mfname", "model", "mtype"),
@@ -483,10 +483,10 @@ def test_migrate_links_sfr_tables(linked_spec):
         ("slnfname", "solution", "slntype"),
     ],
 )
-def test_migrate_links_sim_nam(linked_spec, field, selector, component_ref):
+def test_migrate_links_sim_nam(linked_spec, field, selector, component_ftype):
     file = linked_spec.components["sim-nam"].get_fields(recurse=True)[field]
     assert isinstance(file, v2.File)
-    assert (file.component, file.component_ref) == (selector, component_ref)
+    assert (file.component, file.component_ftype) == (selector, component_ftype)
     assert file.direction == "in" and not file.mode_keyword
     assert not file.optional
 
@@ -501,7 +501,7 @@ def test_migrate_links_model_packages(linked_spec):
     assert models
     for model in models:
         file = model.get_fields(recurse=True)["fname"]
-        assert (file.component, file.component_ref) == ("package", "ftype"), model.name
+        assert (file.component, file.component_ftype) == ("package", "ftype"), model.name
 
 
 def test_migrate_link_selectors_resolve(linked_spec):
@@ -513,7 +513,7 @@ def test_migrate_link_selectors_resolve(linked_spec):
                     continue
                 targets = [n for n, t in children.items() if v2.admits(file.component, t)]
                 assert targets, (name, file.name)
-                if file.component_ref is None:
+                if file.component_ftype is None:
                     ftypes = {linked_spec.components[t].ftype for t in targets}
                     assert len(ftypes) == 1, (name, file.name)
 

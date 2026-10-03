@@ -123,7 +123,7 @@ class File(InputFieldBase):
     component: str | list[str] | None = None
     # A sibling String whose value is the target's ftype token (e.g. `DIS6`),
     # picking one family among the selector's matches. See `Dfns.ftype_family`.
-    component_ref: str | None = None
+    component_ftype: str | None = None
 
 
 Scalar = Annotated[
@@ -1341,25 +1341,25 @@ def _iter_files(fields: "Mapping[str, InputField]"):
 
 def _validate_file_links(component: "ComponentBase", spec: "Dfns") -> None:
     """
-    For every File with ``component`` or ``component_ref`` set:
+    For every File with ``component`` or ``component_ftype`` set:
 
     - it must be an input file;
     - ``component`` must resolve to at least one of this component's
       children (see `Dfns.children`);
-    - without ``component_ref``, it must resolve to one ftype family (a base
+    - without ``component_ftype``, it must resolve to one ftype family (a base
       and its array-based variants, see `Dfns.ftype`);
-    - ``component_ref`` must name a sibling String in the same record.
+    - ``component_ftype`` must name a sibling String in the same record.
     """
     blocks = list((component.blocks or {}).values())
     for block in blocks:
         for file, siblings in _iter_files(block.fields):
-            if file.component is None and file.component_ref is None:
+            if file.component is None and file.component_ftype is None:
                 continue
             where = f"{component.name}: File {file.name!r}"
             if file.direction != "in":
                 raise ValueError(f"{where}: only an input file may link a component")
             if file.component is None:
-                raise ValueError(f"{where}: component_ref without component")
+                raise ValueError(f"{where}: component_ftype without component")
             targets = [
                 n for n, c in spec.children(component.name).items() if admits(file.component, c)
             ]
@@ -1368,17 +1368,17 @@ def _validate_file_links(component: "ComponentBase", spec: "Dfns") -> None:
                     f"{where}: component={file.component!r} matches none of this "
                     f"component's children"
                 )
-            if file.component_ref is None:
+            if file.component_ftype is None:
                 components = spec.components
                 families = {components[n].ftype or n for n in targets}
                 if len(families) > 1:
                     raise ValueError(
                         f"{where}: component={file.component!r} matches several "
-                        f"components {sorted(targets)} and has no component_ref"
+                        f"components {sorted(targets)} and has no component_ftype"
                     )
-            elif not isinstance(siblings.get(file.component_ref), String):
+            elif not isinstance(siblings.get(file.component_ftype), String):
                 raise ValueError(
-                    f"{where}: component_ref={file.component_ref!r} is not a sibling "
+                    f"{where}: component_ftype={file.component_ftype!r} is not a sibling "
                     f"String field in the same record"
                 )
 

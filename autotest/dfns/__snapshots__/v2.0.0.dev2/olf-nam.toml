@@ -68,7 +68,7 @@ tagged = false
 direction = "in"
 mode_keyword = false
 component = "package"
-component_ref = "ftype"
+component_ftype = "ftype"
 
 [blocks.packages.fields.packages.item.fields.pname]
 type = "string"
