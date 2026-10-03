@@ -1,7 +1,7 @@
 type: package
 schema_version: 2.0.0.dev2
 name: utl-tvk
-parent: package
+parent: gwf-npf
 subtype: utility
 blocks:
   options:
@@ -30,6 +30,7 @@ blocks:
                 time-series capability.
               tagged: false
               direction: in
+              component: utl-ts
   period:
     fields:
       perioddata:

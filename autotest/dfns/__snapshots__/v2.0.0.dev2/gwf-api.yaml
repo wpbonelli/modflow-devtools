@@ -50,6 +50,7 @@ blocks:
               {#2} lists observation type(s) supported by the api boundary package.
             tagged: false
             direction: in
+            component: utl-obs
       mover:
         type: keyword
         description: keyword to indicate that this instance of the api boundary Package can be used with

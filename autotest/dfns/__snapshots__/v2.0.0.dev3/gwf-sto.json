@@ -43,7 +43,8 @@
               "longname": "file name of TVS information",
               "description": "defines a time-varying storage (TVS) input file.  Records in the TVS file can be used to change specific storage and specific yield properties at specified times or stress periods.",
               "tagged": false,
-              "direction": "in"
+              "direction": "in",
+              "component": "utl-tvs"
             }
           }
         },

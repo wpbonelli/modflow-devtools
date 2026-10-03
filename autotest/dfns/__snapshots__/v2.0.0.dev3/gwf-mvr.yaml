@@ -1,7 +1,9 @@
 type: package
 schema_version: 2.0.0.dev3
 name: gwf-mvr
-parent: gwf-nam
+parent:
+  - exg-gwfgwf
+  - gwf-nam
 dims:
   maxmvr:
     value: maxmvr

@@ -122,7 +122,8 @@
               "longname": "file name of NCF information",
               "description": "defines a NetCDF configuration (NCF) input file.",
               "tagged": false,
-              "direction": "in"
+              "direction": "in",
+              "component": "utl-ncf"
             }
           }
         }

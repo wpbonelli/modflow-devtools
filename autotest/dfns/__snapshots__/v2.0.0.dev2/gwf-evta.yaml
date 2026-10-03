@@ -81,6 +81,7 @@ blocks:
                 using the time-array series capability.
               tagged: false
               direction: in
+              component: utl-tas
       obs_filerecord:
         type: record
         optional: true
@@ -97,6 +98,7 @@ blocks:
               observation type(s) supported by the EVT package.
             tagged: false
             direction: in
+            component: utl-obs
       export_array_netcdf:
         type: keyword
         longname: export array variables to netcdf output files.

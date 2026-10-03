@@ -1,7 +1,7 @@
 type = "package"
 schema_version = "2.0.0.dev2"
 name = "utl-tvs"
-parent = "package"
+parent = "gwf-sto"
 subtype = "utility"
 
 [blocks.options.fields.disable_storage_change_integration]
@@ -34,6 +34,7 @@ longname = "file name of time series information"
 description = "defines a time-series file defining time series that can be used to assign time-varying values. See the 'Time-Variable Input' section for instructions on using the time-series capability."
 tagged = false
 direction = "in"
+component = "utl-ts"
 
 [blocks.period.fields.perioddata]
 type = "list"

@@ -66,6 +66,7 @@ blocks:
               observation type(s) supported by the CDB package.
             tagged: false
             direction: in
+            component: utl-obs
   dimensions:
     fields:
       maxbound:

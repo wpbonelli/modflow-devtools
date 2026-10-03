@@ -72,6 +72,7 @@ blocks:
               observation type(s) supported by the DFW package.
             tagged: false
             direction: in
+            component: utl-obs
       export_array_ascii:
         type: keyword
         longname: export array variables to layered ascii files.

@@ -67,6 +67,7 @@ blocks:
               package.
             tagged: false
             direction: in
+            component: utl-obs
   dimensions:
     fields:
       maxbound:

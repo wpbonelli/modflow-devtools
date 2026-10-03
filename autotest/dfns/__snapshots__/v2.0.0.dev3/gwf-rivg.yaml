@@ -83,6 +83,7 @@ blocks:
               observation type(s) supported by the RIV package.
             tagged: false
             direction: in
+            component: utl-obs
       mover:
         type: keyword
         description: keyword to indicate that this instance of the River Package can be used with the

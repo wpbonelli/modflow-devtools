@@ -139,6 +139,7 @@ blocks:
                 time-series capability.
               tagged: false
               direction: in
+              component: utl-ts
       obs_filerecord:
         type: record
         optional: true
@@ -155,6 +156,7 @@ blocks:
               observation type(s) supported by the LAK package.
             tagged: false
             direction: in
+            component: utl-obs
       mover:
         type: keyword
         description: keyword to indicate that this instance of the LAK Package can be used with the Water
@@ -411,6 +413,7 @@ blocks:
                 the TAB6_FILENAME input file are provided in Lake Table Input File section.
               tagged: false
               direction: in
+              component: utl-laktab
         shape:
           - ntables
   outlets:

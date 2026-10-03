@@ -194,6 +194,7 @@ blocks:
               periods.
             tagged: false
             direction: in
+            component: utl-tvk
       export_array_ascii:
         type: keyword
         longname: export array variables to layered ascii files.

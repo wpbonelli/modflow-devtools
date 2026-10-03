@@ -83,7 +83,8 @@
                 "longname": "file name of time series information",
                 "description": "defines a time-array-series file defining a time-array series that can be used to assign time-varying values. See the Time-Variable Input section for instructions on using the time-array series capability.",
                 "tagged": false,
-                "direction": "in"
+                "direction": "in",
+                "component": "utl-tas"
               }
             }
           }
@@ -102,7 +103,8 @@
               "longname": "obs6 input filename",
               "description": "name of input file to define observations for the EVT package. See the 'Observation utility' section for instructions for preparing observation input files. Table {#2} lists observation type(s) supported by the EVT package.",
               "tagged": false,
-              "direction": "in"
+              "direction": "in",
+              "component": "utl-obs"
             }
           }
         },

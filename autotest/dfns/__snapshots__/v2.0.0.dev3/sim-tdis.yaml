@@ -39,6 +39,7 @@ blocks:
               in the ATS file can be used to override the time step behavior for selected stress periods.
             tagged: false
             direction: in
+            component: utl-ats
   dimensions:
     fields:
       nper:

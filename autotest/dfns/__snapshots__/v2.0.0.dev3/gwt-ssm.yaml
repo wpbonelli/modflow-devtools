@@ -92,6 +92,9 @@ blocks:
                 on file input for boundary concentrations.
               tagged: false
               direction: in
+              component:
+                - utl-spc
+                - utl-spca
             mixed:
               type: keyword
               longname: mixed keyword

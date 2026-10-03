@@ -101,6 +101,7 @@ blocks:
               for the transport mover are provided in the file provided with these keywords.
             tagged: false
             direction: in
+            component: gwt-mvt
       obs_filerecord:
         type: record
         optional: true
@@ -117,6 +118,7 @@ blocks:
               lists observation type(s) supported by the GWT-GWT package.
             tagged: false
             direction: in
+            component: utl-obs
       dev_interfacemodel_on:
         type: keyword
         longname: activate interface model on exchange

@@ -92,6 +92,9 @@ blocks:
                 on file input for boundary temperatures.
               tagged: false
               direction: in
+              component:
+                - utl-spc
+                - utl-spca
             mixed:
               type: keyword
               longname: mixed keyword

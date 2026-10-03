@@ -138,6 +138,7 @@ longname = "file name of time series information"
 description = "defines a time-series file defining time series that can be used to assign time-varying values. See the 'Time-Variable Input' section for instructions on using the time-series capability."
 tagged = false
 direction = "in"
+component = "utl-ts"
 
 [blocks.options.fields.obs_filerecord]
 type = "record"
@@ -154,6 +155,7 @@ longname = "obs6 input filename"
 description = "name of input file to define observations for the SFR package. See the 'Observation utility' section for instructions for preparing observation input files. Table {#2} lists observation type(s) supported by the SFR package."
 tagged = false
 direction = "in"
+component = "utl-obs"
 
 [blocks.options.fields.mover]
 type = "keyword"
@@ -346,6 +348,7 @@ longname = "table file name"
 description = "character string that defines the path and filename for the file containing cross-section table data for the reach. The TAB6_FILENAME file includes the number of entries in the file and the station elevation data in terms of the fractional width and the reach depth. Instructions for creating the TAB6_FILENAME input file are provided in SFR Reach Cross-Section Table Input File section."
 tagged = false
 direction = "in"
+component = "utl-sfrtab"
 
 [blocks.connectiondata.fields.connectiondata]
 type = "list"
@@ -542,6 +545,7 @@ longname = "table file name"
 description = "character string that defines the path and filename for the file containing cross-section table data for the reach. The TAB6_FILENAME file includes the number of entries in the file and the station elevation data in terms of the fractional width and the reach depth. Instructions for creating the TAB6_FILENAME input file are provided in SFR Reach Cross-Section Table Input File section."
 tagged = false
 direction = "in"
+component = "utl-sfrtab"
 
 [blocks.period.fields.perioddata.item.fields.sfrsetting.arms.auxiliaryrecord]
 type = "record"

@@ -36,7 +36,8 @@
                 "longname": "file name of time series information",
                 "description": "defines a time-array-series file defining a time-array series that can be used to assign time-varying values. See the Time-Variable Input section for instructions on using the time-array series capability.",
                 "tagged": false,
-                "direction": "in"
+                "direction": "in",
+                "component": "utl-tas"
               }
             }
           }

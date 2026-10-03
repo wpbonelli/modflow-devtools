@@ -61,14 +61,16 @@ blocks:
               File' section for instructions for preparing HPC input files.
             tagged: false
             direction: in
+            component: utl-hpc
   timing:
     fields:
       tdis6:
-        type: string
+        type: file
         longname: name of tdis input file
         description: is the name of the Temporal Discretization (TDIS) Input File.
-        optional: true
-        case_sensitive: true
+        direction: in
+        mode_keyword: false
+        component: sim-tdis
   models:
     fields:
       models:
@@ -86,11 +88,14 @@ blocks:
               description: is the type of model to add to simulation.
               tagged: false
             mfname:
-              type: string
+              type: file
               longname: file name for model name file
               description: is the file name of the model name file.
               tagged: false
-              case_sensitive: true
+              direction: in
+              mode_keyword: false
+              component: model
+              component_ref: mtype
             mname:
               type: string
               longname: name of model
@@ -115,11 +120,14 @@ blocks:
               description: is the exchange type.
               tagged: false
             exgfile:
-              type: string
+              type: file
               longname: input file for exchange
               description: is the input file for the exchange.
               tagged: false
-              case_sensitive: true
+              direction: in
+              mode_keyword: false
+              component: exchange
+              component_ref: exgtype
             exgmnamea:
               type: string
               longname: name of model A
@@ -156,11 +164,14 @@ blocks:
                 - ims6
                 - ems6
             slnfname:
-              type: string
+              type: file
               longname: file name for solution input
               description: name of file containing solution input.
               tagged: false
-              case_sensitive: true
+              direction: in
+              mode_keyword: false
+              component: solution
+              component_ref: slntype
             slnmnames:
               type: array
               longname: array of model names in this solution

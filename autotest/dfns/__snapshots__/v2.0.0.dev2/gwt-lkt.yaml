@@ -132,6 +132,7 @@ blocks:
                 time-series capability.
               tagged: false
               direction: in
+              component: utl-ts
       obs_filerecord:
         type: record
         optional: true
@@ -148,6 +149,7 @@ blocks:
               observation type(s) supported by the LKT package.
             tagged: false
             direction: in
+            component: utl-obs
   packagedata:
     fields:
       packagedata:

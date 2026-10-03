@@ -1,7 +1,7 @@
 type: package
 schema_version: 2.0.0.dev3
 name: utl-spc
-parent: sim-nam
+parent: package
 multi: true
 subtype: utility
 dims:
@@ -34,6 +34,7 @@ blocks:
                 time-series capability.
               tagged: false
               direction: in
+              component: utl-ts
   dimensions:
     fields:
       maxbound:

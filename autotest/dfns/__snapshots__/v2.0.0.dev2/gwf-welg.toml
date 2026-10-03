@@ -92,6 +92,7 @@ longname = "obs6 input filename"
 description = "name of input file to define observations for the WEL package. See the 'Observation utility' section for instructions for preparing observation input files. Table {#2} lists observation type(s) supported by the WEL package."
 tagged = false
 direction = "in"
+component = "utl-obs"
 
 [blocks.options.fields.mover]
 type = "keyword"

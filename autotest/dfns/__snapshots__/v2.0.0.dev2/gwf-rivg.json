@@ -68,7 +68,8 @@
               "longname": "obs6 input filename",
               "description": "name of input file to define observations for the RIV package. See the 'Observation utility' section for instructions for preparing observation input files. Table {#2} lists observation type(s) supported by the RIV package.",
               "tagged": false,
-              "direction": "in"
+              "direction": "in",
+              "component": "utl-obs"
             }
           }
         },

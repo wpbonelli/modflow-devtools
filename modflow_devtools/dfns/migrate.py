@@ -146,7 +146,7 @@ def migrate(
             )
     elif schema_version == "2.0.0.dev2":
         from modflow_devtools.dfn import schema as v1
-        from modflow_devtools.dfns.migrate_to_v2_0_0_dev2 import to_v2_0_0_dev2
+        from modflow_devtools.dfns.migrate_to_v2_0_0_dev2 import migrate_corpus, to_v2_0_0_dev2
 
         inpath = Path(inpath).expanduser().absolute()
         common_path = inpath / "common.dfn"
@@ -156,13 +156,15 @@ def migrate(
                 common, _ = v1.Dfn.load_dfn(f)  # type: ignore[attr-defined]
         exclude = {"common", "flopy"}
         dfn_paths = [p for p in sorted(inpath.glob("*.dfn")) if p.stem not in exclude]
+        raw = {}
         for dfn_path in dfn_paths:
             with dfn_path.open() as f:
-                fields, meta = v1.Dfn.load_dfn(f, common=common)  # type: ignore[attr-defined]
-            dfn = to_v2_0_0_dev2(name=dfn_path.stem, fields=fields, meta=meta)
-            _write(_scalars_first(_serialize_safe(dfn)), outdir / f"{dfn_path.stem}.{fmt}", fmt)
+                raw[dfn_path.stem] = v1.Dfn.load_dfn(f, common=common)  # type: ignore[attr-defined]
+        for stem, dfn in migrate_corpus(raw, to_v2_0_0_dev2).items():
+            _write(_scalars_first(_serialize_safe(dfn)), outdir / f"{stem}.{fmt}", fmt)
     elif schema_version == "2.0.0.dev3":
         from modflow_devtools.dfn import schema as v1
+        from modflow_devtools.dfns.migrate_to_v2_0_0_dev2 import migrate_corpus
         from modflow_devtools.dfns.migrate_to_v2_0_0_dev3 import to_v2_0_0_dev3
 
         inpath = Path(inpath).expanduser().absolute()
@@ -173,11 +175,12 @@ def migrate(
                 common, _ = v1.Dfn.load_dfn(f)  # type: ignore[attr-defined]
         exclude = {"common", "flopy"}
         dfn_paths = [p for p in sorted(inpath.glob("*.dfn")) if p.stem not in exclude]
+        raw = {}
         for dfn_path in dfn_paths:
             with dfn_path.open() as f:
-                fields, meta = v1.Dfn.load_dfn(f, common=common)  # type: ignore[attr-defined]
-            dfn = to_v2_0_0_dev3(name=dfn_path.stem, fields=fields, meta=meta)
-            _write(_scalars_first(_serialize_safe(dfn)), outdir / f"{dfn_path.stem}.{fmt}", fmt)
+                raw[dfn_path.stem] = v1.Dfn.load_dfn(f, common=common)  # type: ignore[attr-defined]
+        for stem, dfn in migrate_corpus(raw, to_v2_0_0_dev3).items():
+            _write(_scalars_first(_serialize_safe(dfn)), outdir / f"{stem}.{fmt}", fmt)
     else:
         raise ValueError(
             f"Unsupported schema version {schema_version}, supported "

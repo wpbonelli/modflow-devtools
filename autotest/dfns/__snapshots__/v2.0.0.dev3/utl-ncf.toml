@@ -1,7 +1,7 @@
 type = "package"
 schema_version = "2.0.0.dev3"
 name = "utl-ncf"
-parent = "sim-nam"
+parent = "package"
 subtype = "utility"
 
 [dims.ncpl]

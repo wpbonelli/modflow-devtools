@@ -96,6 +96,7 @@ blocks:
               observation type(s) supported by the DRN package.
             tagged: false
             direction: in
+            component: utl-obs
       mover:
         type: keyword
         description: keyword to indicate that this instance of the Drain Package can be used with the

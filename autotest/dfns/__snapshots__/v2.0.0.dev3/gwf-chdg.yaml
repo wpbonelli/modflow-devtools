@@ -83,6 +83,7 @@ blocks:
               observation type(s) supported by the CHD package.
             tagged: false
             direction: in
+            component: utl-obs
       export_array_netcdf:
         type: keyword
         longname: export array variables to netcdf output files.

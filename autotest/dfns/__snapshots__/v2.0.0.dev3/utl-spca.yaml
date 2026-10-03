@@ -40,6 +40,7 @@ blocks:
                 using the time-array series capability.
               tagged: false
               direction: in
+              component: utl-tas
   period:
     fields:
       concentration:

@@ -110,6 +110,7 @@ blocks:
             description: defines a NetCDF configuration (NCF) input file.
             tagged: false
             direction: in
+            component: utl-ncf
   dimensions:
     fields:
       nlay:

@@ -45,6 +45,7 @@ blocks:
               lists observation type(s) supported by the SWF-GWF package.
             tagged: false
             direction: in
+            component: utl-obs
   dimensions:
     fields:
       nexg:
