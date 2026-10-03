@@ -99,6 +99,17 @@ _NAMEFILE_LINKS: dict[tuple[str, str], tuple[str, str | None]] = {
     ("*-nam", "fname"): ("package", "ftype"),
 }
 
+# Parents for linked utilities whose derived parent (see `v2.covering_selector`)
+# would be `package`, though only these few packages link them. Each must
+# still admit every component that links the utility; `link_components`
+# checks.
+_LINKED_PARENTS: dict[str, list[str]] = {
+    "utl-spc": ["gwe-ssm", "gwt-ssm"],
+    "utl-spca": ["gwe-ssm", "gwt-ssm"],
+    "utl-tas": ["gwf-evta", "gwf-rcha", "utl-spca"],
+    "utl-ncf": [f"{m}-{d}" for m in ("gwe", "gwf", "gwt", "prt") for d in ("dis", "disv")],
+}
+
 # Array-based variants, which share their base's ftype token: mf6 maps these
 # to the base type when matching name-file ftypes (InputLoadType.f90).
 _FTYPE_VARIANTS = frozenset({"evta", "rcha", "spca", "rivg", "chdg", "welg", "drng", "ghbg"})
@@ -2198,7 +2209,12 @@ def link_components(
             ]
         elif not found:
             raise ValueError(f"{name}: no component links this utility, so it has no parent")
-        parent = v2.covering_selector(found, components)
+        if name in _LINKED_PARENTS:
+            parent: str | list[str] = _LINKED_PARENTS[name]
+            if missing := [c.name for c in found if not v2.admits(parent, c)]:
+                raise ValueError(f"{name}: parent {parent!r} doesn't admit linkers {missing}")
+        else:
+            parent = v2.covering_selector(found, components)
         result[name] = component.model_copy(update={"parent": parent})
     return result
 

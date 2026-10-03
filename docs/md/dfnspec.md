@@ -160,7 +160,7 @@ A term **admits** a component if it equals the component's name, type, or subtyp
 
 **Note:** Terms may be mixed. A type or subtype subsumes any named component of the same type or subtype: e.g., `["gwf-sfr", "package"]` reduces to `["package"]` since `gwf-sfr` is a package.
 
-A component that other components' input files link (see [File](#file)), such as a utility, has its `parent` derived from the components that link to it: the simplest selector that admits all of them.
+A component that other components' input files link (see [File](#file)), such as a utility, has its `parent` derived from the components that link to it: the simplest selector that admits all of them. The links are the exact relation; such a `parent` covers them but may admit more (e.g. `utl-ts`'s `package` admits `gwf-npf`, which never links a time series file).
 
 #### `ftype`
 

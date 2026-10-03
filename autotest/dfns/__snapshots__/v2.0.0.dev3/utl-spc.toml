@@ -1,10 +1,13 @@
 type = "package"
 schema_version = "2.0.0.dev3"
 name = "utl-spc"
-parent = "package"
 ftype = "SPC6"
 multi = true
 subtype = "utility"
+parent = [
+    "gwe-ssm",
+    "gwt-ssm",
+]
 
 [dims.maxbound]
 value = "maxbound"

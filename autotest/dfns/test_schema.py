@@ -380,7 +380,7 @@ def test_tas_array_is_per_layer_model_attached(dev3_spec):
     """tas_array is a U2DREL control record of one layer's worth of cells (ncpl), so
     utl-tas must be model-attached for the model-scoped ncpl dim to be visible."""
     tas = dev3_spec.components["utl-tas"]
-    assert tas.parent == "package"
+    assert "ncpl" in dev3_spec.inherited_dims("utl-tas")
     assert tas.blocks["time"].fields["tas_array"].shape == ["ncpl"]
 
 

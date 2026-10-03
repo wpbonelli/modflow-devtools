@@ -539,10 +539,13 @@ def test_migrate_unlinked_files(linked_spec):
     [
         ("utl-ts", "package"),
         ("utl-obs", "package"),
-        ("utl-ncf", "package"),
-        ("utl-spc", "package"),
-        ("utl-spca", "package"),
-        ("utl-tas", "package"),
+        (
+            "utl-ncf",
+            [f"{m}-{d}" for m in ("gwe", "gwf", "gwt", "prt") for d in ("dis", "disv")],
+        ),
+        ("utl-spc", ["gwe-ssm", "gwt-ssm"]),
+        ("utl-spca", ["gwe-ssm", "gwt-ssm"]),
+        ("utl-tas", ["gwf-evta", "gwf-rcha", "utl-spca"]),
         ("utl-tvk", "gwf-npf"),
         ("utl-tvs", "gwf-sto"),
         ("utl-sfrtab", "gwf-sfr"),
