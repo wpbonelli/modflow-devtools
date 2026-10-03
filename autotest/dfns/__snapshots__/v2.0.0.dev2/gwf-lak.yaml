@@ -417,6 +417,7 @@ blocks:
     fields:
       outlets:
         type: list
+        optional: true
         item:
           type: record
           fields:

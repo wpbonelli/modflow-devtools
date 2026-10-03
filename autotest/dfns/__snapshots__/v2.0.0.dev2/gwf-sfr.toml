@@ -319,6 +319,7 @@ tagged = false
 
 [blocks.crosssections.fields.crosssections]
 type = "list"
+optional = true
 
 [blocks.crosssections.fields.crosssections.item]
 type = "record"
@@ -372,6 +373,7 @@ shape = [
 
 [blocks.diversions.fields.diversions]
 type = "list"
+optional = true
 
 [blocks.diversions.fields.diversions.item]
 type = "record"
@@ -407,6 +409,7 @@ tagged = false
 
 [blocks.initialstages.fields.initialstages]
 type = "list"
+optional = true
 
 [blocks.initialstages.fields.initialstages.item]
 type = "record"

@@ -368,6 +368,7 @@ blocks:
     fields:
       crosssections:
         type: list
+        optional: true
         item:
           type: record
           fields:
@@ -434,6 +435,7 @@ blocks:
     fields:
       diversions:
         type: list
+        optional: true
         item:
           type: record
           fields:
@@ -493,6 +495,7 @@ blocks:
     fields:
       initialstages:
         type: list
+        optional: true
         item:
           type: record
           fields:
