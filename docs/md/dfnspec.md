@@ -344,6 +344,12 @@ Scalar fields define a single value.
 
 Type `keyword`. Represents a boolean choice. In input files, the presence of a keyword indicates true, its absence false.
 
+##### Type-specific attributes
+
+###### `aliases`
+
+`[string] (default: [])`. Other spellings MF6 accepts for the keyword.
+
 #### String
 
 Type `string`.

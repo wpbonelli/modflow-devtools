@@ -78,6 +78,7 @@ class InputFieldBase(BaseModel):
 
 class Keyword(InputFieldBase):
     type: Literal["keyword"] = PydanticField(default="keyword", frozen=True)
+    aliases: list[str] = []
 
 
 class String(InputFieldBase):
@@ -221,7 +222,7 @@ def _leading_tags(field: "InputField", *, every_line: bool = False) -> list[str]
     (a Union with an arm that begins with a value instead doesn't qualify)."""
     match field:
         case Keyword():
-            return [field.name]
+            return [field.name, *field.aliases]
         case String() | Integer() | Double() | Array() | File():
             return [field.name] if field.tagged else []
         case Record():
