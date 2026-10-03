@@ -9,6 +9,7 @@ This document describes the MODFLOW 6 component definition (DFN) system. This sy
     - [`name`](#name)
     - [`blocks`](#blocks)
     - [`parent`](#parent)
+    - [`ftype`](#ftype)
     - [`schema_version`](#schema_version)
     - [`dims`](#dims)
     - [`memory`](#memory)
@@ -116,6 +117,7 @@ Component definitions consist of a number of attributes:
 - `name`: the component's name
 - `blocks`: block definitions
 - `parent`: parent component(s)
+- `ftype`: the token naming the component's file type in name files
 - `schema_version`: DFN schema version
 - `dims`: named dimensions resolvable from input fields, available for use in array shapes
 - `runtime_dims`: named dimensions whose value is only known once MODFLOW runs, available for use in memory variable shapes
@@ -158,7 +160,11 @@ A term **admits** a component if it equals the component's name, type, or subtyp
 
 **Note:** Terms may be mixed. A type or subtype subsumes any named component of the same type or subtype: e.g., `["gwf-sfr", "package"]` reduces to `["package"]` since `gwf-sfr` is a package.
 
-A component that other components' input files link (see [File](#file)), such as a utility, has its `parent` derived from the components that link to it: the simplest selector that admits all of them, i.e. the fewest terms, then the narrowest (a concrete name before a subtype before a type). It is a superset of the actual linkers: it says what kind of component can attach this one, and the linking `file` field says exactly which ones do. For example, `utl-tvk` is linked only by `gwf-npf`, so its parent is `"gwf-npf"`; `utl-ts` is linked by stress, advanced, and utility packages and by `gwf-csub`, which has no subtype, so its parent is `"package"`; `gwf-gnc` is listed in a model name file and also linked by `exg-gwfgwf`, so its parent is `["exg-gwfgwf", "gwf-nam"]`.
+A component that other components' input files link (see [File](#file)), such as a utility, has its `parent` derived from the components that link to it: the simplest selector that admits all of them.
+
+#### `ftype`
+
+`string | null (default: null)`. The token naming the component's file type in name files and file records, e.g. `GWF6` for `gwf-nam`, `DIS6` for `gwf-dis`, `IMS6` for `sln-ims`, `GWF6-GWF6` for `exg-gwfgwf`. Array-based variants share their base's token: `gwf-rcha` is `RCH6`, `gwf-chdg` is `CHD6`, and MODFLOW 6 picks the variant from the file's own `READASARRAYS`/`READARRAYGRID` option. Within a component's children, one token names one component, or a base and its variants (an **ftype family**). `null` only for the simulation name file. See [`component_ref`](#component_ref).
 
 #### `schema_version`
 
@@ -445,17 +451,13 @@ If a file option is introduced by one or more leading keywords (e.g. `CROSS_SECT
 
 ###### `component`
 
-`string | [string] | null (default: null)`. The component the file is input for, as a selector (see [`parent`](#parent)). It resolves among this component's **children** only, i.e. the components whose `parent` admits this one: `"package"` in `gwf-nam` means `gwf-nam`'s packages, and `"model"` in `sim-nam` means the model name files. Only valid when `direction` is `"in"`.
-
-Without `component_ref`, the selector must resolve to one **ftype family**: a component and its array-based variants (e.g. `["utl-spc", "utl-spca"]` for SSM's `SPC6` file). MODFLOW 6 picks the variant from the file's own options: `READASARRAYS` selects the `…a` component and `READARRAYGRID` the `…g` component.
-
-For example, `ncf_filerecord`'s file in `gwf-dis` has `component: "utl-ncf"`, and `sim-nam`'s `tdis6` has `component: "sim-tdis"`.
+`string | [string] | null (default: null)`. The component the file is input for. Valid for components whose `parent` admits this one. Only valid when `direction` is `"in"`.
 
 ###### `component_ref`
 
-`string | null (default: null)`. Names a sibling `string` field in the same record whose value is the target's **ftype token** (e.g. `GWF6`, `DIS6`, `IMS6`, `GWF6-GWF6`), like [`fk_ref`](#fk_ref) for keys. The token picks one ftype family among `component`'s matches; the target file's own options then pick the variant, as above. For example, a model name file's `packages` rows have `fname` with `component: "package"` and `component_ref: "ftype"`, and `sim-nam`'s `models` rows have `mfname` with `component: "model"` and `component_ref: "mtype"`.
+`string | null (default: null)`. Names a sibling `string` field in the same record whose value is the target component's **ftype** (e.g. `GWF6`, `DIS6`, `IMS6`, `GWF6-GWF6`). Behaves like [`fk_ref`](#fk_ref) for keys. The token picks one ftype family among `component`'s matches; the target file's own options then pick the variant, as above. For example, a model name file's `packages` rows have `fname` with `component: "package"` and `component_ref: "ftype"`, and `sim-nam`'s `models` rows have `mfname` with `component: "model"` and `component_ref: "mtype"`.
 
-A component's ftype token is its name's suffix, upper-cased, plus `6` (`gwf-dis` → `DIS6`, `sln-ims` → `IMS6`); a model's is its prefix (`gwf-nam` → `GWF6`), and an exchange's names both models (`exg-gwfgwf` → `GWF6-GWF6`). Array-based variants share their base's token (`gwf-rcha` → `RCH6`).
+Each component declares its token in [`ftype`](#ftype).
 
 ### Composites
 

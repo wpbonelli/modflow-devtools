@@ -2,6 +2,7 @@ type = "package"
 schema_version = "2.0.0.dev2"
 name = "chf-chd"
 parent = "chf-nam"
+ftype = "CHD6"
 multi = true
 subtype = "stress"
 

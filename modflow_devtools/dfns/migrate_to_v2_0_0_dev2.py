@@ -99,6 +99,34 @@ _NAMEFILE_LINKS: dict[tuple[str, str], tuple[str, str | None]] = {
     ("*-nam", "fname"): ("package", "ftype"),
 }
 
+# Array-based variants, which share their base's ftype token: mf6 maps these
+# to the base type when matching name-file ftypes (InputLoadType.f90).
+_FTYPE_VARIANTS = frozenset({"evta", "rcha", "spca", "rivg", "chdg", "welg", "drng", "ghbg"})
+
+_MODEL_TYPES = frozenset({*_DEPENDENT_VARS, "prt"})
+
+
+def _ftype(name: str) -> str | None:
+    """
+    The token naming a component's file type (`v2.ComponentBase.ftype`):
+    `gwf-nam` -> `GWF6`, `gwf-dis` -> `DIS6`, `exg-gwfgwf` -> `GWF6-GWF6`,
+    `gwf-rcha` -> `RCH6`. None for the simulation name file, which has none.
+    """
+    prefix, _, suffix = name.partition("-")
+    if name == "sim-nam":
+        return None
+    if suffix == "nam":
+        return f"{prefix.upper()}6"
+    if prefix == "exg":
+        for m in _MODEL_TYPES:
+            if suffix.startswith(m) and suffix[len(m) :] in _MODEL_TYPES:
+                return f"{m.upper()}6-{suffix[len(m) :].upper()}6"
+        raise ValueError(f"{name}: can't split exchange into two model types")
+    if suffix in _FTYPE_VARIANTS:
+        suffix = suffix[:-1]
+    return f"{suffix.upper()}6"
+
+
 # v1 marks these optional, but mf6 requires them. sim-nam's `tdis6`: "TIMING
 # block variable TDIS6 is unset" (SimulationCreate.f90). Fixed upstream in
 # sim-nam.dfn; drop the entry once the DFNs this migrates include the fix.
@@ -2063,6 +2091,7 @@ def to_v2_0_0_dev2(
         "schema_version": "2.0.0.dev2",
         "name": name,
         "parent": parent,
+        "ftype": _ftype(name),
         "blocks": blocks or None,
         "dims": dims,
     }

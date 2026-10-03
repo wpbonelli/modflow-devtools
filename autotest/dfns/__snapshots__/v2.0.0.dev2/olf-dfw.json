@@ -3,6 +3,7 @@
   "schema_version": "2.0.0.dev2",
   "name": "olf-dfw",
   "parent": "olf-nam",
+  "ftype": "DFW6",
   "blocks": {
     "options": {
       "fields": {

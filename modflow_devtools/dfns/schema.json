@@ -1247,6 +1247,18 @@
           "default": null,
           "title": "Parent"
         },
+        "ftype": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Ftype"
+        },
         "dims": {
           "anyOf": [
             {
@@ -1402,6 +1414,18 @@
           ],
           "default": null,
           "title": "Parent"
+        },
+        "ftype": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Ftype"
         },
         "dims": {
           "anyOf": [
@@ -1728,6 +1752,18 @@
           ],
           "default": null,
           "title": "Parent"
+        },
+        "ftype": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Ftype"
         },
         "dims": {
           "anyOf": [

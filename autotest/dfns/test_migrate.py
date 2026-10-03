@@ -514,7 +514,8 @@ def test_migrate_link_selectors_resolve(linked_spec):
                 targets = [n for n, t in children.items() if v2.admits(file.component, t)]
                 assert targets, (name, file.name)
                 if file.component_ref is None:
-                    assert len({linked_spec.ftype(t) for t in targets}) == 1, (name, file.name)
+                    ftypes = {linked_spec.components[t].ftype for t in targets}
+                    assert len(ftypes) == 1, (name, file.name)
 
 
 def test_migrate_model_packages_exclude_utilities(linked_spec):
@@ -562,3 +563,38 @@ def test_migrate_derives_parents_from_links(linked_spec, name, parent):
 def test_migrate_subpackage_keeps_model_dims(linked_spec):
     # tvk's parent is now gwf-npf, not `package`; it must still see grid dims
     assert {"nodes", "nlay"} <= linked_spec.inherited_dims("utl-tvk")
+
+
+@pytest.mark.parametrize(
+    "name, ftype",
+    [
+        ("sim-nam", None),
+        ("gwf-nam", "GWF6"),
+        ("gwf-dis", "DIS6"),
+        ("gwf-rch", "RCH6"),
+        ("gwf-rcha", "RCH6"),
+        ("gwf-chdg", "CHD6"),
+        ("utl-spca", "SPC6"),
+        ("exg-gwfgwf", "GWF6-GWF6"),
+        ("exg-gwfprt", "GWF6-PRT6"),
+        ("sln-ims", "IMS6"),
+        ("sim-tdis", "TDIS6"),
+        ("utl-ncf", "NCF6"),
+    ],
+)
+def test_migrate_ftype(linked_spec, name, ftype):
+    assert linked_spec.components[name].ftype == ftype
+
+
+def test_migrate_ftypes_unique_among_name_file_children(linked_spec):
+    """Within a name file, one ftype names one component, or a base and its
+    array-based variants."""
+    for name, c in linked_spec.components.items():
+        if not name.endswith("-nam"):
+            continue
+        by_ftype: dict = {}
+        for child, cc in linked_spec.children(name).items():
+            by_ftype.setdefault(cc.ftype, []).append(child)
+        for ftype, children in by_ftype.items():
+            base = min(children, key=len)
+            assert all(n in (base, f"{base}a", f"{base}g") for n in children), (name, children)

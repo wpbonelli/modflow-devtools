@@ -2,6 +2,7 @@ type: package
 schema_version: 2.0.0.dev3
 name: gwf-uzf
 parent: gwf-nam
+ftype: UZF6
 multi: true
 subtype: advanced
 dims:

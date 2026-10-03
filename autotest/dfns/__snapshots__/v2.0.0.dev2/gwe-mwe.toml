@@ -2,6 +2,7 @@ type = "package"
 schema_version = "2.0.0.dev2"
 name = "gwe-mwe"
 parent = "gwe-nam"
+ftype = "MWE6"
 multi = true
 subtype = "advanced"
 

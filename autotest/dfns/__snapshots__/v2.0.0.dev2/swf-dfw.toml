@@ -2,6 +2,7 @@ type = "package"
 schema_version = "2.0.0.dev2"
 name = "swf-dfw"
 parent = "swf-nam"
+ftype = "DFW6"
 
 [blocks.options.fields.central_in_space]
 type = "keyword"

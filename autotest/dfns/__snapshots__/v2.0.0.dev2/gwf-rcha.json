@@ -3,6 +3,7 @@
   "schema_version": "2.0.0.dev2",
   "name": "gwf-rcha",
   "parent": "gwf-nam",
+  "ftype": "RCH6",
   "multi": true,
   "subtype": "stress",
   "dims": {

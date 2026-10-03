@@ -3,6 +3,7 @@
   "schema_version": "2.0.0.dev2",
   "name": "olf-nam",
   "parent": "sim-nam",
+  "ftype": "OLF6",
   "dependent_variable": "stage",
   "blocks": {
     "options": {

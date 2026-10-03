@@ -2,6 +2,7 @@ type = "package"
 schema_version = "2.0.0.dev3"
 name = "gwt-sft"
 parent = "gwt-nam"
+ftype = "SFT6"
 multi = true
 subtype = "advanced"
 

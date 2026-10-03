@@ -2,6 +2,7 @@ type = "package"
 schema_version = "2.0.0.dev3"
 name = "utl-tvs"
 parent = "gwf-sto"
+ftype = "TVS6"
 subtype = "utility"
 
 [blocks.options.fields.disable_storage_change_integration]

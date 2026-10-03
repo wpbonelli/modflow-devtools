@@ -261,11 +261,11 @@ def _link_spec(file: File, owner: str = "gwf-dis", **siblings) -> dict:
     utility attached by packages; ``file`` goes in ``owner``."""
     components = {
         "sim-nam": Simulation(name="sim-nam"),
-        "gwf-nam": Model(name="gwf-nam", parent="sim-nam"),
-        "gwf-dis": Package(name="gwf-dis", parent="gwf-nam"),
-        "gwf-rch": Package(name="gwf-rch", parent="gwf-nam", subtype="stress"),
-        "gwf-rcha": Package(name="gwf-rcha", parent="gwf-nam", subtype="stress"),
-        "utl-ncf": Package(name="utl-ncf", parent="package", subtype="utility"),
+        "gwf-nam": Model(name="gwf-nam", parent="sim-nam", ftype="GWF6"),
+        "gwf-dis": Package(name="gwf-dis", parent="gwf-nam", ftype="DIS6"),
+        "gwf-rch": Package(name="gwf-rch", parent="gwf-nam", subtype="stress", ftype="RCH6"),
+        "gwf-rcha": Package(name="gwf-rcha", parent="gwf-nam", subtype="stress", ftype="RCH6"),
+        "utl-ncf": Package(name="utl-ncf", parent="package", subtype="utility", ftype="NCF6"),
     }
     components[owner] = components[owner].model_copy(
         update={"blocks": _file_block(file, **siblings)}
@@ -367,10 +367,7 @@ def test_children_list_parent():
 
 def test_ftype_family():
     spec = Dfns(components=_link_spec(File(name="f", direction="in")))
-    spec.components["exg-gwfgwf"] = Package(name="exg-gwfgwf", parent="sim-nam")
-    assert spec.ftype("gwf-nam") == "GWF6"
-    assert spec.ftype("gwf-rcha") == "RCH6"
-    assert spec.ftype("exg-gwfgwf") == "GWF6-GWF6"
+    spec.components["exg-gwfgwf"] = Package(name="exg-gwfgwf", parent="sim-nam", ftype="GWF6-GWF6")
     assert spec.ftype_family("DIS6", "gwf-nam") == ["gwf-dis"]
     assert spec.ftype_family("rch6", "gwf-nam") == ["gwf-rch", "gwf-rcha"]
     assert spec.ftype_family("GWF6", "sim-nam") == ["gwf-nam"]

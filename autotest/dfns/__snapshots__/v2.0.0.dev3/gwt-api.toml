@@ -2,6 +2,7 @@ type = "package"
 schema_version = "2.0.0.dev3"
 name = "gwt-api"
 parent = "gwt-nam"
+ftype = "API6"
 multi = true
 
 [dims.maxbound]

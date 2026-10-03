@@ -3,6 +3,7 @@
   "schema_version": "2.0.0.dev2",
   "name": "gwt-ist",
   "parent": "gwt-nam",
+  "ftype": "IST6",
   "multi": true,
   "blocks": {
     "options": {

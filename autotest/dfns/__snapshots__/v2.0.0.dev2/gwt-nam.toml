@@ -2,6 +2,7 @@ type = "model"
 schema_version = "2.0.0.dev2"
 name = "gwt-nam"
 parent = "sim-nam"
+ftype = "GWT6"
 dependent_variable = "concentration"
 
 [blocks.options.fields.list]

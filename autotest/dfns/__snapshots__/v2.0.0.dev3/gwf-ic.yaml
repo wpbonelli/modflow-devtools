@@ -2,6 +2,7 @@ type: package
 schema_version: 2.0.0.dev3
 name: gwf-ic
 parent: gwf-nam
+ftype: IC6
 runtime_dims:
   nodes:
     set_in: ar

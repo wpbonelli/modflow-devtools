@@ -2,6 +2,7 @@ type: package
 schema_version: 2.0.0.dev2
 name: gwe-adv
 parent: gwe-nam
+ftype: ADV6
 blocks:
   options:
     fields:

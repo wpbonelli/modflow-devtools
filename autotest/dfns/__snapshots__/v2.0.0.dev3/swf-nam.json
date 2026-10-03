@@ -3,6 +3,7 @@
   "schema_version": "2.0.0.dev3",
   "name": "swf-nam",
   "parent": "sim-nam",
+  "ftype": "SWF6",
   "dependent_variable": "stage",
   "runtime_dims": {
     "nja": {

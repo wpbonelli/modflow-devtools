@@ -3,6 +3,7 @@
   "schema_version": "2.0.0.dev3",
   "name": "gwf-oc",
   "parent": "gwf-nam",
+  "ftype": "OC6",
   "blocks": {
     "options": {
       "fields": {

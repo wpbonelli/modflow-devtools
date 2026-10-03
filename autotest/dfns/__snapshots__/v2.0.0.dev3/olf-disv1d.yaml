@@ -2,6 +2,7 @@ type: package
 schema_version: 2.0.0.dev3
 name: olf-disv1d
 parent: olf-nam
+ftype: DISV1D6
 dims:
   nodes:
     value: nodes

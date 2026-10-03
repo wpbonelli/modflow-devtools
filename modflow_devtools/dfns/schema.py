@@ -926,6 +926,11 @@ class ComponentBase(BaseModel):
     schema_version: str | None = None
     name: str
     parent: str | list[str] | None = None
+    # The token naming this component's file type in name files and file
+    # records (`GWF6`, `DIS6`, `GWF6-GWF6`). Array-based variants share their
+    # base's (`gwf-rcha` is `RCH6`): mf6 picks the variant from the file's own
+    # READASARRAYS/READARRAYGRID option. See `Dfns.ftype_family`.
+    ftype: str | None = None
     dims: dict[str, InputDim] | None = None
     runtime_dims: dict[str, RuntimeDim] | None = None
     blocks: dict[str, Block] | None = None
@@ -1364,7 +1369,8 @@ def _validate_file_links(component: "ComponentBase", spec: "Dfns") -> None:
                     f"component's children"
                 )
             if file.component_ref is None:
-                families = {spec.ftype(n) for n in targets}
+                components = spec.components
+                families = {components[n].ftype or n for n in targets}
                 if len(families) > 1:
                     raise ValueError(
                         f"{where}: component={file.component!r} matches several "
@@ -1609,24 +1615,6 @@ class Dfns(BaseModel):
             n: c for n, c in self.components.items() if n != name and admits(c.parent, component)
         }
 
-    def ftype(self, name: str) -> str:
-        """
-        The ftype token naming a component's family in name files: ``gwf-nam``
-        → ``GWF6``, ``gwf-dis`` → ``DIS6``, ``exg-gwfgwf`` → ``GWF6-GWF6``,
-        ``sln-ims`` → ``IMS6``. An array-based variant (``gwf-rcha``,
-        ``gwf-chdg``, ``utl-spca``) shares its base's token: mf6 picks the
-        variant from the file's own ``READASARRAYS``/``READARRAYGRID`` option.
-        """
-        prefix, _, suffix = name.partition("-")
-        if suffix == "nam":
-            return f"{prefix.upper()}6"
-        if prefix == "exg":
-            # model type prefixes are all three letters
-            return f"{suffix[:3].upper()}6-{suffix[3:].upper()}6"
-        if suffix[-1:] in ("a", "g") and f"{prefix}-{suffix[:-1]}" in self.components:
-            suffix = suffix[:-1]
-        return f"{suffix.upper()}6"
-
     def ftype_family(self, token: str, context: str) -> list[str]:
         """
         The components a name-file ftype token can mean among ``context``'s
@@ -1635,7 +1623,7 @@ class Dfns(BaseModel):
         the target file's own options pick between.
         """
         token = token.upper()
-        return sorted(n for n in self.children(context) if self.ftype(n) == token)
+        return sorted(n for n, c in self.children(context).items() if c.ftype == token)
 
     def _parents_in_models(self, parent: "str | list[str] | None") -> set[str]:
         """

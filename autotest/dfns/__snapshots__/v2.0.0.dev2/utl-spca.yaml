@@ -2,6 +2,7 @@ type: package
 schema_version: 2.0.0.dev2
 name: utl-spca
 parent: package
+ftype: SPC6
 multi: true
 subtype: utility
 blocks:

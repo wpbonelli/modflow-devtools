@@ -3,6 +3,7 @@
   "schema_version": "2.0.0.dev2",
   "name": "swf-pcp",
   "parent": "swf-nam",
+  "ftype": "PCP6",
   "multi": true,
   "subtype": "stress",
   "dims": {

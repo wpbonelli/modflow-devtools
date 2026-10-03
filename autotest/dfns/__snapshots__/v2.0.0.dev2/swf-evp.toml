@@ -2,6 +2,7 @@ type = "package"
 schema_version = "2.0.0.dev2"
 name = "swf-evp"
 parent = "swf-nam"
+ftype = "EVP6"
 multi = true
 subtype = "stress"
 

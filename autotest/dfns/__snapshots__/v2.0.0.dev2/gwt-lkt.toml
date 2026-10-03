@@ -2,6 +2,7 @@ type = "package"
 schema_version = "2.0.0.dev2"
 name = "gwt-lkt"
 parent = "gwt-nam"
+ftype = "LKT6"
 multi = true
 subtype = "advanced"
 

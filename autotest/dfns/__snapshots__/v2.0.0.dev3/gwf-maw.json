@@ -3,6 +3,7 @@
   "schema_version": "2.0.0.dev3",
   "name": "gwf-maw",
   "parent": "gwf-nam",
+  "ftype": "MAW6",
   "multi": true,
   "subtype": "advanced",
   "dims": {

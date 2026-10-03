@@ -3,6 +3,7 @@
   "schema_version": "2.0.0.dev2",
   "name": "chf-flw",
   "parent": "chf-nam",
+  "ftype": "FLW6",
   "multi": true,
   "subtype": "stress",
   "dims": {

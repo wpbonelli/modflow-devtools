@@ -2,6 +2,7 @@ type = "package"
 schema_version = "2.0.0.dev2"
 name = "gwt-disv"
 parent = "gwt-nam"
+ftype = "DISV6"
 
 [dims.nlay]
 value = "nlay"

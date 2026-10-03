@@ -3,6 +3,7 @@
   "schema_version": "2.0.0.dev3",
   "name": "swf-zdg",
   "parent": "swf-nam",
+  "ftype": "ZDG6",
   "multi": true,
   "subtype": "stress",
   "dims": {
