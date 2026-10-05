@@ -2,6 +2,7 @@ type = "package"
 schema_version = "2.0.0.dev2"
 name = "exg-gwtgwt"
 parent = "sim-nam"
+ftype = "GWT6-GWT6"
 multi = true
 subtype = "exchange"
 
@@ -89,6 +90,7 @@ longname = "mvt6 input filename"
 description = "is the file name of the transport mover input file to apply to this exchange.  Information for the transport mover are provided in the file provided with these keywords."
 tagged = false
 direction = "in"
+component = "gwt-mvt"
 
 [blocks.options.fields.obs_filerecord]
 type = "record"
@@ -105,6 +107,7 @@ longname = "obs6 input filename"
 description = "is the file name of the observations input file for this exchange. See the 'Observation utility' section for instructions for preparing observation input files. Table ref{table:gwt-obstypetable} lists observation type(s) supported by the GWT-GWT package."
 tagged = false
 direction = "in"
+component = "utl-obs"
 
 [blocks.options.fields.dev_interfacemodel_on]
 type = "keyword"

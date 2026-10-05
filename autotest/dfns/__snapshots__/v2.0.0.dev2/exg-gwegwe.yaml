@@ -2,6 +2,7 @@ type: package
 schema_version: 2.0.0.dev2
 name: exg-gwegwe
 parent: sim-nam
+ftype: GWE6-GWE6
 multi: true
 subtype: exchange
 dims:
@@ -101,6 +102,7 @@ blocks:
               for the transport mover are provided in the file provided with these keywords.
             tagged: false
             direction: in
+            component: gwe-mve
       obs_filerecord:
         type: record
         optional: true
@@ -117,6 +119,7 @@ blocks:
               lists observation type(s) supported by the GWE-GWE Exchange Package.
             tagged: false
             direction: in
+            component: utl-obs
       dev_interfacemodel_on:
         type: keyword
         longname: activate interface model on exchange

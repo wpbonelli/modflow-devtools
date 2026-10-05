@@ -3,6 +3,7 @@
   "schema_version": "2.0.0.dev2",
   "name": "sln-pts",
   "parent": "sim-nam",
+  "ftype": "PTS6",
   "subtype": "solution",
   "blocks": {
     "options": {

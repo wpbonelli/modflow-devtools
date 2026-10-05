@@ -2,6 +2,7 @@ type: package
 schema_version: 2.0.0.dev3
 name: swf-pcp
 parent: swf-nam
+ftype: PCP6
 multi: true
 subtype: stress
 dims:
@@ -80,6 +81,7 @@ blocks:
                 time-series capability.
               tagged: false
               direction: in
+              component: utl-ts
       obs_filerecord:
         type: record
         optional: true
@@ -96,6 +98,7 @@ blocks:
               Table {#2} lists observation type(s) supported by the Precipitation package.
             tagged: false
             direction: in
+            component: utl-obs
   dimensions:
     fields:
       maxbound:

@@ -2,6 +2,7 @@ type: package
 schema_version: 2.0.0.dev3
 name: gwe-sfe
 parent: gwe-nam
+ftype: SFE6
 multi: true
 subtype: advanced
 dims:
@@ -136,6 +137,7 @@ blocks:
                 time-series capability.
               tagged: false
               direction: in
+              component: utl-ts
       obs_filerecord:
         type: record
         optional: true
@@ -152,6 +154,7 @@ blocks:
               observation type(s) supported by the SFE package.
             tagged: false
             direction: in
+            component: utl-obs
   packagedata:
     fields:
       packagedata:

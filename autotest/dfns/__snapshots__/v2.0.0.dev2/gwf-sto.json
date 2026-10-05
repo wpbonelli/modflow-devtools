@@ -3,6 +3,7 @@
   "schema_version": "2.0.0.dev2",
   "name": "gwf-sto",
   "parent": "gwf-nam",
+  "ftype": "STO6",
   "blocks": {
     "options": {
       "fields": {
@@ -38,7 +39,8 @@
               "longname": "file name of TVS information",
               "description": "defines a time-varying storage (TVS) input file.  Records in the TVS file can be used to change specific storage and specific yield properties at specified times or stress periods.",
               "tagged": false,
-              "direction": "in"
+              "direction": "in",
+              "component": "utl-tvs"
             }
           }
         },

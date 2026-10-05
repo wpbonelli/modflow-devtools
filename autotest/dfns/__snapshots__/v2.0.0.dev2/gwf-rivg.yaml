@@ -2,6 +2,7 @@ type: package
 schema_version: 2.0.0.dev2
 name: gwf-rivg
 parent: gwf-nam
+ftype: RIV6
 multi: true
 subtype: stress
 dims:
@@ -76,6 +77,7 @@ blocks:
               observation type(s) supported by the RIV package.
             tagged: false
             direction: in
+            component: utl-obs
       mover:
         type: keyword
         description: keyword to indicate that this instance of the River Package can be used with the

@@ -56,7 +56,8 @@
               "longname": "file name of time series information",
               "description": "name of input file to define HPC file settings for the HPC package. See the 'HPC File' section for instructions for preparing HPC input files.",
               "tagged": false,
-              "direction": "in"
+              "direction": "in",
+              "component": "utl-hpc"
             }
           }
         }
@@ -65,11 +66,12 @@
     "timing": {
       "fields": {
         "tdis6": {
-          "type": "string",
+          "type": "file",
           "longname": "name of tdis input file",
           "description": "is the name of the Temporal Discretization (TDIS) Input File.",
-          "optional": true,
-          "case_sensitive": true
+          "direction": "in",
+          "mode_keyword": false,
+          "component": "sim-tdis"
         }
       }
     },
@@ -91,11 +93,14 @@
                 "tagged": false
               },
               "mfname": {
-                "type": "string",
+                "type": "file",
                 "longname": "file name for model name file",
                 "description": "is the file name of the model name file.",
                 "tagged": false,
-                "case_sensitive": true
+                "direction": "in",
+                "mode_keyword": false,
+                "component": "model",
+                "component_ftype": "mtype"
               },
               "mname": {
                 "type": "string",
@@ -126,11 +131,14 @@
                 "tagged": false
               },
               "exgfile": {
-                "type": "string",
+                "type": "file",
                 "longname": "input file for exchange",
                 "description": "is the input file for the exchange.",
                 "tagged": false,
-                "case_sensitive": true
+                "direction": "in",
+                "mode_keyword": false,
+                "component": "exchange",
+                "component_ftype": "exgtype"
               },
               "exgmnamea": {
                 "type": "string",
@@ -176,11 +184,14 @@
                 ]
               },
               "slnfname": {
-                "type": "string",
+                "type": "file",
                 "longname": "file name for solution input",
                 "description": "name of file containing solution input.",
                 "tagged": false,
-                "case_sensitive": true
+                "direction": "in",
+                "mode_keyword": false,
+                "component": "solution",
+                "component_ftype": "slntype"
               },
               "slnmnames": {
                 "type": "array",

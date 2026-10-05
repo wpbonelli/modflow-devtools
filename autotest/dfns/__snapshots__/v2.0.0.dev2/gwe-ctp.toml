@@ -2,6 +2,7 @@ type = "package"
 schema_version = "2.0.0.dev2"
 name = "gwe-ctp"
 parent = "gwe-nam"
+ftype = "CTP6"
 multi = true
 subtype = "stress"
 
@@ -65,6 +66,7 @@ longname = "file name of time series information"
 description = "defines a time-series file defining time series that can be used to assign time-varying values. See the 'Time-Variable Input' section for instructions on using the time-series capability."
 tagged = false
 direction = "in"
+component = "utl-ts"
 
 [blocks.options.fields.obs_filerecord]
 type = "record"
@@ -81,6 +83,7 @@ longname = "obs6 input filename"
 description = "name of input file to define observations for the CTP package. See the 'Observation utility' section for instructions for preparing observation input files. Table {#2} lists observation type(s) supported by the CTP package."
 tagged = false
 direction = "in"
+component = "utl-obs"
 
 [blocks.dimensions.fields.maxbound]
 type = "integer"

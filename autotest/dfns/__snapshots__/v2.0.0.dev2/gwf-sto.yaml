@@ -2,6 +2,7 @@ type: package
 schema_version: 2.0.0.dev2
 name: gwf-sto
 parent: gwf-nam
+ftype: STO6
 blocks:
   options:
     fields:
@@ -43,6 +44,7 @@ blocks:
               periods.
             tagged: false
             direction: in
+            component: utl-tvs
       export_array_ascii:
         type: keyword
         longname: export array variables to layered ascii files.

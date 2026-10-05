@@ -1,7 +1,10 @@
 type: package
 schema_version: 2.0.0.dev3
 name: gwf-gnc
-parent: gwf-nam
+ftype: GNC6
+parent:
+  - exg-gwfgwf
+  - gwf-nam
 dims:
   numgnc:
     value: numgnc

@@ -1,7 +1,8 @@
 type = "package"
 schema_version = "2.0.0.dev2"
 name = "utl-ts"
-parent = "sim-nam"
+parent = "package"
+ftype = "TS6"
 multi = true
 subtype = "utility"
 

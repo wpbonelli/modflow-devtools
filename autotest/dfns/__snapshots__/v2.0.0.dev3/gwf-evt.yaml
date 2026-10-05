@@ -2,6 +2,7 @@ type: package
 schema_version: 2.0.0.dev3
 name: gwf-evt
 parent: gwf-nam
+ftype: EVT6
 multi: true
 subtype: stress
 dims:
@@ -88,6 +89,7 @@ blocks:
                 time-series capability.
               tagged: false
               direction: in
+              component: utl-ts
       obs_filerecord:
         type: record
         optional: true
@@ -104,6 +106,7 @@ blocks:
               observation type(s) supported by the EVT package.
             tagged: false
             direction: in
+            component: utl-obs
       surf_rate_specified:
         type: keyword
         longname: specify proportion of evapotranspiration rate at ET surface

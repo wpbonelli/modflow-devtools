@@ -2,6 +2,7 @@ type = "package"
 schema_version = "2.0.0.dev2"
 name = "gwf-lak"
 parent = "gwf-nam"
+ftype = "LAK6"
 multi = true
 subtype = "advanced"
 
@@ -138,6 +139,7 @@ longname = "file name of time series information"
 description = "defines a time-series file defining time series that can be used to assign time-varying values. See the 'Time-Variable Input' section for instructions on using the time-series capability."
 tagged = false
 direction = "in"
+component = "utl-ts"
 
 [blocks.options.fields.obs_filerecord]
 type = "record"
@@ -154,6 +156,7 @@ longname = "obs6 input filename"
 description = "name of input file to define observations for the LAK package. See the 'Observation utility' section for instructions for preparing observation input files. Table {#2} lists observation type(s) supported by the LAK package."
 tagged = false
 direction = "in"
+component = "utl-obs"
 
 [blocks.options.fields.mover]
 type = "keyword"
@@ -353,6 +356,7 @@ longname = "table file name"
 description = "character string that defines the path and filename for the file containing lake table data for the lake connection. The TAB6_FILENAME file includes the number of entries in the file and the relation between stage, volume, and surface area for each entry in the file. Lake table files for EMBEDDEDH and EMBEDDEDV lake-GWF connections also include lake-GWF exchange area data for each entry in the file. Instructions for creating the TAB6_FILENAME input file are provided in Lake Table Input File section."
 tagged = false
 direction = "in"
+component = "utl-laktab"
 
 [blocks.outlets.fields.outlets]
 type = "list"

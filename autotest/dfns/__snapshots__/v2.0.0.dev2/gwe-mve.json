@@ -2,7 +2,11 @@
   "type": "package",
   "schema_version": "2.0.0.dev2",
   "name": "gwe-mve",
-  "parent": "gwe-nam",
+  "ftype": "MVE6",
+  "parent": [
+    "exg-gwegwe",
+    "gwe-nam"
+  ],
   "blocks": {
     "options": {
       "fields": {

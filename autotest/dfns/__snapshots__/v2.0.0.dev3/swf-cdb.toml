@@ -2,6 +2,7 @@ type = "package"
 schema_version = "2.0.0.dev3"
 name = "swf-cdb"
 parent = "swf-nam"
+ftype = "CDB6"
 multi = true
 subtype = "stress"
 
@@ -65,6 +66,7 @@ longname = "obs6 input filename"
 description = "name of input file to define observations for the Zero-Depth-Gradient Boundary package. See the 'Observation utility' section for instructions for preparing observation input files. Table {#2} lists observation type(s) supported by the Zero-Depth-Gradient Boundary package."
 tagged = false
 direction = "in"
+component = "utl-obs"
 
 [blocks.dimensions.fields.maxbound]
 type = "integer"

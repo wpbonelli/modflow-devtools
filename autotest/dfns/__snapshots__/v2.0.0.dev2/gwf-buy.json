@@ -3,6 +3,7 @@
   "schema_version": "2.0.0.dev2",
   "name": "gwf-buy",
   "parent": "gwf-nam",
+  "ftype": "BUY6",
   "dims": {
     "nrhospecies": {
       "value": "nrhospecies"

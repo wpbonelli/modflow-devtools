@@ -2,6 +2,7 @@ type: package
 schema_version: 2.0.0.dev3
 name: exg-gwfgwf
 parent: sim-nam
+ftype: GWF6-GWF6
 multi: true
 subtype: exchange
 dims:
@@ -127,6 +128,7 @@ blocks:
               be in model 2.
             tagged: false
             direction: in
+            component: gwf-gnc
       mvr_filerecord:
         type: record
         optional: true
@@ -148,6 +150,7 @@ blocks:
               of this exchange.
             tagged: false
             direction: in
+            component: gwf-mvr
       obs_filerecord:
         type: record
         optional: true
@@ -164,6 +167,7 @@ blocks:
               lists observation type(s) supported by the GWF-GWF package.
             tagged: false
             direction: in
+            component: utl-obs
       dev_interfacemodel_on:
         type: keyword
         longname: activate interface model on exchange

@@ -2,6 +2,7 @@ type: package
 schema_version: 2.0.0.dev2
 name: swf-evp
 parent: swf-nam
+ftype: EVP6
 multi: true
 subtype: stress
 dims:
@@ -73,6 +74,7 @@ blocks:
                 time-series capability.
               tagged: false
               direction: in
+              component: utl-ts
       obs_filerecord:
         type: record
         optional: true
@@ -89,6 +91,7 @@ blocks:
               {#2} lists observation type(s) supported by the Evaporation package.
             tagged: false
             direction: in
+            component: utl-obs
   dimensions:
     fields:
       maxbound:

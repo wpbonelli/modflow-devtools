@@ -2,6 +2,7 @@ type: package
 schema_version: 2.0.0.dev3
 name: gwf-csub
 parent: gwf-nam
+ftype: CSUB6
 dims:
   ninterbeds:
     value: ninterbeds
@@ -284,6 +285,7 @@ blocks:
                 time-series capability.
               tagged: false
               direction: in
+              component: utl-ts
       obs_filerecord:
         type: record
         optional: true
@@ -300,6 +302,7 @@ blocks:
               observation type(s) supported by the CSUB package.
             tagged: false
             direction: in
+            component: utl-obs
   dimensions:
     fields:
       ninterbeds:

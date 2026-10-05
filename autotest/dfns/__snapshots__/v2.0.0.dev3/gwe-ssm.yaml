@@ -2,6 +2,7 @@ type: package
 schema_version: 2.0.0.dev3
 name: gwe-ssm
 parent: gwe-nam
+ftype: SSM6
 blocks:
   options:
     fields:
@@ -92,6 +93,9 @@ blocks:
                 on file input for boundary temperatures.
               tagged: false
               direction: in
+              component:
+                - utl-spc
+                - utl-spca
             mixed:
               type: keyword
               longname: mixed keyword

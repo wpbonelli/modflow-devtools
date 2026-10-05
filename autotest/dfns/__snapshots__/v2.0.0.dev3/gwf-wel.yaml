@@ -2,6 +2,7 @@ type: package
 schema_version: 2.0.0.dev3
 name: gwf-wel
 parent: gwf-nam
+ftype: WEL6
 multi: true
 subtype: stress
 dims:
@@ -119,6 +120,7 @@ blocks:
                 time-series capability.
               tagged: false
               direction: in
+              component: utl-ts
       obs_filerecord:
         type: record
         optional: true
@@ -135,6 +137,7 @@ blocks:
               observation type(s) supported by the WEL package.
             tagged: false
             direction: in
+            component: utl-obs
       mover:
         type: keyword
         description: keyword to indicate that this instance of the Well Package can be used with the Water

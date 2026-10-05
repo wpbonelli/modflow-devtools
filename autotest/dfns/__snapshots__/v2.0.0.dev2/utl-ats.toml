@@ -1,7 +1,8 @@
 type = "package"
 schema_version = "2.0.0.dev2"
 name = "utl-ats"
-parent = "sim-nam"
+parent = "sim-tdis"
+ftype = "ATS6"
 subtype = "utility"
 
 [dims.maxats]

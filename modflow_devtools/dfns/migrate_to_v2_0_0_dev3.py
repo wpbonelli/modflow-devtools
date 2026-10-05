@@ -20,6 +20,7 @@ Package-specific variables that are not captured by the above (e.g. ``k → k11`
 ``condsat``, ``area``) are hardcoded and override any entry with the same name.
 """
 
+from collections.abc import Mapping
 from typing import Literal
 
 from boltons.dictutils import OMD
@@ -1317,11 +1318,17 @@ _MODEL_MEMORY["prt-nam"] = {
 # ---------------------------------------------------------------------------
 
 
-def to_v2_0_0_dev3(name: str, fields: OMD, meta: list[str]) -> v2.Component:
-    """Map a component definition from the raw v1 schema to 2.0.0.dev3."""
+def to_v2_0_0_dev3(
+    name: str,
+    fields: OMD,
+    meta: list[str],
+    subpackages: Mapping[str, str] | None = None,
+) -> v2.Component:
+    """Map a component definition from the raw v1 schema to 2.0.0.dev3. See
+    `to_v2_0_0_dev2` for ``subpackages``."""
 
     # Step 1: run the dev2 migration to get blocks, dims, parent, subtype, etc.
-    component = to_v2_0_0_dev2(name, fields, meta)
+    component = to_v2_0_0_dev2(name, fields, meta, subpackages=subpackages)
 
     memory: dict[str, v2.MemoryScalar | v2.MemoryArray] = {}
 

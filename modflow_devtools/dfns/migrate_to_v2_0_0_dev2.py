@@ -79,6 +79,70 @@ _OC_RTYPE_VALID: dict[str, list[str]] = {
     "prt": ["BUDGET"],
 }
 
+# Subpackage links the `# flopy subpackage` keys miss, by the keyword leading
+# the file record. mf6 loads SSM's `spc6` file as SPC or SPCA depending on the
+# file's own READASARRAYS option, so it links the variant family.
+_KEYWORD_LINKS: dict[tuple[str, str], str | list[str]] = {
+    ("gwf-sfr", "tab6"): "utl-sfrtab",
+    ("gwf-lak", "tab6"): "utl-laktab",
+    ("gwt-ssm", "spc6"): ["utl-spc", "utl-spca"],
+    ("gwe-ssm", "spc6"): ["utl-spc", "utl-spca"],
+}
+
+# Name-file filename columns: (component, field) -> (selector, component_ftype).
+# `*-nam` means every model name file.
+_NAMEFILE_LINKS: dict[tuple[str, str], tuple[str, str | None]] = {
+    ("sim-nam", "tdis6"): ("sim-tdis", None),
+    ("sim-nam", "mfname"): ("model", "mtype"),
+    ("sim-nam", "exgfile"): ("exchange", "exgtype"),
+    ("sim-nam", "slnfname"): ("solution", "slntype"),
+    ("*-nam", "fname"): ("package", "ftype"),
+}
+
+# Parents for linked utilities whose derived parent (see `v2.covering_selector`)
+# would be `package`, though only these few packages link them. Each must
+# still admit every component that links the utility; `link_components`
+# checks.
+_LINKED_PARENTS: dict[str, list[str]] = {
+    "utl-spc": ["gwe-ssm", "gwt-ssm"],
+    "utl-spca": ["gwe-ssm", "gwt-ssm"],
+    "utl-tas": ["gwf-evta", "gwf-rcha", "utl-spca"],
+    "utl-ncf": [f"{m}-{d}" for m in ("gwe", "gwf", "gwt", "prt") for d in ("dis", "disv")],
+}
+
+# Array-based variants, which share their base's ftype token: mf6 maps these
+# to the base type when matching name-file ftypes (InputLoadType.f90).
+_FTYPE_VARIANTS = frozenset({"evta", "rcha", "spca", "rivg", "chdg", "welg", "drng", "ghbg"})
+
+_MODEL_TYPES = frozenset({*_DEPENDENT_VARS, "prt"})
+
+
+def _ftype(name: str) -> str | None:
+    """
+    The token naming a component's file type (`v2.ComponentBase.ftype`):
+    `gwf-nam` -> `GWF6`, `gwf-dis` -> `DIS6`, `exg-gwfgwf` -> `GWF6-GWF6`,
+    `gwf-rcha` -> `RCH6`. None for the simulation name file, which has none.
+    """
+    prefix, _, suffix = name.partition("-")
+    if name == "sim-nam":
+        return None
+    if suffix == "nam":
+        return f"{prefix.upper()}6"
+    if prefix == "exg":
+        for m in _MODEL_TYPES:
+            if suffix.startswith(m) and suffix[len(m) :] in _MODEL_TYPES:
+                return f"{m.upper()}6-{suffix[len(m) :].upper()}6"
+        raise ValueError(f"{name}: can't split exchange into two model types")
+    if suffix in _FTYPE_VARIANTS:
+        suffix = suffix[:-1]
+    return f"{suffix.upper()}6"
+
+
+# v1 marks these optional, but mf6 requires them. sim-nam's `tdis6`: "TIMING
+# block variable TDIS6 is unset" (SimulationCreate.f90). Fixed upstream in
+# sim-nam.dfn; drop the entry once the DFNs this migrates include the fix.
+_V1_REQUIRED: frozenset[tuple[str, str]] = frozenset({("sim-nam", "tdis6")})
+
 
 def _scope_for(
     parent: "str | list[str] | None",
@@ -564,6 +628,43 @@ def _fix_cellid_fields(name: str, blocks: dict[str, v2.Block]) -> dict[str, v2.B
     new_list = list_field.model_copy(update={"item": new_item})
     new_block = block.model_copy(update={"fields": {**block.fields, block_name: new_list}})
     return {**blocks, block_name: new_block}
+
+
+def _link_namefile_fields(name: str, blocks: dict[str, v2.Block]) -> dict[str, v2.Block]:
+    """Turn a name file's filename columns (see `_NAMEFILE_LINKS`) from
+    Strings into input Files linking the components they name. Name-file
+    entries have no FILEIN keyword."""
+    key = "*-nam" if name.endswith("-nam") and name != "sim-nam" else name
+    links = {f: link for (c, f), link in _NAMEFILE_LINKS.items() if c == key}
+    if not links:
+        return blocks
+
+    def _link(field: Any) -> Any:
+        if isinstance(field, v2.String) and field.name in links:
+            selector, component_ftype = links[field.name]
+            optional = field.optional and (name, field.name) not in _V1_REQUIRED
+            data = {k: getattr(field, k) for k in v2.InputFieldBase.model_fields}
+            return v2.File(
+                **{**data, "optional": optional},
+                direction="in",
+                mode_keyword=False,
+                component=selector,
+                component_ftype=component_ftype,
+            )
+        if isinstance(field, v2.Record):
+            return field.model_copy(
+                update={"fields": {n: _link(f) for n, f in field.fields.items()}}
+            )
+        if isinstance(field, v2.List):
+            return field.model_copy(update={"item": _link(field.item)})
+        return field
+
+    return {
+        block_name: block.model_copy(
+            update={"fields": {n: _link(f) for n, f in block.fields.items()}}
+        )
+        for block_name, block in blocks.items()
+    }
 
 
 def _mark_cellids(blocks: dict[str, v2.Block]) -> dict[str, v2.Block]:
@@ -1492,8 +1593,20 @@ def infer_parent(name: str, fields: OMD) -> str | None:
     return None
 
 
-def to_v2_0_0_dev2(name: str, fields: OMD, meta: list[str]) -> v2.Component:
-    """Map a component definition from the raw v1 schema to 2.0.0.dev2."""
+def to_v2_0_0_dev2(
+    name: str,
+    fields: OMD,
+    meta: list[str],
+    subpackages: Mapping[str, str] | None = None,
+) -> v2.Component:
+    """
+    Map a component definition from the raw v1 schema to 2.0.0.dev2.
+
+    ``subpackages`` maps a file record's name to the component its file is
+    input for (see `subpackage_keys`). Linked components' parents need the
+    whole corpus, so they are derived by `link_components`, not here.
+    """
+    subpackages = subpackages or {}
 
     from modflow_devtools.dfn.migrate_to_v2_0_0_dev0 import (
         is_advanced_package,
@@ -1786,6 +1899,10 @@ def to_v2_0_0_dev2(name: str, fields: OMD, meta: list[str]) -> v2.Component:
                     None,
                 )
 
+            linked: str | list[str] | None = subpackages.get(_name)
+            for sname in subnames[:mode_idx]:
+                linked = linked or _KEYWORD_LINKS.get((name, sname))
+
             rec_fields: dict[str, v2.InputField] = {}
             for i, sname in enumerate(subnames):
                 if i == mode_idx:
@@ -1806,6 +1923,7 @@ def to_v2_0_0_dev2(name: str, fields: OMD, meta: list[str]) -> v2.Component:
                         deprecated=m.get("deprecated") or None,
                         tagged=False,
                         direction="in" if file_mode == "filein" else "out",
+                        component=linked if file_mode == "filein" else None,
                     )
                     continue
                 m = _lookup(sname)
@@ -1977,12 +2095,14 @@ def to_v2_0_0_dev2(name: str, fields: OMD, meta: list[str]) -> v2.Component:
     blocks = _mark_cellids(blocks)
     blocks = _apply_fk_backfill(name, blocks)
     blocks = _apply_array_fk_backfill(name, blocks)
+    blocks = _link_namefile_fields(name, blocks)
     dims = {**explicit_dims, **array_dims, **derived_dims} or None
 
     d: dict[str, Any] = {
         "schema_version": "2.0.0.dev2",
         "name": name,
         "parent": parent,
+        "ftype": _ftype(name),
         "blocks": blocks or None,
         "dims": dims,
     }
@@ -2009,3 +2129,109 @@ def to_v2_0_0_dev2(name: str, fields: OMD, meta: list[str]) -> v2.Component:
         is_stress_pkg = is_stress_package(name, meta)
         subtype = "advanced" if is_advanced else "stress" if is_stress_pkg else None
     return v2.Package(**d, subtype=subtype, multi=is_multi_package(meta))
+
+
+def subpackage_keys(metas: Mapping[str, list[str]]) -> dict[str, str]:
+    """
+    Map each file record name a `# flopy subpackage <key> ...` header line
+    declares to the component declaring it: any field named ``<key>`` holds
+    the name of one of its files (``ts_filerecord`` -> ``utl-ts``).
+    """
+    keys: dict[str, str] = {}
+    for name, meta in metas.items():
+        for line in meta:
+            parts = line.lstrip("#").split()
+            if parts[:2] == ["flopy", "subpackage"] and len(parts) > 2:
+                keys[parts[2]] = name
+    return keys
+
+
+def _mf6_subpackages(meta: list[str]) -> list[str]:
+    """Components a `# mf6 subpackage <component>` header line names."""
+    result = []
+    for line in meta:
+        parts = line.lstrip("#").split()
+        if parts[:2] == ["mf6", "subpackage"] and len(parts) > 2:
+            result.append(parts[2])
+    return result
+
+
+def _links(component: v2.ComponentBase) -> list[str]:
+    """Concrete components this component's input files link."""
+    return [
+        t
+        for block in (component.blocks or {}).values()
+        for file, _ in v2._iter_files(block.fields)
+        for t in v2._parents_as_set(file.component)
+    ]
+
+
+def link_components(
+    components: Mapping[str, v2.Component], metas: Mapping[str, list[str]]
+) -> dict[str, v2.Component]:
+    """
+    Corpus-wide link checks, then each linked component's parent derived from
+    the components that link to it (see `v2.covering_selector`).
+
+    The links themselves are made per file, by `to_v2_0_0_dev2`. Only
+    concrete links count: a name file's type selectors (``model``,
+    ``package``, ...) pick among components whose parents are already known.
+    """
+    links = {name: _links(c) for name, c in components.items()}
+
+    for name, meta in metas.items():
+        if name not in components:
+            continue
+        for target in _mf6_subpackages(meta):
+            if target in components and target not in links[name]:
+                raise ValueError(f"{name}: '# mf6 subpackage {target}' but no file links it")
+    for (name, keyword), selector in _KEYWORD_LINKS.items():
+        selected = v2._parents_as_set(selector)
+        if name in components and not selected & set(links[name]):
+            raise ValueError(f"{name}: no {keyword!r} file record to link {selector!r}")
+
+    linkers: dict[str, list[v2.ComponentBase]] = {}
+    for name, targets in links.items():
+        for t in dict.fromkeys(targets):
+            if t in components:
+                linkers.setdefault(t, []).append(components[name])
+
+    result = dict(components)
+    for name, component in components.items():
+        found = linkers.get(name, [])
+        if not name.startswith("utl-"):
+            # also listed in a name file (gwf-gnc, gwf-mvr, ...): keep that parent
+            if not found:
+                continue
+            found = [
+                *(components[p] for p in v2._parents_as_set(component.parent) if p in components),
+                *found,
+            ]
+        elif not found:
+            raise ValueError(f"{name}: no component links this utility, so it has no parent")
+        if name in _LINKED_PARENTS:
+            parent: str | list[str] = _LINKED_PARENTS[name]
+            if missing := [c.name for c in found if not v2.admits(parent, c)]:
+                raise ValueError(f"{name}: parent {parent!r} doesn't admit linkers {missing}")
+        else:
+            parent = v2.covering_selector(found, components)
+        result[name] = component.model_copy(update={"parent": parent})
+    return result
+
+
+def migrate_corpus(
+    raw: Mapping[str, tuple[OMD, list[str]]],
+    convert: Callable[..., v2.Component] = to_v2_0_0_dev2,
+) -> dict[str, v2.Component]:
+    """
+    Migrate a whole corpus of v1 definitions, ``{name: (fields, meta)}``,
+    with ``convert`` (`to_v2_0_0_dev2`, or a later version's converter that
+    accepts ``subpackages``), then link the components to each other (see
+    `link_components`).
+    """
+    metas = {name: meta for name, (_, meta) in raw.items()}
+    keys = subpackage_keys(metas)
+    components = {
+        name: convert(name, fields, meta, subpackages=keys) for name, (fields, meta) in raw.items()
+    }
+    return link_components(components, metas)

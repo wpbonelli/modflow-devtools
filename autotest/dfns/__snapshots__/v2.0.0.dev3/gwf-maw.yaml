@@ -2,6 +2,7 @@ type: package
 schema_version: 2.0.0.dev3
 name: gwf-maw
 parent: gwf-nam
+ftype: MAW6
 multi: true
 subtype: advanced
 dims:
@@ -181,6 +182,7 @@ blocks:
                 time-series capability.
               tagged: false
               direction: in
+              component: utl-ts
       obs_filerecord:
         type: record
         optional: true
@@ -197,6 +199,7 @@ blocks:
               observation type(s) supported by the MAW package.
             tagged: false
             direction: in
+            component: utl-obs
       mover:
         type: keyword
         description: keyword to indicate that this instance of the MAW Package can be used with the Water

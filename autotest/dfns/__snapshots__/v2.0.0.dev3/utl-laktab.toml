@@ -1,7 +1,8 @@
 type = "package"
 schema_version = "2.0.0.dev3"
 name = "utl-laktab"
-parent = "sim-nam"
+parent = "gwf-lak"
+ftype = "LAKTAB6"
 multi = true
 subtype = "utility"
 

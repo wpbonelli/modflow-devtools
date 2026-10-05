@@ -3,6 +3,7 @@
   "schema_version": "2.0.0.dev2",
   "name": "gwf-npf",
   "parent": "gwf-nam",
+  "ftype": "NPF6",
   "blocks": {
     "options": {
       "fields": {
@@ -149,7 +150,8 @@
               "longname": "file name of TVK information",
               "description": "defines a time-varying hydraulic conductivity (TVK) input file.  Records in the TVK file can be used to change hydraulic conductivity properties at specified times or stress periods.",
               "tagged": false,
-              "direction": "in"
+              "direction": "in",
+              "component": "utl-tvk"
             }
           }
         },

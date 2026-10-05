@@ -2,6 +2,7 @@ type: package
 schema_version: 2.0.0.dev2
 name: gwf-sfr
 parent: gwf-nam
+ftype: SFR6
 multi: true
 subtype: advanced
 dims:
@@ -140,6 +141,7 @@ blocks:
                 time-series capability.
               tagged: false
               direction: in
+              component: utl-ts
       obs_filerecord:
         type: record
         optional: true
@@ -156,6 +158,7 @@ blocks:
               observation type(s) supported by the SFR package.
             tagged: false
             direction: in
+            component: utl-obs
       mover:
         type: keyword
         description: keyword to indicate that this instance of the SFR Package can be used with the Water
@@ -393,6 +396,7 @@ blocks:
                 SFR Reach Cross-Section Table Input File section.
               tagged: false
               direction: in
+              component: utl-sfrtab
   connectiondata:
     fields:
       connectiondata:
@@ -672,6 +676,7 @@ blocks:
                         are provided in SFR Reach Cross-Section Table Input File section.
                       tagged: false
                       direction: in
+                      component: utl-sfrtab
                 auxiliaryrecord:
                   type: record
                   fields:

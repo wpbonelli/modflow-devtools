@@ -2,6 +2,7 @@ type: model
 schema_version: 2.0.0.dev3
 name: olf-nam
 parent: sim-nam
+ftype: OLF6
 dependent_variable: stage
 runtime_dims:
   nja:
@@ -74,12 +75,15 @@ blocks:
                 lowercase.
               tagged: false
             fname:
-              type: string
+              type: file
               longname: file name
               description: is the name of the file containing the package input.  The path to the file
                 should be included if the file is not located in the folder where the program was run.
               tagged: false
-              case_sensitive: true
+              direction: in
+              mode_keyword: false
+              component: package
+              component_ftype: ftype
             pname:
               type: string
               longname: user name for package

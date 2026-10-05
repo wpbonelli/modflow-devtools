@@ -2,6 +2,7 @@ type: package
 schema_version: 2.0.0.dev2
 name: gwf-disv
 parent: gwf-nam
+ftype: DISV6
 dims:
   nlay:
     value: nlay
@@ -110,6 +111,7 @@ blocks:
             description: defines a NetCDF configuration (NCF) input file.
             tagged: false
             direction: in
+            component: utl-ncf
   dimensions:
     fields:
       nlay:

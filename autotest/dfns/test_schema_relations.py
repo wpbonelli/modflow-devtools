@@ -7,6 +7,7 @@ from modflow_devtools.dfns.schema import (
     Block,
     Dfns,
     Double,
+    File,
     InputDim,
     Integer,
     Keyword,
@@ -14,9 +15,12 @@ from modflow_devtools.dfns.schema import (
     Model,
     Package,
     Record,
+    Simulation,
     String,
     Union,
     _validate_fk_fields,
+    admits,
+    covering_selector,
 )
 
 
@@ -242,3 +246,148 @@ def test_dfns_validate_cellid_outside_list_item():
     gwf = Model(name="gwf-nam", blocks=None)
     with pytest.raises(ValueError, match="only valid on a column in a list item"):
         Dfns(components={"gwf-nam": gwf, "gwf-gnc": pkg})
+
+
+# --- file links (File.component / component_ftype) ---
+
+
+def _file_block(file: File, **siblings) -> dict:
+    item = Record(name="item", fields={**siblings, file.name: file})
+    return {"links": Block(name="links", fields={"links": List(name="links", item=item)})}
+
+
+def _link_spec(file: File, owner: str = "gwf-dis", **siblings) -> dict:
+    """A gwf model with dis, rch/rcha (a variant family) and a utl-ncf
+    utility attached by packages; ``file`` goes in ``owner``."""
+    components = {
+        "sim-nam": Simulation(name="sim-nam"),
+        "gwf-nam": Model(name="gwf-nam", parent="sim-nam", ftype="GWF6"),
+        "gwf-dis": Package(name="gwf-dis", parent="gwf-nam", ftype="DIS6"),
+        "gwf-rch": Package(name="gwf-rch", parent="gwf-nam", subtype="stress", ftype="RCH6"),
+        "gwf-rcha": Package(name="gwf-rcha", parent="gwf-nam", subtype="stress", ftype="RCH6"),
+        "utl-ncf": Package(name="utl-ncf", parent="package", subtype="utility", ftype="NCF6"),
+    }
+    components[owner] = components[owner].model_copy(
+        update={"blocks": _file_block(file, **siblings)}
+    )
+    return components
+
+
+def test_file_link_fixed_target():
+    file = File(name="ncf6_filename", direction="in", component="utl-ncf")
+    Dfns(components=_link_spec(file))
+
+
+def test_file_link_variant_family_without_component_ftype():
+    file = File(name="f", direction="in", component=["gwf-rch", "gwf-rcha"])
+    Dfns(components=_link_spec(file, owner="gwf-nam"))
+
+
+def test_file_link_component_ftype():
+    file = File(name="fname", direction="in", component="package", component_ftype="ftype")
+    Dfns(components=_link_spec(file, owner="gwf-nam", ftype=String(name="ftype")))
+
+
+def test_file_link_output_rejected():
+    file = File(name="f", direction="out", component="utl-ncf")
+    with pytest.raises(ValueError, match="only an input file"):
+        Dfns(components=_link_spec(file))
+
+
+def test_file_link_unknown_selector_rejected():
+    file = File(name="f", direction="in", component="utl-nope")
+    with pytest.raises(ValueError, match="matches none"):
+        Dfns(components=_link_spec(file))
+
+
+def test_file_link_not_a_child_rejected():
+    # utl-ncf's parent is `package`, which doesn't admit the model
+    file = File(name="f", direction="in", component="utl-ncf")
+    with pytest.raises(ValueError, match="matches none"):
+        Dfns(components=_link_spec(file, owner="gwf-nam"))
+
+
+def test_file_link_ambiguous_without_component_ftype_rejected():
+    file = File(name="f", direction="in", component="package")
+    with pytest.raises(ValueError, match="no component_ftype"):
+        Dfns(components=_link_spec(file, owner="gwf-nam"))
+
+
+def test_file_link_component_ftype_not_sibling_rejected():
+    file = File(name="f", direction="in", component="package", component_ftype="ftype")
+    with pytest.raises(ValueError, match="not a sibling String"):
+        Dfns(components=_link_spec(file, owner="gwf-nam"))
+
+
+def test_admits():
+    rch = Package(name="gwf-rch", parent="gwf-nam", subtype="stress")
+    assert admits("gwf-rch", rch)
+    assert admits("stress", rch)
+    assert admits("package", rch)
+    assert admits(["model", "stress"], rch)
+    assert admits("*", rch)
+    assert not admits("model", rch)
+    assert not admits(None, rch)
+
+
+def test_covering_selector():
+    nam = Model(name="gwf-nam")
+    exg = Package(name="exg-gwfgwf", subtype="exchange")
+    npf = Package(name="gwf-npf")
+    wel = Package(name="gwf-wel", subtype="stress")
+    chd = Package(name="gwf-chd", subtype="stress")
+    spc = Package(name="utl-spc", subtype="utility")
+    all_ = {c.name: c for c in (nam, exg, npf, wel, chd, spc)}
+    # one linker: its own name
+    assert covering_selector([npf], all_) == "gwf-npf"
+    # a shared subtype beats a type
+    assert covering_selector([wel, chd], all_) == "stress"
+    # one type term beats two narrower ones
+    assert covering_selector([wel, spc], all_) == "package"
+    # no single term covers a model and an exchange: concrete names
+    assert covering_selector([nam, exg], all_) == ["exg-gwfgwf", "gwf-nam"]
+
+
+def test_children_list_parent():
+    gwf = Model(name="gwf-nam", parent="sim-nam")
+    exg = Package(name="exg-gwfgwf", parent="sim-nam", subtype="exchange")
+    gnc = Package(name="gwf-gnc", parent=["gwf-nam", "exg-gwfgwf"])
+    spec = Dfns(
+        components={
+            "sim-nam": Simulation(name="sim-nam"),
+            "gwf-nam": gwf,
+            "exg-gwfgwf": exg,
+            "gwf-gnc": gnc,
+        }
+    )
+    assert "gwf-gnc" in spec.children("gwf-nam")
+    assert "gwf-gnc" in spec.children("exg-gwfgwf")
+    assert "gwf-gnc" not in spec.children("sim-nam")
+
+
+def test_ftype_family():
+    spec = Dfns(components=_link_spec(File(name="f", direction="in")))
+    spec.components["exg-gwfgwf"] = Package(name="exg-gwfgwf", parent="sim-nam", ftype="GWF6-GWF6")
+    assert spec.ftype_family("DIS6", "gwf-nam") == ["gwf-dis"]
+    assert spec.ftype_family("rch6", "gwf-nam") == ["gwf-rch", "gwf-rcha"]
+    assert spec.ftype_family("GWF6", "sim-nam") == ["gwf-nam"]
+    assert spec.ftype_family("GWF6-GWF6", "sim-nam") == ["exg-gwfgwf"]
+    assert spec.ftype_family("NCF6", "gwf-nam") == []
+
+
+def test_concrete_package_parent_sees_model_dims():
+    """A subpackage whose parent is a concrete package (utl-tvk's gwf-npf)
+    is in that package's model, so it sees the model's grid dims."""
+    spec = Dfns(
+        components={
+            "gwf-nam": Model(name="gwf-nam"),
+            "gwf-dis": Package(
+                name="gwf-dis",
+                parent="gwf-nam",
+                dims={"nodes": InputDim(value="10", scope="model")},
+            ),
+            "gwf-npf": Package(name="gwf-npf", parent="gwf-nam"),
+            "utl-tvk": Package(name="utl-tvk", parent="gwf-npf", subtype="utility"),
+        }
+    )
+    assert "nodes" in spec.inherited_dims("utl-tvk")

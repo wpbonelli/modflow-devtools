@@ -3,6 +3,7 @@
   "schema_version": "2.0.0.dev3",
   "name": "swf-sto",
   "parent": "swf-nam",
+  "ftype": "STO6",
   "blocks": {
     "options": {
       "fields": {

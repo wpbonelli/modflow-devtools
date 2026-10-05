@@ -3,6 +3,7 @@
   "schema_version": "2.0.0.dev2",
   "name": "gwf-sfr",
   "parent": "gwf-nam",
+  "ftype": "SFR6",
   "multi": true,
   "subtype": "advanced",
   "dims": {
@@ -146,7 +147,8 @@
                 "longname": "file name of time series information",
                 "description": "defines a time-series file defining time series that can be used to assign time-varying values. See the 'Time-Variable Input' section for instructions on using the time-series capability.",
                 "tagged": false,
-                "direction": "in"
+                "direction": "in",
+                "component": "utl-ts"
               }
             }
           }
@@ -165,7 +167,8 @@
               "longname": "obs6 input filename",
               "description": "name of input file to define observations for the SFR package. See the 'Observation utility' section for instructions for preparing observation input files. Table {#2} lists observation type(s) supported by the SFR package.",
               "tagged": false,
-              "direction": "in"
+              "direction": "in",
+              "component": "utl-obs"
             }
           }
         },
@@ -372,7 +375,8 @@
                 "longname": "table file name",
                 "description": "character string that defines the path and filename for the file containing cross-section table data for the reach. The TAB6_FILENAME file includes the number of entries in the file and the station elevation data in terms of the fractional width and the reach depth. Instructions for creating the TAB6_FILENAME input file are provided in SFR Reach Cross-Section Table Input File section.",
                 "tagged": false,
-                "direction": "in"
+                "direction": "in",
+                "component": "utl-sfrtab"
               }
             }
           }
@@ -594,7 +598,8 @@
                         "longname": "table file name",
                         "description": "character string that defines the path and filename for the file containing cross-section table data for the reach. The TAB6_FILENAME file includes the number of entries in the file and the station elevation data in terms of the fractional width and the reach depth. Instructions for creating the TAB6_FILENAME input file are provided in SFR Reach Cross-Section Table Input File section.",
                         "tagged": false,
-                        "direction": "in"
+                        "direction": "in",
+                        "component": "utl-sfrtab"
                       }
                     }
                   },

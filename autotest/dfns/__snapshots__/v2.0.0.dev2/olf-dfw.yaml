@@ -2,6 +2,7 @@ type: package
 schema_version: 2.0.0.dev2
 name: olf-dfw
 parent: olf-nam
+ftype: DFW6
 blocks:
   options:
     fields:
@@ -72,6 +73,7 @@ blocks:
               observation type(s) supported by the DFW package.
             tagged: false
             direction: in
+            component: utl-obs
       export_array_ascii:
         type: keyword
         longname: export array variables to layered ascii files.

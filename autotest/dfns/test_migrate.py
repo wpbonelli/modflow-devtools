@@ -406,3 +406,198 @@ def test_migrate_keyword_aliases(dfn_dir):
     component = _migrate_dev3(dfn_dir, "utl-ts")
     record = component.blocks["attributes"].fields["time_series_namerecord"]
     assert record.fields["names"].aliases == ["name"]
+
+
+# --- component links (File.component) and the parents derived from them ---
+
+
+@pytest.fixture(scope="module")
+def linked_spec(dfn_dir):
+    return v2.Dfns.load(dfn_dir)
+
+
+def _linked_files(component, record: str) -> list:
+    """The input Files under the field named ``record``, anywhere."""
+    found = [
+        f
+        for f in component.get_fields(recurse=True).values(multi=True)
+        if f.name == record or getattr(getattr(f, "item", None), "name", None) == record
+    ]
+    assert found, f"{component.name} has no {record!r}"
+    return [
+        file for f in found for file, _ in v2._iter_files({f.name: f}) if file.direction == "in"
+    ]
+
+
+def _components(component, record: str) -> list:
+    return [f.component for f in _linked_files(component, record)]
+
+
+@pytest.mark.parametrize(
+    "name", [f"{m}-{d}" for m in ("gwf", "gwt", "gwe", "prt") for d in ("dis", "disv")]
+)
+def test_migrate_links_ncf(linked_spec, name):
+    assert _components(linked_spec.components[name], "ncf_filerecord") == ["utl-ncf"]
+
+
+def test_migrate_links_ts_and_obs_everywhere(linked_spec):
+    for name, c in linked_spec.components.items():
+        fields = c.get_fields(recurse=True)
+        for record, target in (("ts_filerecord", "utl-ts"), ("obs_filerecord", "utl-obs")):
+            if record in fields:
+                assert set(_components(c, record)) == {target}, name
+
+
+@pytest.mark.parametrize(
+    "name, record, target",
+    [
+        ("gwf-npf", "tvk_filerecord", "utl-tvk"),
+        ("gwf-sto", "tvs_filerecord", "utl-tvs"),
+        ("sim-tdis", "ats_filerecord", "utl-ats"),
+        ("sim-nam", "hpc_filerecord", "utl-hpc"),
+        ("gwt-ssm", "fileinput", ["utl-spc", "utl-spca"]),
+        ("gwe-ssm", "fileinput", ["utl-spc", "utl-spca"]),
+        ("gwf-lak", "tables", "utl-laktab"),
+    ],
+)
+def test_migrate_links_subpackage(linked_spec, name, record, target):
+    assert _components(linked_spec.components[name], record) == [target]
+
+
+def test_migrate_links_sfr_tables(linked_spec):
+    files = [
+        f
+        for f in linked_spec.components["gwf-sfr"].get_fields(recurse=True).values(multi=True)
+        if isinstance(f, v2.File) and f.name == "tab6_filename"
+    ]
+    assert len(files) == 2
+    assert {f.component for f in files} == {"utl-sfrtab"}
+
+
+@pytest.mark.parametrize(
+    "field, selector, component_ftype",
+    [
+        ("tdis6", "sim-tdis", None),
+        ("mfname", "model", "mtype"),
+        ("exgfile", "exchange", "exgtype"),
+        ("slnfname", "solution", "slntype"),
+    ],
+)
+def test_migrate_links_sim_nam(linked_spec, field, selector, component_ftype):
+    file = linked_spec.components["sim-nam"].get_fields(recurse=True)[field]
+    assert isinstance(file, v2.File)
+    assert (file.component, file.component_ftype) == (selector, component_ftype)
+    assert file.direction == "in" and not file.mode_keyword
+    assert not file.optional
+
+
+def test_migrate_tdis6_renders_without_filein(linked_spec):
+    timing = linked_spec.components["sim-nam"].blocks["timing"]
+    assert "TDIS6 <tdis6>" in timing.fields["tdis6"].render()
+
+
+def test_migrate_links_model_packages(linked_spec):
+    models = [c for c in linked_spec.components.values() if isinstance(c, v2.Model)]
+    assert models
+    for model in models:
+        file = model.get_fields(recurse=True)["fname"]
+        assert (file.component, file.component_ftype) == ("package", "ftype"), model.name
+
+
+def test_migrate_link_selectors_resolve(linked_spec):
+    for name, c in linked_spec.components.items():
+        children = linked_spec.children(name)
+        for block in (c.blocks or {}).values():
+            for file, _ in v2._iter_files(block.fields):
+                if file.component is None:
+                    continue
+                targets = [n for n, t in children.items() if v2.admits(file.component, t)]
+                assert targets, (name, file.name)
+                if file.component_ftype is None:
+                    ftypes = {linked_spec.components[t].ftype for t in targets}
+                    assert len(ftypes) == 1, (name, file.name)
+
+
+def test_migrate_model_packages_exclude_utilities(linked_spec):
+    children = linked_spec.children("gwf-nam")
+    assert {"gwf-dis", "gwf-gnc", "gwf-mvr"} <= set(children)
+    assert not any(n.startswith("utl-") for n in children)
+
+
+def test_migrate_unlinked_files(linked_spec):
+    """Output files (grb_filerecord, ...) and NetCDF input aren't links."""
+    netcdf = {"nc_filerecord", "nc_mesh2d_filerecord", "nc_structured_filerecord"}
+    for name, c in linked_spec.components.items():
+        for field in c.get_fields(recurse=True).values(multi=True):
+            for file, _ in v2._iter_files({field.name: field}):
+                if file.direction == "out" or field.name in netcdf:
+                    assert file.component is None, (name, file.name)
+
+
+@pytest.mark.parametrize(
+    "name, parent",
+    [
+        ("utl-ts", "package"),
+        ("utl-obs", "package"),
+        (
+            "utl-ncf",
+            [f"{m}-{d}" for m in ("gwe", "gwf", "gwt", "prt") for d in ("dis", "disv")],
+        ),
+        ("utl-spc", ["gwe-ssm", "gwt-ssm"]),
+        ("utl-spca", ["gwe-ssm", "gwt-ssm"]),
+        ("utl-tas", ["gwf-evta", "gwf-rcha", "utl-spca"]),
+        ("utl-tvk", "gwf-npf"),
+        ("utl-tvs", "gwf-sto"),
+        ("utl-sfrtab", "gwf-sfr"),
+        ("utl-laktab", "gwf-lak"),
+        ("utl-ats", "sim-tdis"),
+        ("utl-hpc", "sim-nam"),
+        ("gwf-gnc", ["exg-gwfgwf", "gwf-nam"]),
+        ("gwf-mvr", ["exg-gwfgwf", "gwf-nam"]),
+        ("gwt-mvt", ["exg-gwtgwt", "gwt-nam"]),
+        ("gwe-mve", ["exg-gwegwe", "gwe-nam"]),
+        ("sim-tdis", "sim-nam"),
+    ],
+)
+def test_migrate_derives_parents_from_links(linked_spec, name, parent):
+    assert linked_spec.components[name].parent == parent
+
+
+def test_migrate_subpackage_keeps_model_dims(linked_spec):
+    # tvk's parent is now gwf-npf, not `package`; it must still see grid dims
+    assert {"nodes", "nlay"} <= linked_spec.inherited_dims("utl-tvk")
+
+
+@pytest.mark.parametrize(
+    "name, ftype",
+    [
+        ("sim-nam", None),
+        ("gwf-nam", "GWF6"),
+        ("gwf-dis", "DIS6"),
+        ("gwf-rch", "RCH6"),
+        ("gwf-rcha", "RCH6"),
+        ("gwf-chdg", "CHD6"),
+        ("utl-spca", "SPC6"),
+        ("exg-gwfgwf", "GWF6-GWF6"),
+        ("exg-gwfprt", "GWF6-PRT6"),
+        ("sln-ims", "IMS6"),
+        ("sim-tdis", "TDIS6"),
+        ("utl-ncf", "NCF6"),
+    ],
+)
+def test_migrate_ftype(linked_spec, name, ftype):
+    assert linked_spec.components[name].ftype == ftype
+
+
+def test_migrate_ftypes_unique_among_name_file_children(linked_spec):
+    """Within a name file, one ftype names one component, or a base and its
+    array-based variants."""
+    for name, c in linked_spec.components.items():
+        if not name.endswith("-nam"):
+            continue
+        by_ftype: dict = {}
+        for child, cc in linked_spec.children(name).items():
+            by_ftype.setdefault(cc.ftype, []).append(child)
+        for ftype, children in by_ftype.items():
+            base = min(children, key=len)
+            assert all(n in (base, f"{base}a", f"{base}g") for n in children), (name, children)

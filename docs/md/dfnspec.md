@@ -9,6 +9,7 @@ This document describes the MODFLOW 6 component definition (DFN) system. This sy
     - [`name`](#name)
     - [`blocks`](#blocks)
     - [`parent`](#parent)
+    - [`ftype`](#ftype)
     - [`schema_version`](#schema_version)
     - [`dims`](#dims)
     - [`memory`](#memory)
@@ -116,6 +117,7 @@ Component definitions consist of a number of attributes:
 - `name`: the component's name
 - `blocks`: block definitions
 - `parent`: parent component(s)
+- `ftype`: the token naming the component's file type in name files
 - `schema_version`: DFN schema version
 - `dims`: named dimensions resolvable from input fields, available for use in array shapes
 - `runtime_dims`: named dimensions whose value is only known once MODFLOW runs, available for use in memory variable shapes
@@ -149,11 +151,20 @@ Parent relationships are defined bottom-up with attribute `parent`:
 
 - `null` — no parent; only valid for the root, i.e. simulation.
 - `"*"` — unconstrained; any parent component type is allowed.
-- A string or list of strings — declares the set of valid parent component types. Entries are either:
+- A string or list of strings (a **selector**) — declares the set of valid parents. Each entry (a **term**) is one of:
   - **Component type names:** `"simulation"`, `"model"`, or `"package"`.
-  - **Concrete component names:** e.g. ``"gwf-nam"`
+  - **Subtypes:** `"solution"`, `"exchange"`, `"stress"`, `"advanced"`, or `"utility"` (see [`subtype`](#subtype)).
+  - **Concrete component names:** e.g. `"gwf-nam"`, `"gwf-npf"`.
 
-**Note:** Type names and concrete component names may be mixed. A type name subsumes any named component of the same type: e.g., `["gwf-sfr", "package"]` reduces to `["package"]` since `gwf-sfr` is a package.
+A term **admits** a component if it equals the component's name, type, or subtype, and a selector admits a component if any of its terms does. The same selectors appear in a `file` field's [`component`](#component).
+
+**Note:** Terms may be mixed. A type or subtype subsumes any named component of the same type or subtype: e.g., `["gwf-sfr", "package"]` reduces to `["package"]` since `gwf-sfr` is a package.
+
+A component that other components' input files link (see [File](#file)), such as a utility, has its `parent` derived from the components that link to it: the simplest selector that admits all of them. The links are the exact relation; such a `parent` covers them but may admit more (e.g. `utl-ts`'s `package` admits `gwf-npf`, which never links a time series file).
+
+#### `ftype`
+
+`string | null (default: null)`. The token naming the component's file type in name files and file records, e.g. `GWF6` for `gwf-nam`, `DIS6` for `gwf-dis`, `IMS6` for `sln-ims`, `GWF6-GWF6` for `exg-gwfgwf`. Array-based variants share their base's token: `gwf-rcha` is `RCH6`, `gwf-chdg` is `CHD6`, and MODFLOW 6 picks the variant from the file's own `READASARRAYS`/`READARRAYGRID` option. Within a component's children, one token names one component, or a base and its variants (an **ftype family**). `null` only for the simulation name file. See [`component_ftype`](#component_ftype).
 
 #### `schema_version`
 
@@ -426,13 +437,27 @@ Type `double`.
 
 Type `file`. A path to another file.
 
-If a file option is introduced by one or more leading keywords (e.g. `CROSS_SECTION TAB6` before `FILEIN <tab6_filename>`), those keywords are ordinary `Keyword` fields alongside the `File` field in the enclosing `Record`, in declaration order -- `File` carries no keyword/tag data of its own. An exception: `prt-fmi`'s `GWFHEAD`/`GWFBUDGET`/`GWFGRID` fields have no enclosing record, so they're directly `tagged: true`, using their own `name` as the tag like any other tagged scalar field.
+If a file option is introduced by one or more leading keywords (e.g. `CROSS_SECTION TAB6` before `FILEIN <tab6_filename>`), those keywords are ordinary `Keyword` fields alongside the `File` field in the enclosing `Record`, in declaration order -- `File` carries no keyword/tag data of its own. A `File` with no enclosing record, such as `sim-nam`'s `TDIS6 <tdis6>`, is `tagged: true` instead, using its own `name` as the tag like any other tagged scalar field.
 
 ##### Type-specific attributes
 
 ###### `direction`
 
 `"in" | "out"`. Whether the program reads or writes the file. Required.
+
+###### `mode_keyword`
+
+`boolean (default: true)`. Whether a `FILEIN` (or `FILEOUT`, per `direction`) keyword precedes the path. Name-file entries have none: `TDIS6 <tdis6>` in `sim-nam`, or `<ftype> <fname> [<pname>]` rows in a model name file.
+
+###### `component`
+
+`string | [string] | null (default: null)`. The component the file is input for. Valid for components whose `parent` admits this one. Only valid when `direction` is `"in"`.
+
+###### `component_ftype`
+
+`string | null (default: null)`. Names a sibling `string` field in the same record whose value is the target component's **ftype** (e.g. `GWF6`, `DIS6`, `IMS6`, `GWF6-GWF6`). Behaves like [`fk_ref`](#fk_ref) for keys. The token picks one ftype family among `component`'s matches; the target file's own options then pick the variant, as above. For example, a model name file's `packages` rows have `fname` with `component: "package"` and `component_ftype: "ftype"`, and `sim-nam`'s `models` rows have `mfname` with `component: "model"` and `component_ftype: "mtype"`.
+
+Each component declares its token in [`ftype`](#ftype).
 
 ### Composites
 
@@ -732,7 +757,7 @@ Dimensions may specify a `scope` attribute controlling which other components ca
 - **`"component"`**: only visible within this component (or to subpackages that list this component as their explicit parent). The default scope.
 - **`"model"`**: visible to any component that can share the same model instance, as determined by component `parent` attributes. A dimension defined in component A with `scope: "model"` is visible to component B if:
   - A's `parent` contains a concrete model-name entry (e.g. `"gwf-nam"`, `"chf-nam"`), and
-  - B's `parent` contains either that same model-name entry (meaning B can belong to the same model type), a generic type (`"model"` or `"package"`, meaning B can be attached to any such type), or a wildcard pattern (`"*"`, meaning B can be attached to any component).
+  - B's `parent` contains either that same model-name entry (meaning B can belong to the same model type), a generic type (`"model"` or `"package"`, meaning B can be attached to any such type), or a wildcard pattern (`"*"`, meaning B can be attached to any component). A concrete package entry in B's `parent` counts as that package's own parents: `utl-tvk`, with `parent: "gwf-npf"`, is in whatever model `gwf-npf` is.
 - **`"simulation"`**: always visible to all components.
 
 Examples:

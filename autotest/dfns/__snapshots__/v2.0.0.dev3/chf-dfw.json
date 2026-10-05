@@ -3,6 +3,7 @@
   "schema_version": "2.0.0.dev3",
   "name": "chf-dfw",
   "parent": "chf-nam",
+  "ftype": "DFW6",
   "runtime_dims": {
     "nodes": {
       "set_in": "ar"
@@ -61,7 +62,8 @@
               "longname": "obs6 input filename",
               "description": "name of input file to define observations for the DFW package. See the 'Observation utility' section for instructions for preparing observation input files. Table {#2} lists observation type(s) supported by the DFW package.",
               "tagged": false,
-              "direction": "in"
+              "direction": "in",
+              "component": "utl-obs"
             }
           }
         },

@@ -2,8 +2,18 @@
   "type": "package",
   "schema_version": "2.0.0.dev2",
   "name": "utl-ncf",
-  "parent": "sim-nam",
+  "ftype": "NCF6",
   "subtype": "utility",
+  "parent": [
+    "gwe-dis",
+    "gwe-disv",
+    "gwf-dis",
+    "gwf-disv",
+    "gwt-dis",
+    "gwt-disv",
+    "prt-dis",
+    "prt-disv"
+  ],
   "dims": {
     "ncpl": {
       "value": "ncpl"

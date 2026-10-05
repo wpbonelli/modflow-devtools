@@ -3,6 +3,7 @@
   "schema_version": "2.0.0.dev3",
   "name": "prt-disv",
   "parent": "prt-nam",
+  "ftype": "DISV6",
   "dims": {
     "nlay": {
       "value": "nlay",
@@ -118,7 +119,8 @@
               "longname": "file name of NCF information",
               "description": "defines a NetCDF configuration (NCF) input file.",
               "tagged": false,
-              "direction": "in"
+              "direction": "in",
+              "component": "utl-ncf"
             }
           }
         }

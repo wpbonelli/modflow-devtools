@@ -2,6 +2,7 @@ type: package
 schema_version: 2.0.0.dev2
 name: gwf-disu
 parent: gwf-nam
+ftype: DISU6
 dims:
   nodes:
     value: nodes

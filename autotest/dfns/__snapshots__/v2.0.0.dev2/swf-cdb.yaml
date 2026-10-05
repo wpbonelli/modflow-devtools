@@ -2,6 +2,7 @@ type: package
 schema_version: 2.0.0.dev2
 name: swf-cdb
 parent: swf-nam
+ftype: CDB6
 multi: true
 subtype: stress
 dims:
@@ -67,6 +68,7 @@ blocks:
               package.
             tagged: false
             direction: in
+            component: utl-obs
   dimensions:
     fields:
       maxbound:

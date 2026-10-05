@@ -2,6 +2,7 @@ type: package
 schema_version: 2.0.0.dev2
 name: gwf-welg
 parent: gwf-nam
+ftype: WEL6
 multi: true
 subtype: stress
 dims:
@@ -116,6 +117,7 @@ blocks:
               observation type(s) supported by the WEL package.
             tagged: false
             direction: in
+            component: utl-obs
       mover:
         type: keyword
         description: keyword to indicate that this instance of the Well Package can be used with the Water

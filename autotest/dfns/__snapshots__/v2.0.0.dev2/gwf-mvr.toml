@@ -1,7 +1,11 @@
 type = "package"
 schema_version = "2.0.0.dev2"
 name = "gwf-mvr"
-parent = "gwf-nam"
+ftype = "MVR6"
+parent = [
+    "exg-gwfgwf",
+    "gwf-nam",
+]
 
 [dims.maxmvr]
 value = "maxmvr"

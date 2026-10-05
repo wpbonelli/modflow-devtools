@@ -2,6 +2,7 @@ type = "package"
 schema_version = "2.0.0.dev3"
 name = "gwe-cnd"
 parent = "gwe-nam"
+ftype = "CND6"
 
 [runtime_dims.nodes]
 set_in = "ar"

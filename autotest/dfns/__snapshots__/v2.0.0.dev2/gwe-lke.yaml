@@ -2,6 +2,7 @@ type: package
 schema_version: 2.0.0.dev2
 name: gwe-lke
 parent: gwe-nam
+ftype: LKE6
 multi: true
 subtype: advanced
 dims:
@@ -132,6 +133,7 @@ blocks:
                 time-series capability.
               tagged: false
               direction: in
+              component: utl-ts
       obs_filerecord:
         type: record
         optional: true
@@ -148,6 +150,7 @@ blocks:
               observation type(s) supported by the LKE package.
             tagged: false
             direction: in
+            component: utl-obs
   packagedata:
     fields:
       packagedata:

@@ -54,13 +54,15 @@ longname = "file name of time series information"
 description = "name of input file to define HPC file settings for the HPC package. See the 'HPC File' section for instructions for preparing HPC input files."
 tagged = false
 direction = "in"
+component = "utl-hpc"
 
 [blocks.timing.fields.tdis6]
-type = "string"
+type = "file"
 longname = "name of tdis input file"
 description = "is the name of the Temporal Discretization (TDIS) Input File."
-optional = true
-case_sensitive = true
+direction = "in"
+mode_keyword = false
+component = "sim-tdis"
 
 [blocks.models.fields.models]
 type = "list"
@@ -79,11 +81,14 @@ description = "is the type of model to add to simulation."
 tagged = false
 
 [blocks.models.fields.models.item.fields.mfname]
-type = "string"
+type = "file"
 longname = "file name for model name file"
 description = "is the file name of the model name file."
 tagged = false
-case_sensitive = true
+direction = "in"
+mode_keyword = false
+component = "model"
+component_ftype = "mtype"
 
 [blocks.models.fields.models.item.fields.mname]
 type = "string"
@@ -108,11 +113,14 @@ description = "is the exchange type."
 tagged = false
 
 [blocks.exchanges.fields.exchanges.item.fields.exgfile]
-type = "string"
+type = "file"
 longname = "input file for exchange"
 description = "is the input file for the exchange."
 tagged = false
-case_sensitive = true
+direction = "in"
+mode_keyword = false
+component = "exchange"
+component_ftype = "exgtype"
 
 [blocks.exchanges.fields.exchanges.item.fields.exgmnamea]
 type = "string"
@@ -152,11 +160,14 @@ valid = [
 ]
 
 [blocks.solutiongroup.fields.solutiongroup.item.fields.slnfname]
-type = "string"
+type = "file"
 longname = "file name for solution input"
 description = "name of file containing solution input."
 tagged = false
-case_sensitive = true
+direction = "in"
+mode_keyword = false
+component = "solution"
+component_ftype = "slntype"
 
 [blocks.solutiongroup.fields.solutiongroup.item.fields.slnmnames]
 type = "array"

@@ -3,6 +3,7 @@
   "schema_version": "2.0.0.dev2",
   "name": "chf-evp",
   "parent": "chf-nam",
+  "ftype": "EVP6",
   "multi": true,
   "subtype": "stress",
   "dims": {
@@ -68,7 +69,8 @@
                 "longname": "file name of time series information",
                 "description": "defines a time-series file defining time series that can be used to assign time-varying values. See the 'Time-Variable Input' section for instructions on using the time-series capability.",
                 "tagged": false,
-                "direction": "in"
+                "direction": "in",
+                "component": "utl-ts"
               }
             }
           }
@@ -87,7 +89,8 @@
               "longname": "obs6 input filename",
               "description": "name of input file to define observations for the EVP package. See the 'Observation utility' section for instructions for preparing observation input files. Table {#2} lists observation type(s) supported by the EVP package.",
               "tagged": false,
-              "direction": "in"
+              "direction": "in",
+              "component": "utl-obs"
             }
           }
         }

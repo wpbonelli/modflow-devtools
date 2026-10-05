@@ -2,6 +2,7 @@ type = "package"
 schema_version = "2.0.0.dev3"
 name = "sim-tdis"
 parent = "sim-nam"
+ftype = "TDIS6"
 
 [dims.nper]
 value = "nper"
@@ -34,6 +35,7 @@ longname = "file name of adaptive time series information"
 description = "defines an adaptive time step (ATS) input file defining ATS controls.  Records in the ATS file can be used to override the time step behavior for selected stress periods."
 tagged = false
 direction = "in"
+component = "utl-ats"
 
 [blocks.dimensions.fields.nper]
 type = "integer"

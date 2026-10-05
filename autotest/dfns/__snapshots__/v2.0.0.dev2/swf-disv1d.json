@@ -3,6 +3,7 @@
   "schema_version": "2.0.0.dev2",
   "name": "swf-disv1d",
   "parent": "swf-nam",
+  "ftype": "DISV1D6",
   "dims": {
     "nodes": {
       "value": "nodes",

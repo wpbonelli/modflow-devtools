@@ -2,6 +2,7 @@ type: package
 schema_version: 2.0.0.dev2
 name: exg-gwtgwt
 parent: sim-nam
+ftype: GWT6-GWT6
 multi: true
 subtype: exchange
 dims:
@@ -99,6 +100,7 @@ blocks:
               for the transport mover are provided in the file provided with these keywords.
             tagged: false
             direction: in
+            component: gwt-mvt
       obs_filerecord:
         type: record
         optional: true
@@ -115,6 +117,7 @@ blocks:
               lists observation type(s) supported by the GWT-GWT package.
             tagged: false
             direction: in
+            component: utl-obs
       dev_interfacemodel_on:
         type: keyword
         longname: activate interface model on exchange

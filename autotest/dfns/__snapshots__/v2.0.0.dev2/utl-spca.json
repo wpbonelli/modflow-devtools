@@ -2,9 +2,13 @@
   "type": "package",
   "schema_version": "2.0.0.dev2",
   "name": "utl-spca",
-  "parent": "package",
+  "ftype": "SPC6",
   "multi": true,
   "subtype": "utility",
+  "parent": [
+    "gwe-ssm",
+    "gwt-ssm"
+  ],
   "blocks": {
     "options": {
       "fields": {
@@ -36,7 +40,8 @@
                 "longname": "file name of time series information",
                 "description": "defines a time-array-series file defining a time-array series that can be used to assign time-varying values. See the Time-Variable Input section for instructions on using the time-array series capability.",
                 "tagged": false,
-                "direction": "in"
+                "direction": "in",
+                "component": "utl-tas"
               }
             }
           }

@@ -2,6 +2,7 @@ type: package
 schema_version: 2.0.0.dev2
 name: gwe-disu
 parent: gwe-nam
+ftype: DISU6
 dims:
   nodes:
     value: nodes
