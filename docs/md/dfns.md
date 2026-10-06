@@ -203,6 +203,49 @@ Available field types:
 
 See [DFN specification](dfnspec.md) for full attribute documentation.
 
+### Evaluating dimensions and shapes
+
+A dim's `value` and an `Array`/`List` shape expression are both expressions over the component's input (see [`dims`](dfnspec.md#dims-inputdim) and [Dimensions](dfnspec.md#dimensions)). `dim_value` evaluates either one, given the component's dim value expressions and a function looking up input field values:
+
+```python
+from modflow_devtools.dfns import dim_value, split_bound
+
+dis = spec.components["gwf-dis"]
+dims = {name: dim.value for name, dim in dis.dims.items()}
+dim_value("nodes", dims, {"nlay": 2, "nrow": 3, "ncol": 4}.get)
+# 24
+```
+
+A name that is a dim is evaluated in turn. Any other name, including an input dim's own name, goes to `lookup`. `sum(list.column)` passes `lookup` the dotted path and expects the column's values back, so how rows are stored is up to the caller. The result is `None` if an input it depends on isn't set. `dims` and `lookup` are optional: without them, there are no dims and no input is set.
+
+For an inline array's shape, `lookup` should also see the fields of the array's row, since a shape may name one (cell2d's `icvert` has shape `["ncvert"]`). A row-level lookup like `packagedata.ncon(ifno)` also needs `select`, which gets the path (`"packagedata.ncon"`) and this row's `ifno` value, and returns the value from the referenced row:
+
+```python
+from collections import ChainMap
+
+dim_value("ncvert", lookup=ChainMap(row, package).get)
+dim_value("packagedata.ncon(ifno)", dims, row.get, select)
+```
+
+A bounded shape expression (`"<=maxbound"`) is a relation, not a value. Split off the bound with `split_bound` (`("<=", "maxbound")`) and evaluate the rest.
+
+`dim_input` is the inverse. Rather than plug inputs in, it finds the input to plug in so the expression gives the data's length, i.e. the input to sync to the data:
+
+```python
+from modflow_devtools.dfns import dim_input
+
+dim_input("nseg-1", dims, length=3)  # pxdp has 3 values
+# ("nseg", 4)
+dim_input("ncvert", length=5)  # icvert has 5 values
+# ("ncvert", 5)
+dim_input("auxiliary", dims, length=2)  # len(auxiliary): no input to sync
+# None
+```
+
+It returns `None` when there's nothing to sync: no unset input, more than one, or one it can't solve for (under `len()`, `sum()`, `*` or a row-level lookup). Then the data can only be checked with `dim_value`.
+
+Both functions work on the expression strings alone, without a loaded `Dfns`.
+
 ### Rendering block templates
 
 `Block.render()` produces a `BEGIN/END` template string showing the structure of a block — the same format used in the MODFLOW 6 user guide and in tooling such as IDE hover text:

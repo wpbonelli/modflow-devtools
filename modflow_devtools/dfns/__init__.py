@@ -32,6 +32,9 @@ from modflow_devtools.dfns.schema import (
     Simulation,
     String,
     Union,
+    dim_input,
+    dim_value,
+    split_bound,
 )
 
 # Experimental API warning
@@ -76,6 +79,9 @@ __all__ = [
     "Simulation",
     "String",
     "Union",
+    "dim_input",
+    "dim_value",
     "fetch_dfns",
     "migrate",
+    "split_bound",
 ]

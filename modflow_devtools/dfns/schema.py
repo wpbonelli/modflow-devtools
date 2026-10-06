@@ -1,6 +1,7 @@
 import ast
 import re
 from collections.abc import Callable, Mapping
+from dataclasses import dataclass
 from os import PathLike
 from pathlib import Path
 from typing import Annotated, Any, Literal, cast
@@ -704,7 +705,11 @@ def _resolve_derived_dims(component: "ComponentBase", known_dims: set[str]) -> l
                     _validate_sum_call(node, component, value)
 
         if _DIM_RE.fullmatch(value):
-            # Bare identifier: must name an Integer field in this component
+            # Bare identifier: an input dim, the Integer field of its own name
+            if value != name:
+                raise ValueError(
+                    f"dims {name!r}: a bare field name must be the dim's own name, got {value!r}"
+                )
             field = component.get_fields().get(value)
             if field is None:
                 raise ValueError(f"dims {name!r}: field {value!r} not found in component")
@@ -745,6 +750,165 @@ def _resolve_derived_dims(component: "ComponentBase", known_dims: set[str]) -> l
         raise ValueError(f"Cycle in dims: {cyclic}")
 
     return order
+
+
+class _DimExprs:
+    """A component's dim value expressions, evaluated (and solved) over input
+    field values from ``lookup``; see :func:`dim_value`."""
+
+    def __init__(self, dims: Mapping[str, str] | None, lookup: Callable[[str], Any] | None):
+        self.dims = dims or {}
+        self.lookup = lookup or (lambda _: None)
+
+    def parse(self, expr: str) -> ast.expr:
+        if _BOUND_RE.match(expr):
+            raise ValueError(f"{expr!r} is bounded; split off the bound with split_bound")
+        try:
+            return ast.parse(expr, mode="eval").body
+        except SyntaxError as e:
+            raise ValueError(f"invalid expression {expr!r}: {e}") from e
+
+    def dim(self, name: str, seen: frozenset[str]) -> "tuple[str, ast.expr] | None":
+        """A dim's value expression and its tree, or None for an input."""
+        expr = self.dims.get(name, name)
+        if expr == name:
+            return None
+        if name in seen:
+            raise ValueError(f"cycle in dims at {name!r}")
+        return expr, self.parse(expr)
+
+    def path(self, node: ast.expr, expr: str) -> str:
+        if isinstance(node, ast.Name):
+            return node.id
+        if isinstance(node, ast.Attribute):
+            return f"{self.path(node.value, expr)}.{node.attr}"
+        raise ValueError(f"unsupported argument in {expr!r}: {ast.unparse(node)!r}")
+
+    def evaluate(self, node: ast.expr, seen: frozenset[str], expr: str) -> int | None:
+        if isinstance(node, ast.Constant) and type(node.value) is int:
+            return node.value
+        if isinstance(node, ast.Name):
+            if (d := self.dim(node.id, seen)) is None:
+                v = self.lookup(node.id)
+                return None if v is None else int(v)
+            return self.evaluate(d[1], seen | {node.id}, d[0])
+        if isinstance(node, ast.UnaryOp) and isinstance(node.op, ast.USub):
+            v = self.evaluate(node.operand, seen, expr)
+            return None if v is None else -v
+        if isinstance(node, ast.BinOp) and isinstance(
+            node.op, (ast.Add, ast.Sub, ast.Mult, ast.Div, ast.FloorDiv)
+        ):
+            a, b = self.evaluate(node.left, seen, expr), self.evaluate(node.right, seen, expr)
+            if a is None or b is None:
+                return None
+            if isinstance(node.op, ast.Add):
+                return a + b
+            if isinstance(node.op, ast.Sub):
+                return a - b
+            if isinstance(node.op, ast.Mult):
+                return a * b
+            if isinstance(node.op, ast.Div) and a % b:
+                raise ValueError(f"{a} / {b} is not an integer in {expr!r}")
+            return a // b
+        if (
+            isinstance(node, ast.Call)
+            and isinstance(node.func, ast.Name)
+            and node.func.id in ("len", "sum")
+            and len(node.args) == 1
+            and not node.keywords
+        ):
+            v = self.lookup(self.path(node.args[0], expr))
+            if v is None:
+                return None
+            return len(v) if node.func.id == "len" else int(sum(v))
+        raise ValueError(f"unsupported expression in {expr!r}: {ast.unparse(node)!r}")
+
+    def solve(
+        self, node: ast.expr, value: int, seen: frozenset[str], expr: str
+    ) -> "tuple[str, int] | None":
+        if isinstance(node, ast.Name):
+            if (d := self.dim(node.id, seen)) is None:
+                return (node.id, value) if self.lookup(node.id) is None else None
+            return self.solve(d[1], value, seen | {node.id}, d[0])
+        if isinstance(node, ast.UnaryOp) and isinstance(node.op, ast.USub):
+            return self.solve(node.operand, -value, seen, expr)
+        if isinstance(node, ast.BinOp) and isinstance(node.op, (ast.Add, ast.Sub)):
+            a, b = self.evaluate(node.left, seen, expr), self.evaluate(node.right, seen, expr)
+            add = isinstance(node.op, ast.Add)
+            if a is None and b is not None:
+                return self.solve(node.left, value - b if add else value + b, seen, expr)
+            if b is None and a is not None:
+                return self.solve(node.right, value - a if add else a - value, seen, expr)
+        # anything else (len(), sum(), *, /, ...) can't be undone
+        return None
+
+
+def dim_value(
+    expr: str,
+    dims: Mapping[str, str] | None = None,
+    lookup: Callable[[str], Any] | None = None,
+    select: Callable[[str, Any], Any] | None = None,
+) -> int | None:
+    """
+    Evaluate a dimension expression: a dim's name or ``value``, or an
+    ``Array``/``List`` shape expression (without its bound; see
+    :func:`split_bound`).
+
+    ``dims`` maps the component's dim names to their value expressions
+    (``{"nodes": "nlay * ncpl", ...}``, as in ``InputDim.value``). ``lookup``
+    gets an input field's value by name, or by dotted path for
+    ``sum(list.column)`` (an iterable of the column's values), and returns None
+    if the field isn't set. To evaluate an inline array's shape, ``lookup``
+    should see the fields of the array's row too. Without ``dims`` there are
+    no dims; without ``lookup`` no input is set.
+
+    A name that is a dim is evaluated in turn; any other name, like an input
+    dim's own name, a field in the row, or a name not in ``dims``, is passed to
+    ``lookup``. Expressions may use integer literals, ``+``, ``-``, ``*``,
+    ``/`` (exact), ``//``, ``len()`` and ``sum()``.
+
+    A row-level lookup, ``[component.]block.column(fk_field)``, needs
+    ``select``: given the path ``"[component.]block.column"`` and the row's
+    ``fk_field`` value, it returns that column's value in the referenced row.
+
+    Returns None if an input it depends on isn't set. Raises ValueError for a
+    malformed expression, a cycle, or an inexact ``/``.
+    """
+    exprs = _DimExprs(dims, lookup)
+    if m := _LOOKUP_RE.fullmatch(expr):
+        component_ref, block_name, col_name, fk_field_name = m.groups()
+        if select is None:
+            raise ValueError(f"{expr!r} is a row-level lookup, which needs select")
+        key = exprs.lookup(fk_field_name)
+        if key is None:
+            return None
+        v = select(".".join(filter(None, (component_ref, block_name, col_name))), key)
+        return None if v is None else int(v)
+    return exprs.evaluate(exprs.parse(expr), frozenset(), expr)
+
+
+def dim_input(
+    expr: str,
+    dims: Mapping[str, str] | None = None,
+    lookup: Callable[[str], Any] | None = None,
+    *,
+    length: int,
+) -> tuple[str, int] | None:
+    """
+    The inverse of :func:`dim_value`: rather than plug inputs into ``expr``,
+    find the input to plug in so that ``expr`` gives ``length``, the number of
+    values the data has. Returns ``(name, value)``, the input to sync to the
+    data, or None if there is none: no unset input, more than one, or one
+    that can't be solved for (under ``len()``, ``sum()``, ``*`` or a
+    row-level lookup). Then the data can only be checked with ``dim_value``.
+
+    E.g. ``"nseg-1"`` with 3 values gives ``("nseg", 4)``. Other arguments are
+    as for ``dim_value``.
+    """
+    if _LOOKUP_RE.fullmatch(expr):
+        return None
+    exprs = _DimExprs(dims, lookup)
+    return exprs.solve(exprs.parse(expr), length, frozenset(), expr)
 
 
 class BlockHeader(BaseModel):
@@ -997,20 +1161,87 @@ _DIM_RE = re.compile(r"^[A-Za-z_]\w*$")
 _LEN_CALL_RE = re.compile(r"^len\([A-Za-z_]\w*\)$")
 _LOOKUP_RE = re.compile(r"^(?:([\w-]+)\.)?(\w+)\.(\w+)\((\w+)\)$")
 _BOUND_RE = re.compile(r"^[<>]=?")
-_ARITH_RE = re.compile(r"^([A-Za-z_]\w*)\s*[+-]\s*\d+$")
+_ARITH_RE = re.compile(r"^([A-Za-z_]\w*)\s*([+-])\s*(\d+)$")
+
+_SHAPE_FORMS = (
+    "must be a dim reference (^[A-Za-z_]\\w*$), an arithmetic offset "
+    "(dim [+-] integer), or a row-level lookup (block.column(fk_field)), "
+    "optionally prefixed by a bound (<, <=, >, >=)"
+)
 
 
 def split_bound(element: str) -> "tuple[str | None, str]":
     """
     Split a shape element into its bound operator and the expression it bounds.
 
-    A bare element (``"nper"``) is an exact extent; an element prefixed with an
-    inequality operator (``"<=maxbound"``) bounds the extent instead. Returns
-    ``(operator, expression)``, with ``operator`` ``None`` for an exact extent.
+    A bare element (``"nper"``) is an exact length; an element prefixed with an
+    inequality operator (``"<=maxbound"``) bounds the length instead. Returns
+    ``(operator, expression)``, with ``operator`` ``None`` for an exact length.
     """
     if m := _BOUND_RE.match(element):
         return m.group(), element[m.end() :].strip()
     return None, element
+
+
+@dataclass(frozen=True)
+class _ShapeRef:
+    """
+    A parsed shape element; see :func:`_parse_shape_element`.
+
+    ``kind`` is ``"dim"`` for a dim reference, ``"sibling"`` for a reference
+    to an Integer subfield of the same record (an inline count on the same
+    row), and ``"lookup"`` for a row-level column lookup.
+    """
+
+    kind: Literal["dim", "sibling", "lookup"]
+    # the dim, sibling field, or looked-up column
+    name: str
+    # arithmetic offset: "nseg-1" -> -1
+    offset: int = 0
+    # "<", "<=", ">" or ">=", or None for an exact length
+    bound: str | None = None
+    # lookup only: "[component.]block.column(fk_field)"
+    component: str | None = None
+    block: str | None = None
+    fk_field: str | None = None
+
+
+def _parse_shape_element(element: str, record: "Record | None" = None) -> _ShapeRef:
+    """
+    Parse one element of an ``Array.shape`` or ``List.shape``.
+
+    ``record`` is the record the array is a subfield of, if any. A name that
+    is an Integer subfield of it is a ``"sibling"`` (cell2d's ``ncvert``,
+    counting ``icvert``), otherwise a ``"dim"``. Loading rejects a name that
+    is both, so the record is all the context needed to tell them apart.
+
+    Nothing else is checked against a component; that happens when ``Dfns``
+    loads. Raises ``ValueError`` if the element is malformed.
+    """
+    bound, core = split_bound(element)
+    if bound is not None and split_bound(core)[0] is not None:
+        raise ValueError(
+            f"invalid shape element {element!r}: at most one bound operator is allowed"
+        )
+    if m := _LOOKUP_RE.fullmatch(core):
+        component_ref, block_name, col_name, fk_field_name = m.groups()
+        return _ShapeRef(
+            "lookup",
+            col_name,
+            bound=bound,
+            component=component_ref,
+            block=block_name,
+            fk_field=fk_field_name,
+        )
+    if _DIM_RE.fullmatch(core):
+        name, offset = core, 0
+    elif m := _ARITH_RE.fullmatch(core):
+        name, sign, n = m.groups()
+        offset = int(sign + n)
+    else:
+        raise ValueError(f"invalid shape element {element!r}: {_SHAPE_FORMS}")
+    sibling = record is not None and isinstance(record.fields.get(name), Integer)
+    return _ShapeRef("sibling" if sibling else "dim", name, offset=offset, bound=bound)
 
 
 def _find_list_in_block(component: "ComponentBase", block_name: str) -> "List | None":
@@ -1024,6 +1255,110 @@ def _find_list_in_block(component: "ComponentBase", block_name: str) -> "List | 
     return None
 
 
+def _check_shape_element(
+    element: str,
+    field: "Array | List",
+    known_dims: set[str],
+    component: "ComponentBase | None" = None,
+    enclosing_record: "Record | None" = None,
+    spec: "Dfns | None" = None,
+) -> None:
+    """
+    Check that a shape element parses and resolves in its context: a dim in
+    ``known_dims``, a sibling that isn't also a dim, or a lookup of an Integer
+    column in a list block (in ``component``, or with ``spec`` another
+    component), selected by a sibling whose ``fk`` references that block.
+
+    A sibling or lookup varies by row, so the array must be the rightmost
+    field in its record, like a self-sizing array: a reader can't know where
+    fields after it start.
+
+    Raises ValueError on any violation.
+    """
+    try:
+        ref = _parse_shape_element(element, enclosing_record)
+        _check_shape_ref(element, ref, known_dims, component, enclosing_record, spec)
+        if ref.kind != "dim" and list(enclosing_record.fields)[-1] != field.name:  # type: ignore
+            raise ValueError(
+                f"invalid shape element {element!r}: it varies by row, so "
+                f"{field.name!r} must be the rightmost field in its record"
+            )
+    except ValueError as e:
+        raise ValueError(f"{type(field).__name__} {field.name!r} has {e}") from None
+
+
+def _check_shape_ref(
+    element: str,
+    ref: _ShapeRef,
+    known_dims: set[str],
+    component: "ComponentBase | None",
+    enclosing_record: "Record | None",
+    spec: "Dfns | None",
+) -> None:
+    where = f"invalid shape element {element!r}"
+
+    if ref.kind == "dim":
+        if ref.name not in known_dims:
+            raise ValueError(
+                f"{where}: {ref.name!r} does not resolve to a known dim "
+                f"(explicit, derived, or grid)"
+            )
+        return
+
+    if ref.kind == "sibling":
+        if ref.name in known_dims:
+            raise ValueError(f"{where}: {ref.name!r} is both a dim and a sibling field")
+        return
+
+    # a lookup selects a row by a sibling field, so the array must be in a record
+    if enclosing_record is None:
+        raise ValueError(f"{where}: a row-level lookup, but the field is not inside a record")
+
+    # Resolve target component (cross-component reference or local)
+    target: ComponentBase | None
+    if ref.component is not None:
+        if spec is None:
+            raise ValueError(f"{where}: cross-component reference requires a Dfns spec")
+        target = spec.components.get(ref.component)
+        if target is None:
+            raise ValueError(f"{where}: component {ref.component!r} not found in spec")
+    else:
+        target = component
+    assert target is not None and ref.block is not None and ref.fk_field is not None
+
+    # block must identify a list block in the target component
+    list_field = _find_list_in_block(target, ref.block)
+    if list_field is None:
+        loc = f"component {ref.component!r}" if ref.component else "this component"
+        raise ValueError(f"{where}: {ref.block!r} is not a list block in {loc}")
+
+    # the column must be an Integer field in the list's item record
+    item = list_field.item
+    item_fields: dict = item.fields if isinstance(item, Record) else item.arms
+    col_field = item_fields.get(ref.name)
+    if col_field is None:
+        raise ValueError(f"{where}: {ref.name!r} is not a field in {list_field.name!r} item")
+    if not isinstance(col_field, Integer):
+        raise ValueError(f"{where}: {ref.name!r} is {type(col_field).__name__}, must be Integer")
+
+    # the fk field must be a sibling field in the enclosing record
+    fk_field = enclosing_record.fields.get(ref.fk_field)
+    if fk_field is None:
+        raise ValueError(
+            f"{where}: {ref.fk_field!r} is not a sibling field in the enclosing record"
+        )
+
+    # its fk must be set and its block portion must match the lookup's block
+    fk = getattr(fk_field, "fk", None)
+    if fk is None:
+        raise ValueError(f"{where}: {ref.fk_field!r}.fk is not set")
+    fk_block = fk.split(".")[0] if "." in fk else fk
+    if fk_block != ref.block:
+        raise ValueError(
+            f"{where}: {ref.fk_field!r}.fk = {fk!r} does not reference block {ref.block!r}"
+        )
+
+
 def _validate_shape_element(
     element: str,
     array_field: "Array",
@@ -1032,139 +1367,8 @@ def _validate_shape_element(
     known_dims: set[str],
     spec: "Dfns | None" = None,
 ) -> None:
-    """
-    Validate one element of an Array.shape list.
-
-    Valid forms:
-      - Dim reference  ``^[A-Za-z_]\\w*$``
-        Must resolve in the 3-level scope: explicit → derived → grid dims.
-      - Row-level column lookup  ``^(\\w+)\\.(\\w+)\\((\\w+)\\)$``
-        Structural checks (see plan §Shape element parsing).
-      - Arithmetic offset (dim [+-] integer)
-      - Any of the above prefixed with a bound operator (<, >, <=, >=)
-
-    Raises ValueError on any violation.
-    """
-    # a bound (<, >, <=, >=) may prefix any expression valid on its own
-    op, core = split_bound(element)
-    if op is not None:
-        if split_bound(core)[0] is not None:
-            raise ValueError(
-                f"Array {array_field.name!r} has invalid shape element {element!r}: "
-                f"at most one bound operator is allowed"
-            )
-        _validate_shape_element(core, array_field, component, enclosing_record, known_dims, spec)
-        return
-
-    if _DIM_RE.fullmatch(element):
-        if element in known_dims:
-            return
-        # Per-row varying shape: a sibling Integer with dimension="record" supplies
-        # an inline count on the same line.
-        if enclosing_record is not None:
-            sibling = enclosing_record.fields.get(element)
-            if isinstance(sibling, Integer):
-                return
-        raise ValueError(
-            f"Array {array_field.name!r} shape element {element!r} "
-            f"does not resolve to a known dim "
-            f"(explicit, derived, or grid)"
-        )
-
-    if m := _LOOKUP_RE.fullmatch(element):
-        component_ref, block_name, col_name, fk_field_name = m.groups()
-
-        # array must be a subfield of a record, not a top-level block field
-        if enclosing_record is None:
-            raise ValueError(
-                f"Array {array_field.name!r} shape element {element!r} is a "
-                f"row-level lookup but the array is not inside a record"
-            )
-
-        # Resolve target component (cross-component reference or local)
-        if component_ref is not None:
-            if spec is None:
-                raise ValueError(
-                    f"Array {array_field.name!r} shape element {element!r}: "
-                    f"cross-component reference requires a Dfns spec"
-                )
-            target = spec.components.get(component_ref)
-            if target is None:
-                raise ValueError(
-                    f"Array {array_field.name!r} shape element {element!r}: "
-                    f"component {component_ref!r} not found in spec"
-                )
-        else:
-            target = component  # type: ignore
-
-        # block_name must identify a list block in the target component
-        list_field = _find_list_in_block(target, block_name)  # type: ignore
-        if list_field is None:
-            where = f"component {component_ref!r}" if component_ref else "this component"
-            raise ValueError(
-                f"Array {array_field.name!r} shape element {element!r}: "
-                f"{block_name!r} is not a list block in {where}"
-            )
-
-        # col_name must be an Integer field in the list's item record
-        item = list_field.item
-        item_fields: dict = item.fields if isinstance(item, Record) else item.arms
-        col_field = item_fields.get(col_name)
-        if col_field is None:
-            raise ValueError(
-                f"Array {array_field.name!r} shape element {element!r}: "
-                f"{col_name!r} is not a field in {list_field.name!r} item"
-            )
-        if not isinstance(col_field, Integer):
-            raise ValueError(
-                f"Array {array_field.name!r} shape element {element!r}: "
-                f"{col_name!r} is {type(col_field).__name__}, must be Integer"
-            )
-
-        # fk_field_name must be a sibling field in the enclosing record
-        fk_field = enclosing_record.fields.get(fk_field_name)
-        if fk_field is None:
-            raise ValueError(
-                f"Array {array_field.name!r} shape element {element!r}: "
-                f"{fk_field_name!r} is not a sibling field in the enclosing record"
-            )
-
-        # fk_field.fk must be set and its block portion must match block_name
-        fk = getattr(fk_field, "fk", None)
-        if fk is None:
-            raise ValueError(
-                f"Array {array_field.name!r} shape element {element!r}: "
-                f"{fk_field_name!r}.fk is not set"
-            )
-        fk_block = fk.split(".")[0] if "." in fk else fk
-        if fk_block != block_name:
-            raise ValueError(
-                f"Array {array_field.name!r} shape element {element!r}: "
-                f"{fk_field_name!r}.fk = {fk!r} does not reference block {block_name!r}"
-            )
-        return
-
-    # validate simple integer arithmetic
-    if m := _ARITH_RE.fullmatch(element):
-        dim_name = m.group(1)
-        if dim_name in known_dims:
-            return
-        if enclosing_record is not None:
-            sibling = enclosing_record.fields.get(dim_name)
-            if isinstance(sibling, Integer):
-                return
-        raise ValueError(
-            f"Array {array_field.name!r} shape element {element!r}: "
-            f"{dim_name!r} does not resolve to a known dim "
-            f"(explicit, derived, or grid)"
-        )
-
-    raise ValueError(
-        f"Array {array_field.name!r} has invalid shape element {element!r}: "
-        f"must be a dim reference (^[A-Za-z_]\\w*$), an arithmetic offset "
-        f"(dim [+-] integer), or a row-level lookup (block.column(fk_field)), "
-        f"optionally prefixed by a bound (<, <=, >, >=)"
-    )
+    """Validate one element of an Array.shape (see `_check_shape_element`)."""
+    _check_shape_element(element, array_field, known_dims, component, enclosing_record, spec)
 
 
 def _validate_list_shape_element(
@@ -1173,46 +1377,10 @@ def _validate_list_shape_element(
     known_dims: set[str],
 ) -> None:
     """
-    Validate one element of a List.shape.
-
-    Valid forms are a strict subset of array shape forms — no row-level lookup
-    and no intra-record sibling reference, since lists are not inside records:
-      - Plain dim reference
-      - Arithmetic offset (dim [+-] integer)
-      - Any of the above prefixed with a bound operator (<, >, <=, >=)
+    Validate one element of a List.shape. A list isn't inside a record, so
+    its shape may only reference dims.
     """
-    op, core = split_bound(element)
-    if op is not None:
-        if split_bound(core)[0] is not None:
-            raise ValueError(
-                f"List {list_field.name!r} has invalid shape element {element!r}: "
-                f"at most one bound operator is allowed"
-            )
-        _validate_list_shape_element(core, list_field, known_dims)
-        return
-
-    if _DIM_RE.fullmatch(element):
-        if element not in known_dims:
-            raise ValueError(
-                f"List {list_field.name!r} shape element {element!r} "
-                f"does not resolve to a known dim"
-            )
-        return
-
-    if m := _ARITH_RE.fullmatch(element):
-        dim_name = m.group(1)
-        if dim_name not in known_dims:
-            raise ValueError(
-                f"List {list_field.name!r} shape element {element!r}: "
-                f"{dim_name!r} does not resolve to a known dim"
-            )
-        return
-
-    raise ValueError(
-        f"List {list_field.name!r} has invalid shape element {element!r}: "
-        f"must be a dim reference (^[A-Za-z_]\\w*$), an arithmetic offset "
-        f"(dim [+-] integer), optionally prefixed by a bound (<, <=, >, >=)"
-    )
+    _check_shape_element(element, list_field, known_dims)
 
 
 def _validate_fk_fields(component: "ComponentBase", spec: "Dfns") -> None:
