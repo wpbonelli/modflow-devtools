@@ -305,5 +305,27 @@
         "naux"
       ]
     }
+  },
+  "observations": {
+    "chd": {
+      "type": "union",
+      "tagged": false,
+      "arms": {
+        "cellid": {
+          "type": "array",
+          "tagged": false,
+          "dtype": "integer",
+          "index": true,
+          "cellid": true,
+          "shape": [
+            "ncelldim"
+          ]
+        },
+        "boundname": {
+          "type": "string",
+          "tagged": false
+        }
+      }
+    }
   }
 }

@@ -310,3 +310,15 @@ memory:
     dtype: string
     shape:
       - naux
+observations:
+  flow-ja-face:
+    type: union
+    tagged: false
+    arms:
+      iexg:
+        type: integer
+        tagged: false
+        index: true
+      boundname:
+        type: string
+        tagged: false

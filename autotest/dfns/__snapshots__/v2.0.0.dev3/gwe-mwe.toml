@@ -352,3 +352,138 @@ dtype = "double"
 shape = [
     "ncv",
 ]
+
+[observations.temperature]
+type = "union"
+tagged = false
+
+[observations.temperature.arms.mawno]
+type = "integer"
+tagged = false
+index = true
+fk = "packagedata.mawno"
+
+[observations.temperature.arms.boundname]
+type = "string"
+tagged = false
+
+[observations.storage]
+type = "union"
+tagged = false
+
+[observations.storage.arms.mawno]
+type = "integer"
+tagged = false
+index = true
+fk = "packagedata.mawno"
+
+[observations.storage.arms.boundname]
+type = "string"
+tagged = false
+
+[observations.constant]
+type = "union"
+tagged = false
+
+[observations.constant.arms.mawno]
+type = "integer"
+tagged = false
+index = true
+fk = "packagedata.mawno"
+
+[observations.constant.arms.boundname]
+type = "string"
+tagged = false
+
+[observations.from-mvr]
+type = "union"
+tagged = false
+
+[observations.from-mvr.arms.mawno]
+type = "integer"
+tagged = false
+index = true
+fk = "packagedata.mawno"
+
+[observations.from-mvr.arms.boundname]
+type = "string"
+tagged = false
+
+[observations.rate]
+type = "union"
+tagged = false
+
+[observations.rate.arms.mawno]
+type = "integer"
+tagged = false
+index = true
+fk = "packagedata.mawno"
+
+[observations.rate.arms.boundname]
+type = "string"
+tagged = false
+
+[observations.fw-rate]
+type = "union"
+tagged = false
+
+[observations.fw-rate.arms.mawno]
+type = "integer"
+tagged = false
+index = true
+fk = "packagedata.mawno"
+
+[observations.fw-rate.arms.boundname]
+type = "string"
+tagged = false
+
+[observations.rate-to-mvr]
+type = "union"
+tagged = false
+
+[observations.rate-to-mvr.arms.mawno]
+type = "integer"
+tagged = false
+index = true
+fk = "packagedata.mawno"
+
+[observations.rate-to-mvr.arms.boundname]
+type = "string"
+tagged = false
+
+[observations.fw-rate-to-mvr]
+type = "union"
+tagged = false
+
+[observations.fw-rate-to-mvr.arms.mawno]
+type = "integer"
+tagged = false
+index = true
+fk = "packagedata.mawno"
+
+[observations.fw-rate-to-mvr.arms.boundname]
+type = "string"
+tagged = false
+
+[observations.mwe]
+type = "union"
+tagged = false
+
+[observations.mwe.arms.mawno]
+type = "record"
+tagged = false
+
+[observations.mwe.arms.mawno.fields.mawno]
+type = "integer"
+tagged = false
+index = true
+fk = "packagedata.mawno"
+
+[observations.mwe.arms.mawno.fields.iconn]
+type = "integer"
+tagged = false
+index = true
+
+[observations.mwe.arms.boundname]
+type = "string"
+tagged = false

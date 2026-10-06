@@ -168,5 +168,12 @@
         "nodes"
       ]
     }
+  },
+  "observations": {
+    "ext-outflow": {
+      "type": "integer",
+      "tagged": false,
+      "index": true
+    }
   }
 }

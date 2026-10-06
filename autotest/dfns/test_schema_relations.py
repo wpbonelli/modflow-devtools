@@ -248,6 +248,69 @@ def test_dfns_validate_cellid_outside_list_item():
         Dfns(components={"gwf-nam": gwf, "gwf-gnc": pkg})
 
 
+# --- observation types ---
+
+
+def _obs_spec(observations: dict) -> dict:
+    """gwf-lak with a packagedata list keyed by `ifno`."""
+    pkg_item = Record(name="item", fields={"ifno": Integer(name="ifno", pk=True)})
+    pkg_list = List(name="packagedata", item=pkg_item)
+    lak = Package(
+        name="gwf-lak",
+        parent="gwf-nam",
+        blocks={"packagedata": Block(name="packagedata", fields={"packagedata": pkg_list})},
+        observations=observations,
+    )
+    return {"gwf-nam": Model(name="gwf-nam"), "gwf-lak": lak}
+
+
+def _lak_obs(fk: str = "packagedata.ifno", tagged: bool = False) -> Union:
+    """LAK's `lak` obstype: a lake and connection, or a boundname."""
+    feature = Record(
+        name="ifno",
+        tagged=False,
+        fields={
+            "ifno": Integer(name="ifno", tagged=False, index=True, fk=fk),
+            "iconn": Integer(name="iconn", tagged=tagged, index=True),
+        },
+    )
+    boundname = String(name="boundname", tagged=False)
+    return Union(name="lak", tagged=False, arms={"ifno": feature, "boundname": boundname})
+
+
+def test_dfns_validate_observations():
+    observations = {
+        "lak": _lak_obs(),
+        "head": Array(
+            name="head", tagged=False, dtype="integer", shape=["ncelldim"], index=True, cellid=True
+        ),
+    }
+    spec = Dfns(components=_obs_spec(observations))
+    assert spec.components["gwf-lak"].observations == observations
+
+
+def test_dfns_validate_observations_unresolved_fk():
+    with pytest.raises(ValueError, match="is not a list block"):
+        Dfns(components=_obs_spec({"lak": _lak_obs(fk="nosuch.ifno")}))
+
+
+def test_dfns_validate_observations_untagged():
+    with pytest.raises(ValueError, match=r"\['iconn'\] must be untagged"):
+        Dfns(components=_obs_spec({"lak": _lak_obs(tagged=True)}))
+
+
+def test_dfns_validate_observations_lower_case():
+    with pytest.raises(ValueError, match="must be lower case"):
+        Dfns(components=_obs_spec({"LAK": _lak_obs()}))
+
+
+def test_dfns_validate_observations_at_most_two_columns():
+    fields = {n: Integer(name=n, tagged=False, index=True) for n in ("a", "b", "c")}
+    observations = {"x": Record(name="x", tagged=False, fields=fields)}
+    with pytest.raises(ValueError, match="at most id2"):
+        Dfns(components=_obs_spec(observations))
+
+
 # --- file links (File.component / component_ftype) ---
 
 

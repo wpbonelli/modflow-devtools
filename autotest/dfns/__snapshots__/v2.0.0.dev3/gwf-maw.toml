@@ -450,3 +450,175 @@ tagged = false
 set_in = "ar"
 source = "nmawwells"
 type = "integer"
+
+[observations.head]
+type = "union"
+tagged = false
+
+[observations.head.arms.ifno]
+type = "integer"
+tagged = false
+index = true
+fk = "packagedata.ifno"
+
+[observations.head.arms.boundname]
+type = "string"
+tagged = false
+
+[observations.from-mvr]
+type = "union"
+tagged = false
+
+[observations.from-mvr.arms.ifno]
+type = "integer"
+tagged = false
+index = true
+fk = "packagedata.ifno"
+
+[observations.from-mvr.arms.boundname]
+type = "string"
+tagged = false
+
+[observations.rate]
+type = "union"
+tagged = false
+
+[observations.rate.arms.ifno]
+type = "integer"
+tagged = false
+index = true
+fk = "packagedata.ifno"
+
+[observations.rate.arms.boundname]
+type = "string"
+tagged = false
+
+[observations.rate-to-mvr]
+type = "union"
+tagged = false
+
+[observations.rate-to-mvr.arms.ifno]
+type = "integer"
+tagged = false
+index = true
+fk = "packagedata.ifno"
+
+[observations.rate-to-mvr.arms.boundname]
+type = "string"
+tagged = false
+
+[observations.fw-rate]
+type = "union"
+tagged = false
+
+[observations.fw-rate.arms.ifno]
+type = "integer"
+tagged = false
+index = true
+fk = "packagedata.ifno"
+
+[observations.fw-rate.arms.boundname]
+type = "string"
+tagged = false
+
+[observations.fw-to-mvr]
+type = "union"
+tagged = false
+
+[observations.fw-to-mvr.arms.ifno]
+type = "integer"
+tagged = false
+index = true
+fk = "packagedata.ifno"
+
+[observations.fw-to-mvr.arms.boundname]
+type = "string"
+tagged = false
+
+[observations.storage]
+type = "union"
+tagged = false
+
+[observations.storage.arms.ifno]
+type = "integer"
+tagged = false
+index = true
+fk = "packagedata.ifno"
+
+[observations.storage.arms.boundname]
+type = "string"
+tagged = false
+
+[observations.constant]
+type = "union"
+tagged = false
+
+[observations.constant.arms.ifno]
+type = "integer"
+tagged = false
+index = true
+fk = "packagedata.ifno"
+
+[observations.constant.arms.boundname]
+type = "string"
+tagged = false
+
+[observations.fw-conductance]
+type = "union"
+tagged = false
+
+[observations.fw-conductance.arms.ifno]
+type = "integer"
+tagged = false
+index = true
+fk = "packagedata.ifno"
+
+[observations.fw-conductance.arms.boundname]
+type = "string"
+tagged = false
+
+[observations.maw]
+type = "union"
+tagged = false
+
+[observations.maw.arms.ifno]
+type = "record"
+tagged = false
+
+[observations.maw.arms.ifno.fields.ifno]
+type = "integer"
+tagged = false
+index = true
+fk = "packagedata.ifno"
+
+[observations.maw.arms.ifno.fields.icon]
+type = "integer"
+tagged = false
+index = true
+
+[observations.maw.arms.boundname]
+type = "string"
+tagged = false
+
+[observations.conductance]
+type = "union"
+tagged = false
+
+[observations.conductance.arms.ifno]
+type = "record"
+tagged = false
+
+[observations.conductance.arms.ifno.fields.ifno]
+type = "integer"
+tagged = false
+index = true
+fk = "packagedata.ifno"
+
+[observations.conductance.arms.ifno.fields.icon]
+type = "integer"
+tagged = false
+index = true
+
+[observations.conductance.arms.boundname]
+type = "string"
+tagged = false

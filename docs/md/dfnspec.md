@@ -13,6 +13,7 @@ This document describes the MODFLOW 6 component definition (DFN) system. This sy
     - [`schema_version`](#schema_version)
     - [`dims`](#dims)
     - [`memory`](#memory)
+    - [`observations`](#observations)
   - [Component types](#component-types)
     - [Simulation](#simulation)
     - [Model](#model)
@@ -122,6 +123,7 @@ Component definitions consist of a number of attributes:
 - `dims`: named dimensions resolvable from input fields, available for use in array shapes
 - `runtime_dims`: named dimensions whose value is only known once MODFLOW runs, available for use in memory variable shapes
 - `memory`: API-accessible runtime variable definitions
+- `observations`: the observation types the component accepts in its OBS file
 
 Components may refer to, i.e. be constrained by, other components. Cross-component constraints include parent-child relations, model-solution compatibility restrictions, and primary/foreign keys.
 
@@ -183,6 +185,10 @@ A component that other components' input files link (see [File](#file)), such as
 `{string: MemoryVariable} (default: {})`. The component's memory catalog. See section below.
 
 If a component does not provide a `memory` catalog, all memory-managed variables in the component's runtime context will be readonly by default. To allow MODFLOW API access to runtime variables, they must be defined in the `memory` catalog.
+
+#### `observations`
+
+`{string: Integer | Double | String | Array | Record | Union} (default: {})`. The observation types the component accepts in its OBS file, keyed by lower-case name. Each is an untagged field for the values that follow the observation type: its ID and ID2.
 
 ### Component types
 
@@ -529,7 +535,7 @@ Type `union`. Sum type.
 
 `{string: Scalar | Array | Record}`. Subfields, required.
 
-A union is usually keyword-led: each arm begins with its own keyword, which picks the arm. An untagged union's arms begin with a value instead, and the value alone may not pick the arm. `utl-obs`'s `id` is a cellid, a 1-based index (e.g. a lake number), or a boundname, depending on the parent package and the observation type. As with a runtime-resolved [foreign key](#primary-and-foreign-keys), the codec resolves which arm applies.
+A union is usually keyword-led: each arm begins with its own keyword, which picks the arm. An untagged union's arms begin with a value instead, and the value alone may not pick the arm. `utl-obs`'s `id` is a cellid, a 1-based index (e.g. a lake number), or a boundname, depending on the parent package and the observation type. The parent's [`observations`](#observations) say which.
 
 #### List
 

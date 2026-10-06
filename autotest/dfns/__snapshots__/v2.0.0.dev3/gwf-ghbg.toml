@@ -288,3 +288,39 @@ dtype = "string"
 shape = [
     "naux",
 ]
+
+[observations.ghb]
+type = "union"
+tagged = false
+
+[observations.ghb.arms.cellid]
+type = "array"
+tagged = false
+dtype = "integer"
+index = true
+cellid = true
+shape = [
+    "ncelldim",
+]
+
+[observations.ghb.arms.boundname]
+type = "string"
+tagged = false
+
+[observations.to-mvr]
+type = "union"
+tagged = false
+
+[observations.to-mvr.arms.cellid]
+type = "array"
+tagged = false
+dtype = "integer"
+index = true
+cellid = true
+shape = [
+    "ncelldim",
+]
+
+[observations.to-mvr.arms.boundname]
+type = "string"
+tagged = false

@@ -77,3 +77,39 @@ type = "integer"
 set_in = "ar"
 source = "maxbound"
 type = "integer"
+
+[observations.api]
+type = "union"
+tagged = false
+
+[observations.api.arms.cellid]
+type = "array"
+tagged = false
+dtype = "integer"
+index = true
+cellid = true
+shape = [
+    "ncelldim",
+]
+
+[observations.api.arms.boundname]
+type = "string"
+tagged = false
+
+[observations.to-mvr]
+type = "union"
+tagged = false
+
+[observations.to-mvr.arms.cellid]
+type = "array"
+tagged = false
+dtype = "integer"
+index = true
+cellid = true
+shape = [
+    "ncelldim",
+]
+
+[observations.to-mvr.arms.boundname]
+type = "string"
+tagged = false

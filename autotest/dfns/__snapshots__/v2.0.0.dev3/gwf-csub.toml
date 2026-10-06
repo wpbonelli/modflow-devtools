@@ -646,3 +646,386 @@ dtype = "double"
 shape = [
     "nodes",
 ]
+
+[observations.csub]
+type = "union"
+tagged = false
+
+[observations.csub.arms.icsubno]
+type = "integer"
+tagged = false
+index = true
+fk = "packagedata.icsubno"
+
+[observations.csub.arms.boundname]
+type = "string"
+tagged = false
+
+[observations.inelastic-csub]
+type = "union"
+tagged = false
+
+[observations.inelastic-csub.arms.icsubno]
+type = "integer"
+tagged = false
+index = true
+fk = "packagedata.icsubno"
+
+[observations.inelastic-csub.arms.boundname]
+type = "string"
+tagged = false
+
+[observations.elastic-csub]
+type = "union"
+tagged = false
+
+[observations.elastic-csub.arms.icsubno]
+type = "integer"
+tagged = false
+index = true
+fk = "packagedata.icsubno"
+
+[observations.elastic-csub.arms.boundname]
+type = "string"
+tagged = false
+
+[observations.delay-flowtop]
+type = "union"
+tagged = false
+
+[observations.delay-flowtop.arms.icsubno]
+type = "integer"
+tagged = false
+index = true
+fk = "packagedata.icsubno"
+
+[observations.delay-flowtop.arms.boundname]
+type = "string"
+tagged = false
+
+[observations.delay-flowbot]
+type = "union"
+tagged = false
+
+[observations.delay-flowbot.arms.icsubno]
+type = "integer"
+tagged = false
+index = true
+fk = "packagedata.icsubno"
+
+[observations.delay-flowbot.arms.boundname]
+type = "string"
+tagged = false
+
+[observations.sk]
+type = "integer"
+tagged = false
+index = true
+fk = "packagedata.icsubno"
+
+[observations.ske]
+type = "integer"
+tagged = false
+index = true
+fk = "packagedata.icsubno"
+
+[observations.theta]
+type = "integer"
+tagged = false
+index = true
+fk = "packagedata.icsubno"
+
+[observations.thickness]
+type = "integer"
+tagged = false
+index = true
+fk = "packagedata.icsubno"
+
+[observations.interbed-compaction]
+type = "integer"
+tagged = false
+index = true
+fk = "packagedata.icsubno"
+
+[observations.interbed-compaction-pct]
+type = "integer"
+tagged = false
+index = true
+fk = "packagedata.icsubno"
+
+[observations.inelastic-compaction]
+type = "integer"
+tagged = false
+index = true
+fk = "packagedata.icsubno"
+
+[observations.elastic-compaction]
+type = "integer"
+tagged = false
+index = true
+fk = "packagedata.icsubno"
+
+[observations.delay-head]
+type = "record"
+tagged = false
+
+[observations.delay-head.fields.icsubno]
+type = "integer"
+tagged = false
+index = true
+fk = "packagedata.icsubno"
+
+[observations.delay-head.fields.idcellno]
+type = "integer"
+tagged = false
+index = true
+
+[observations.delay-gstress]
+type = "record"
+tagged = false
+
+[observations.delay-gstress.fields.icsubno]
+type = "integer"
+tagged = false
+index = true
+fk = "packagedata.icsubno"
+
+[observations.delay-gstress.fields.idcellno]
+type = "integer"
+tagged = false
+index = true
+
+[observations.delay-estress]
+type = "record"
+tagged = false
+
+[observations.delay-estress.fields.icsubno]
+type = "integer"
+tagged = false
+index = true
+fk = "packagedata.icsubno"
+
+[observations.delay-estress.fields.idcellno]
+type = "integer"
+tagged = false
+index = true
+
+[observations.delay-preconstress]
+type = "record"
+tagged = false
+
+[observations.delay-preconstress.fields.icsubno]
+type = "integer"
+tagged = false
+index = true
+fk = "packagedata.icsubno"
+
+[observations.delay-preconstress.fields.idcellno]
+type = "integer"
+tagged = false
+index = true
+
+[observations.delay-compaction]
+type = "record"
+tagged = false
+
+[observations.delay-compaction.fields.icsubno]
+type = "integer"
+tagged = false
+index = true
+fk = "packagedata.icsubno"
+
+[observations.delay-compaction.fields.idcellno]
+type = "integer"
+tagged = false
+index = true
+
+[observations.delay-thickness]
+type = "record"
+tagged = false
+
+[observations.delay-thickness.fields.icsubno]
+type = "integer"
+tagged = false
+index = true
+fk = "packagedata.icsubno"
+
+[observations.delay-thickness.fields.idcellno]
+type = "integer"
+tagged = false
+index = true
+
+[observations.delay-theta]
+type = "record"
+tagged = false
+
+[observations.delay-theta.fields.icsubno]
+type = "integer"
+tagged = false
+index = true
+fk = "packagedata.icsubno"
+
+[observations.delay-theta.fields.idcellno]
+type = "integer"
+tagged = false
+index = true
+
+[observations.coarse-csub]
+type = "array"
+tagged = false
+dtype = "integer"
+index = true
+cellid = true
+shape = [
+    "ncelldim",
+]
+
+[observations.csub-cell]
+type = "array"
+tagged = false
+dtype = "integer"
+index = true
+cellid = true
+shape = [
+    "ncelldim",
+]
+
+[observations.wcomp-csub-cell]
+type = "array"
+tagged = false
+dtype = "integer"
+index = true
+cellid = true
+shape = [
+    "ncelldim",
+]
+
+[observations.sk-cell]
+type = "array"
+tagged = false
+dtype = "integer"
+index = true
+cellid = true
+shape = [
+    "ncelldim",
+]
+
+[observations.ske-cell]
+type = "array"
+tagged = false
+dtype = "integer"
+index = true
+cellid = true
+shape = [
+    "ncelldim",
+]
+
+[observations.estress-cell]
+type = "array"
+tagged = false
+dtype = "integer"
+index = true
+cellid = true
+shape = [
+    "ncelldim",
+]
+
+[observations.gstress-cell]
+type = "array"
+tagged = false
+dtype = "integer"
+index = true
+cellid = true
+shape = [
+    "ncelldim",
+]
+
+[observations.preconstress-cell]
+type = "array"
+tagged = false
+dtype = "integer"
+index = true
+cellid = true
+shape = [
+    "ncelldim",
+]
+
+[observations.coarse-compaction]
+type = "array"
+tagged = false
+dtype = "integer"
+index = true
+cellid = true
+shape = [
+    "ncelldim",
+]
+
+[observations.compaction-cell]
+type = "array"
+tagged = false
+dtype = "integer"
+index = true
+cellid = true
+shape = [
+    "ncelldim",
+]
+
+[observations.inelastic-compaction-cell]
+type = "array"
+tagged = false
+dtype = "integer"
+index = true
+cellid = true
+shape = [
+    "ncelldim",
+]
+
+[observations.elastic-compaction-cell]
+type = "array"
+tagged = false
+dtype = "integer"
+index = true
+cellid = true
+shape = [
+    "ncelldim",
+]
+
+[observations.coarse-thickness]
+type = "array"
+tagged = false
+dtype = "integer"
+index = true
+cellid = true
+shape = [
+    "ncelldim",
+]
+
+[observations.thickness-cell]
+type = "array"
+tagged = false
+dtype = "integer"
+index = true
+cellid = true
+shape = [
+    "ncelldim",
+]
+
+[observations.coarse-theta]
+type = "array"
+tagged = false
+dtype = "integer"
+index = true
+cellid = true
+shape = [
+    "ncelldim",
+]
+
+[observations.theta-cell]
+type = "array"
+tagged = false
+dtype = "integer"
+index = true
+cellid = true
+shape = [
+    "ncelldim",
+]

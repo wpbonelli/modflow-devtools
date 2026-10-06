@@ -294,3 +294,39 @@ dtype = "string"
 shape = [
     "naux",
 ]
+
+[observations.src]
+type = "union"
+tagged = false
+
+[observations.src.arms.cellid]
+type = "array"
+tagged = false
+dtype = "integer"
+index = true
+cellid = true
+shape = [
+    "ncelldim",
+]
+
+[observations.src.arms.boundname]
+type = "string"
+tagged = false
+
+[observations.to-mvr]
+type = "union"
+tagged = false
+
+[observations.to-mvr.arms.cellid]
+type = "array"
+tagged = false
+dtype = "integer"
+index = true
+cellid = true
+shape = [
+    "ncelldim",
+]
+
+[observations.to-mvr.arms.boundname]
+type = "string"
+tagged = false

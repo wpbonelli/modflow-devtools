@@ -364,3 +364,145 @@ memory:
     dtype: double
     shape:
       - ncv
+observations:
+  temperature:
+    type: union
+    tagged: false
+    arms:
+      uzfno:
+        type: integer
+        tagged: false
+        index: true
+        fk: packagedata.uzfno
+      boundname:
+        type: string
+        tagged: false
+  storage:
+    type: union
+    tagged: false
+    arms:
+      uzfno:
+        type: integer
+        tagged: false
+        index: true
+        fk: packagedata.uzfno
+      boundname:
+        type: string
+        tagged: false
+  constant:
+    type: union
+    tagged: false
+    arms:
+      uzfno:
+        type: integer
+        tagged: false
+        index: true
+        fk: packagedata.uzfno
+      boundname:
+        type: string
+        tagged: false
+  from-mvr:
+    type: union
+    tagged: false
+    arms:
+      uzfno:
+        type: integer
+        tagged: false
+        index: true
+        fk: packagedata.uzfno
+      boundname:
+        type: string
+        tagged: false
+  uze:
+    type: union
+    tagged: false
+    arms:
+      uzfno:
+        type: integer
+        tagged: false
+        index: true
+        fk: packagedata.uzfno
+      boundname:
+        type: string
+        tagged: false
+  thermal-equil:
+    type: union
+    tagged: false
+    arms:
+      uzfno:
+        type: integer
+        tagged: false
+        index: true
+        fk: packagedata.uzfno
+      boundname:
+        type: string
+        tagged: false
+  infiltration:
+    type: union
+    tagged: false
+    arms:
+      uzfno:
+        type: integer
+        tagged: false
+        index: true
+        fk: packagedata.uzfno
+      boundname:
+        type: string
+        tagged: false
+  rej-inf:
+    type: union
+    tagged: false
+    arms:
+      uzfno:
+        type: integer
+        tagged: false
+        index: true
+        fk: packagedata.uzfno
+      boundname:
+        type: string
+        tagged: false
+  uzet:
+    type: union
+    tagged: false
+    arms:
+      uzfno:
+        type: integer
+        tagged: false
+        index: true
+        fk: packagedata.uzfno
+      boundname:
+        type: string
+        tagged: false
+  rej-inf-to-mvr:
+    type: union
+    tagged: false
+    arms:
+      uzfno:
+        type: integer
+        tagged: false
+        index: true
+        fk: packagedata.uzfno
+      boundname:
+        type: string
+        tagged: false
+  flow-ja-face:
+    type: union
+    tagged: false
+    arms:
+      uzfno:
+        type: record
+        tagged: false
+        fields:
+          uzfno:
+            type: integer
+            tagged: false
+            index: true
+            fk: packagedata.uzfno
+          uzfno2:
+            type: integer
+            tagged: false
+            index: true
+            fk: packagedata.uzfno
+      boundname:
+        type: string
+        tagged: false

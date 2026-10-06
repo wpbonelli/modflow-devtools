@@ -82,3 +82,34 @@ memory:
     set_in: ar
     source: maxbound
     type: integer
+observations:
+  api:
+    type: union
+    tagged: false
+    arms:
+      cellid:
+        type: array
+        tagged: false
+        dtype: integer
+        index: true
+        cellid: true
+        shape:
+          - ncelldim
+      boundname:
+        type: string
+        tagged: false
+  to-mvr:
+    type: union
+    tagged: false
+    arms:
+      cellid:
+        type: array
+        tagged: false
+        dtype: integer
+        index: true
+        cellid: true
+        shape:
+          - ncelldim
+      boundname:
+        type: string
+        tagged: false

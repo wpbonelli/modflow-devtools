@@ -700,5 +700,414 @@
         "nodes"
       ]
     }
+  },
+  "observations": {
+    "csub": {
+      "type": "union",
+      "tagged": false,
+      "arms": {
+        "icsubno": {
+          "type": "integer",
+          "tagged": false,
+          "index": true,
+          "fk": "packagedata.icsubno"
+        },
+        "boundname": {
+          "type": "string",
+          "tagged": false
+        }
+      }
+    },
+    "inelastic-csub": {
+      "type": "union",
+      "tagged": false,
+      "arms": {
+        "icsubno": {
+          "type": "integer",
+          "tagged": false,
+          "index": true,
+          "fk": "packagedata.icsubno"
+        },
+        "boundname": {
+          "type": "string",
+          "tagged": false
+        }
+      }
+    },
+    "elastic-csub": {
+      "type": "union",
+      "tagged": false,
+      "arms": {
+        "icsubno": {
+          "type": "integer",
+          "tagged": false,
+          "index": true,
+          "fk": "packagedata.icsubno"
+        },
+        "boundname": {
+          "type": "string",
+          "tagged": false
+        }
+      }
+    },
+    "delay-flowtop": {
+      "type": "union",
+      "tagged": false,
+      "arms": {
+        "icsubno": {
+          "type": "integer",
+          "tagged": false,
+          "index": true,
+          "fk": "packagedata.icsubno"
+        },
+        "boundname": {
+          "type": "string",
+          "tagged": false
+        }
+      }
+    },
+    "delay-flowbot": {
+      "type": "union",
+      "tagged": false,
+      "arms": {
+        "icsubno": {
+          "type": "integer",
+          "tagged": false,
+          "index": true,
+          "fk": "packagedata.icsubno"
+        },
+        "boundname": {
+          "type": "string",
+          "tagged": false
+        }
+      }
+    },
+    "sk": {
+      "type": "integer",
+      "tagged": false,
+      "index": true,
+      "fk": "packagedata.icsubno"
+    },
+    "ske": {
+      "type": "integer",
+      "tagged": false,
+      "index": true,
+      "fk": "packagedata.icsubno"
+    },
+    "theta": {
+      "type": "integer",
+      "tagged": false,
+      "index": true,
+      "fk": "packagedata.icsubno"
+    },
+    "thickness": {
+      "type": "integer",
+      "tagged": false,
+      "index": true,
+      "fk": "packagedata.icsubno"
+    },
+    "interbed-compaction": {
+      "type": "integer",
+      "tagged": false,
+      "index": true,
+      "fk": "packagedata.icsubno"
+    },
+    "interbed-compaction-pct": {
+      "type": "integer",
+      "tagged": false,
+      "index": true,
+      "fk": "packagedata.icsubno"
+    },
+    "inelastic-compaction": {
+      "type": "integer",
+      "tagged": false,
+      "index": true,
+      "fk": "packagedata.icsubno"
+    },
+    "elastic-compaction": {
+      "type": "integer",
+      "tagged": false,
+      "index": true,
+      "fk": "packagedata.icsubno"
+    },
+    "delay-head": {
+      "type": "record",
+      "tagged": false,
+      "fields": {
+        "icsubno": {
+          "type": "integer",
+          "tagged": false,
+          "index": true,
+          "fk": "packagedata.icsubno"
+        },
+        "idcellno": {
+          "type": "integer",
+          "tagged": false,
+          "index": true
+        }
+      }
+    },
+    "delay-gstress": {
+      "type": "record",
+      "tagged": false,
+      "fields": {
+        "icsubno": {
+          "type": "integer",
+          "tagged": false,
+          "index": true,
+          "fk": "packagedata.icsubno"
+        },
+        "idcellno": {
+          "type": "integer",
+          "tagged": false,
+          "index": true
+        }
+      }
+    },
+    "delay-estress": {
+      "type": "record",
+      "tagged": false,
+      "fields": {
+        "icsubno": {
+          "type": "integer",
+          "tagged": false,
+          "index": true,
+          "fk": "packagedata.icsubno"
+        },
+        "idcellno": {
+          "type": "integer",
+          "tagged": false,
+          "index": true
+        }
+      }
+    },
+    "delay-preconstress": {
+      "type": "record",
+      "tagged": false,
+      "fields": {
+        "icsubno": {
+          "type": "integer",
+          "tagged": false,
+          "index": true,
+          "fk": "packagedata.icsubno"
+        },
+        "idcellno": {
+          "type": "integer",
+          "tagged": false,
+          "index": true
+        }
+      }
+    },
+    "delay-compaction": {
+      "type": "record",
+      "tagged": false,
+      "fields": {
+        "icsubno": {
+          "type": "integer",
+          "tagged": false,
+          "index": true,
+          "fk": "packagedata.icsubno"
+        },
+        "idcellno": {
+          "type": "integer",
+          "tagged": false,
+          "index": true
+        }
+      }
+    },
+    "delay-thickness": {
+      "type": "record",
+      "tagged": false,
+      "fields": {
+        "icsubno": {
+          "type": "integer",
+          "tagged": false,
+          "index": true,
+          "fk": "packagedata.icsubno"
+        },
+        "idcellno": {
+          "type": "integer",
+          "tagged": false,
+          "index": true
+        }
+      }
+    },
+    "delay-theta": {
+      "type": "record",
+      "tagged": false,
+      "fields": {
+        "icsubno": {
+          "type": "integer",
+          "tagged": false,
+          "index": true,
+          "fk": "packagedata.icsubno"
+        },
+        "idcellno": {
+          "type": "integer",
+          "tagged": false,
+          "index": true
+        }
+      }
+    },
+    "coarse-csub": {
+      "type": "array",
+      "tagged": false,
+      "dtype": "integer",
+      "index": true,
+      "cellid": true,
+      "shape": [
+        "ncelldim"
+      ]
+    },
+    "csub-cell": {
+      "type": "array",
+      "tagged": false,
+      "dtype": "integer",
+      "index": true,
+      "cellid": true,
+      "shape": [
+        "ncelldim"
+      ]
+    },
+    "wcomp-csub-cell": {
+      "type": "array",
+      "tagged": false,
+      "dtype": "integer",
+      "index": true,
+      "cellid": true,
+      "shape": [
+        "ncelldim"
+      ]
+    },
+    "sk-cell": {
+      "type": "array",
+      "tagged": false,
+      "dtype": "integer",
+      "index": true,
+      "cellid": true,
+      "shape": [
+        "ncelldim"
+      ]
+    },
+    "ske-cell": {
+      "type": "array",
+      "tagged": false,
+      "dtype": "integer",
+      "index": true,
+      "cellid": true,
+      "shape": [
+        "ncelldim"
+      ]
+    },
+    "estress-cell": {
+      "type": "array",
+      "tagged": false,
+      "dtype": "integer",
+      "index": true,
+      "cellid": true,
+      "shape": [
+        "ncelldim"
+      ]
+    },
+    "gstress-cell": {
+      "type": "array",
+      "tagged": false,
+      "dtype": "integer",
+      "index": true,
+      "cellid": true,
+      "shape": [
+        "ncelldim"
+      ]
+    },
+    "preconstress-cell": {
+      "type": "array",
+      "tagged": false,
+      "dtype": "integer",
+      "index": true,
+      "cellid": true,
+      "shape": [
+        "ncelldim"
+      ]
+    },
+    "coarse-compaction": {
+      "type": "array",
+      "tagged": false,
+      "dtype": "integer",
+      "index": true,
+      "cellid": true,
+      "shape": [
+        "ncelldim"
+      ]
+    },
+    "compaction-cell": {
+      "type": "array",
+      "tagged": false,
+      "dtype": "integer",
+      "index": true,
+      "cellid": true,
+      "shape": [
+        "ncelldim"
+      ]
+    },
+    "inelastic-compaction-cell": {
+      "type": "array",
+      "tagged": false,
+      "dtype": "integer",
+      "index": true,
+      "cellid": true,
+      "shape": [
+        "ncelldim"
+      ]
+    },
+    "elastic-compaction-cell": {
+      "type": "array",
+      "tagged": false,
+      "dtype": "integer",
+      "index": true,
+      "cellid": true,
+      "shape": [
+        "ncelldim"
+      ]
+    },
+    "coarse-thickness": {
+      "type": "array",
+      "tagged": false,
+      "dtype": "integer",
+      "index": true,
+      "cellid": true,
+      "shape": [
+        "ncelldim"
+      ]
+    },
+    "thickness-cell": {
+      "type": "array",
+      "tagged": false,
+      "dtype": "integer",
+      "index": true,
+      "cellid": true,
+      "shape": [
+        "ncelldim"
+      ]
+    },
+    "coarse-theta": {
+      "type": "array",
+      "tagged": false,
+      "dtype": "integer",
+      "index": true,
+      "cellid": true,
+      "shape": [
+        "ncelldim"
+      ]
+    },
+    "theta-cell": {
+      "type": "array",
+      "tagged": false,
+      "dtype": "integer",
+      "index": true,
+      "cellid": true,
+      "shape": [
+        "ncelldim"
+      ]
+    }
   }
 }

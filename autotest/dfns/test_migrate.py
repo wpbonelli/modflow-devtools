@@ -386,6 +386,88 @@ def test_migrate_obs_id_union(dfn_dir, col, optional):
     assert not any(arm.tagged for arm in field.arms.values())
 
 
+def _obs_forms(field) -> list[tuple]:
+    """The token sequences an observation field reads, each a tuple of
+    columns: ("cellid",), ("boundname",), ("double", name) or ("index", fk)."""
+    if isinstance(field, v2.Union):
+        return [f for arm in field.arms.values() for f in _obs_forms(arm)]
+    if isinstance(field, v2.Record):
+        forms: list[tuple] = [()]
+        for col in field.fields.values():
+            forms = [f + g for f in forms for g in _obs_forms(col)]
+        return forms
+    if isinstance(field, v2.Array) and field.cellid:
+        return [(("cellid",),)]
+    if isinstance(field, v2.String):
+        return [(("boundname",),)]
+    if isinstance(field, v2.Double):
+        return [(("double", field.name),)]
+    assert isinstance(field, v2.Integer) and field.index
+    return [(("index", field.fk),)]
+
+
+_CELL = ("cellid",)
+_NAME = ("boundname",)
+
+
+@pytest.mark.parametrize(
+    "name, obstype, forms",
+    [
+        # CSUB mixes index- and cellid-keyed obstypes, some without boundnames
+        ("gwf-csub", "csub", [(("index", "packagedata.icsubno"),), (_NAME,)]),
+        ("gwf-csub", "sk", [(("index", "packagedata.icsubno"),)]),
+        ("gwf-csub", "csub-cell", [(_CELL,)]),
+        ("gwf-csub", "delay-head", [(("index", "packagedata.icsubno"), ("index", None))]),
+        # UZF's water-content depth isn't an id, and follows a boundname too
+        (
+            "gwf-uzf",
+            "water-content",
+            [(("index", "packagedata.ifno"), ("double", "depth")), (_NAME, ("double", "depth"))],
+        ),
+        ("gwf-uzf", "uzet", [(("index", "packagedata.ifno"),), (_NAME,)]),
+        # a connection number follows a lake number, but not a boundname
+        ("gwf-lak", "lak", [(("index", "packagedata.ifno"), ("index", None)), (_NAME,)]),
+        ("gwf-lak", "outlet", [(("index", "outlets.outletno"),), (_NAME,)]),
+        (
+            "gwt-lkt",
+            "flow-ja-face",
+            [(("index", "packagedata.ifno"), ("index", "packagedata.ifno")), (_NAME,)],
+        ),
+        # MF6 reads no id2 for lke, though its docs list one
+        ("gwe-lke", "lke", [(("index", "packagedata.lakeno"),), (_NAME,)]),
+        ("gwf-wel", "wel", [(_CELL,), (_NAME,)]),
+        ("gwf-nam", "flow-ja-face", [(_CELL, _CELL)]),
+        # an exchange id is a row number in exchangedata, which has no pk
+        ("exg-gwegwe", "flow-ja-face", [(("index", None),), (_NAME,)]),
+    ],
+)
+def test_migrate_observations(dfn_dir, name, obstype, forms):
+    component = _migrate_dev3(dfn_dir, name)
+    assert component.observations is not None
+    field = component.observations[obstype]
+    assert field.name == obstype
+    assert _obs_forms(field) == forms
+
+
+def test_migrate_observations_on_obs_parents(dev3):
+    """Every component with an OBS file gets observations, except the
+    SWF-GWF exchanges, which MF6 registers no observation types for."""
+    out, _ = dev3
+    spec = v2.Dfns.load(out)
+    obs_parents = {
+        name
+        for name, c in spec.components.items()
+        if isinstance(c, v2.Model)
+        or any(
+            getattr(f, "component", None) == "utl-obs"
+            for f in c.get_fields(recurse=True).values(multi=True)
+        )
+    }
+    with_obs = {name for name, c in spec.components.items() if c.observations}
+    assert obs_parents - with_obs == {"exg-chfgwf", "exg-olfgwf", "prt-nam"}
+    assert with_obs <= obs_parents
+
+
 def test_migrate_sfr_ic_is_signed_index(dfn_dir):
     component = _migrate_dev3(dfn_dir, "gwf-sfr")
     item = component.blocks["connectiondata"].fields["connectiondata"].item

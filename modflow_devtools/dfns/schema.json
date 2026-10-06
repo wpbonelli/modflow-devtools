@@ -1336,6 +1336,51 @@
           "default": null,
           "title": "Memory"
         },
+        "observations": {
+          "anyOf": [
+            {
+              "additionalProperties": {
+                "discriminator": {
+                  "mapping": {
+                    "array": "#/$defs/Array",
+                    "double": "#/$defs/Double",
+                    "integer": "#/$defs/Integer",
+                    "record": "#/$defs/Record",
+                    "string": "#/$defs/String",
+                    "union": "#/$defs/Union"
+                  },
+                  "propertyName": "type"
+                },
+                "oneOf": [
+                  {
+                    "$ref": "#/$defs/Integer"
+                  },
+                  {
+                    "$ref": "#/$defs/Double"
+                  },
+                  {
+                    "$ref": "#/$defs/String"
+                  },
+                  {
+                    "$ref": "#/$defs/Array"
+                  },
+                  {
+                    "$ref": "#/$defs/Record"
+                  },
+                  {
+                    "$ref": "#/$defs/Union"
+                  }
+                ]
+              },
+              "type": "object"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Observations"
+        },
         "type": {
           "const": "model",
           "default": "model",
@@ -1503,6 +1548,51 @@
           ],
           "default": null,
           "title": "Memory"
+        },
+        "observations": {
+          "anyOf": [
+            {
+              "additionalProperties": {
+                "discriminator": {
+                  "mapping": {
+                    "array": "#/$defs/Array",
+                    "double": "#/$defs/Double",
+                    "integer": "#/$defs/Integer",
+                    "record": "#/$defs/Record",
+                    "string": "#/$defs/String",
+                    "union": "#/$defs/Union"
+                  },
+                  "propertyName": "type"
+                },
+                "oneOf": [
+                  {
+                    "$ref": "#/$defs/Integer"
+                  },
+                  {
+                    "$ref": "#/$defs/Double"
+                  },
+                  {
+                    "$ref": "#/$defs/String"
+                  },
+                  {
+                    "$ref": "#/$defs/Array"
+                  },
+                  {
+                    "$ref": "#/$defs/Record"
+                  },
+                  {
+                    "$ref": "#/$defs/Union"
+                  }
+                ]
+              },
+              "type": "object"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Observations"
         },
         "type": {
           "const": "package",
@@ -1841,6 +1931,51 @@
           ],
           "default": null,
           "title": "Memory"
+        },
+        "observations": {
+          "anyOf": [
+            {
+              "additionalProperties": {
+                "discriminator": {
+                  "mapping": {
+                    "array": "#/$defs/Array",
+                    "double": "#/$defs/Double",
+                    "integer": "#/$defs/Integer",
+                    "record": "#/$defs/Record",
+                    "string": "#/$defs/String",
+                    "union": "#/$defs/Union"
+                  },
+                  "propertyName": "type"
+                },
+                "oneOf": [
+                  {
+                    "$ref": "#/$defs/Integer"
+                  },
+                  {
+                    "$ref": "#/$defs/Double"
+                  },
+                  {
+                    "$ref": "#/$defs/String"
+                  },
+                  {
+                    "$ref": "#/$defs/Array"
+                  },
+                  {
+                    "$ref": "#/$defs/Record"
+                  },
+                  {
+                    "$ref": "#/$defs/Union"
+                  }
+                ]
+              },
+              "type": "object"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Observations"
         },
         "type": {
           "const": "simulation",

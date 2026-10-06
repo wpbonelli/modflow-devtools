@@ -774,5 +774,344 @@
       "source": "ntables",
       "type": "integer"
     }
+  },
+  "observations": {
+    "stage": {
+      "type": "union",
+      "tagged": false,
+      "arms": {
+        "ifno": {
+          "type": "integer",
+          "tagged": false,
+          "index": true,
+          "fk": "packagedata.ifno"
+        },
+        "boundname": {
+          "type": "string",
+          "tagged": false
+        }
+      }
+    },
+    "ext-inflow": {
+      "type": "union",
+      "tagged": false,
+      "arms": {
+        "ifno": {
+          "type": "integer",
+          "tagged": false,
+          "index": true,
+          "fk": "packagedata.ifno"
+        },
+        "boundname": {
+          "type": "string",
+          "tagged": false
+        }
+      }
+    },
+    "outlet-inflow": {
+      "type": "union",
+      "tagged": false,
+      "arms": {
+        "ifno": {
+          "type": "integer",
+          "tagged": false,
+          "index": true,
+          "fk": "packagedata.ifno"
+        },
+        "boundname": {
+          "type": "string",
+          "tagged": false
+        }
+      }
+    },
+    "inflow": {
+      "type": "union",
+      "tagged": false,
+      "arms": {
+        "ifno": {
+          "type": "integer",
+          "tagged": false,
+          "index": true,
+          "fk": "packagedata.ifno"
+        },
+        "boundname": {
+          "type": "string",
+          "tagged": false
+        }
+      }
+    },
+    "from-mvr": {
+      "type": "union",
+      "tagged": false,
+      "arms": {
+        "ifno": {
+          "type": "integer",
+          "tagged": false,
+          "index": true,
+          "fk": "packagedata.ifno"
+        },
+        "boundname": {
+          "type": "string",
+          "tagged": false
+        }
+      }
+    },
+    "rainfall": {
+      "type": "union",
+      "tagged": false,
+      "arms": {
+        "ifno": {
+          "type": "integer",
+          "tagged": false,
+          "index": true,
+          "fk": "packagedata.ifno"
+        },
+        "boundname": {
+          "type": "string",
+          "tagged": false
+        }
+      }
+    },
+    "runoff": {
+      "type": "union",
+      "tagged": false,
+      "arms": {
+        "ifno": {
+          "type": "integer",
+          "tagged": false,
+          "index": true,
+          "fk": "packagedata.ifno"
+        },
+        "boundname": {
+          "type": "string",
+          "tagged": false
+        }
+      }
+    },
+    "withdrawal": {
+      "type": "union",
+      "tagged": false,
+      "arms": {
+        "ifno": {
+          "type": "integer",
+          "tagged": false,
+          "index": true,
+          "fk": "packagedata.ifno"
+        },
+        "boundname": {
+          "type": "string",
+          "tagged": false
+        }
+      }
+    },
+    "evaporation": {
+      "type": "union",
+      "tagged": false,
+      "arms": {
+        "ifno": {
+          "type": "integer",
+          "tagged": false,
+          "index": true,
+          "fk": "packagedata.ifno"
+        },
+        "boundname": {
+          "type": "string",
+          "tagged": false
+        }
+      }
+    },
+    "storage": {
+      "type": "union",
+      "tagged": false,
+      "arms": {
+        "ifno": {
+          "type": "integer",
+          "tagged": false,
+          "index": true,
+          "fk": "packagedata.ifno"
+        },
+        "boundname": {
+          "type": "string",
+          "tagged": false
+        }
+      }
+    },
+    "constant": {
+      "type": "union",
+      "tagged": false,
+      "arms": {
+        "ifno": {
+          "type": "integer",
+          "tagged": false,
+          "index": true,
+          "fk": "packagedata.ifno"
+        },
+        "boundname": {
+          "type": "string",
+          "tagged": false
+        }
+      }
+    },
+    "volume": {
+      "type": "union",
+      "tagged": false,
+      "arms": {
+        "ifno": {
+          "type": "integer",
+          "tagged": false,
+          "index": true,
+          "fk": "packagedata.ifno"
+        },
+        "boundname": {
+          "type": "string",
+          "tagged": false
+        }
+      }
+    },
+    "surface-area": {
+      "type": "union",
+      "tagged": false,
+      "arms": {
+        "ifno": {
+          "type": "integer",
+          "tagged": false,
+          "index": true,
+          "fk": "packagedata.ifno"
+        },
+        "boundname": {
+          "type": "string",
+          "tagged": false
+        }
+      }
+    },
+    "lak": {
+      "type": "union",
+      "tagged": false,
+      "arms": {
+        "ifno": {
+          "type": "record",
+          "tagged": false,
+          "fields": {
+            "ifno": {
+              "type": "integer",
+              "tagged": false,
+              "index": true,
+              "fk": "packagedata.ifno"
+            },
+            "iconn": {
+              "type": "integer",
+              "tagged": false,
+              "index": true
+            }
+          }
+        },
+        "boundname": {
+          "type": "string",
+          "tagged": false
+        }
+      }
+    },
+    "wetted-area": {
+      "type": "union",
+      "tagged": false,
+      "arms": {
+        "ifno": {
+          "type": "record",
+          "tagged": false,
+          "fields": {
+            "ifno": {
+              "type": "integer",
+              "tagged": false,
+              "index": true,
+              "fk": "packagedata.ifno"
+            },
+            "iconn": {
+              "type": "integer",
+              "tagged": false,
+              "index": true
+            }
+          }
+        },
+        "boundname": {
+          "type": "string",
+          "tagged": false
+        }
+      }
+    },
+    "conductance": {
+      "type": "union",
+      "tagged": false,
+      "arms": {
+        "ifno": {
+          "type": "record",
+          "tagged": false,
+          "fields": {
+            "ifno": {
+              "type": "integer",
+              "tagged": false,
+              "index": true,
+              "fk": "packagedata.ifno"
+            },
+            "iconn": {
+              "type": "integer",
+              "tagged": false,
+              "index": true
+            }
+          }
+        },
+        "boundname": {
+          "type": "string",
+          "tagged": false
+        }
+      }
+    },
+    "ext-outflow": {
+      "type": "union",
+      "tagged": false,
+      "arms": {
+        "outletno": {
+          "type": "integer",
+          "tagged": false,
+          "index": true,
+          "fk": "outlets.outletno"
+        },
+        "boundname": {
+          "type": "string",
+          "tagged": false
+        }
+      }
+    },
+    "to-mvr": {
+      "type": "union",
+      "tagged": false,
+      "arms": {
+        "outletno": {
+          "type": "integer",
+          "tagged": false,
+          "index": true,
+          "fk": "outlets.outletno"
+        },
+        "boundname": {
+          "type": "string",
+          "tagged": false
+        }
+      }
+    },
+    "outlet": {
+      "type": "union",
+      "tagged": false,
+      "arms": {
+        "outletno": {
+          "type": "integer",
+          "tagged": false,
+          "index": true,
+          "fk": "outlets.outletno"
+        },
+        "boundname": {
+          "type": "string",
+          "tagged": false
+        }
+      }
+    }
   }
 }

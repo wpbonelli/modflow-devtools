@@ -436,5 +436,209 @@
       "source": "nwavesets",
       "type": "integer"
     }
+  },
+  "observations": {
+    "uzf-gwrch": {
+      "type": "union",
+      "tagged": false,
+      "arms": {
+        "ifno": {
+          "type": "integer",
+          "tagged": false,
+          "index": true,
+          "fk": "packagedata.ifno"
+        },
+        "boundname": {
+          "type": "string",
+          "tagged": false
+        }
+      }
+    },
+    "uzf-gwd": {
+      "type": "union",
+      "tagged": false,
+      "arms": {
+        "ifno": {
+          "type": "integer",
+          "tagged": false,
+          "index": true,
+          "fk": "packagedata.ifno"
+        },
+        "boundname": {
+          "type": "string",
+          "tagged": false
+        }
+      }
+    },
+    "uzf-gwd-to-mvr": {
+      "type": "union",
+      "tagged": false,
+      "arms": {
+        "ifno": {
+          "type": "integer",
+          "tagged": false,
+          "index": true,
+          "fk": "packagedata.ifno"
+        },
+        "boundname": {
+          "type": "string",
+          "tagged": false
+        }
+      }
+    },
+    "uzf-gwet": {
+      "type": "union",
+      "tagged": false,
+      "arms": {
+        "ifno": {
+          "type": "integer",
+          "tagged": false,
+          "index": true,
+          "fk": "packagedata.ifno"
+        },
+        "boundname": {
+          "type": "string",
+          "tagged": false
+        }
+      }
+    },
+    "infiltration": {
+      "type": "union",
+      "tagged": false,
+      "arms": {
+        "ifno": {
+          "type": "integer",
+          "tagged": false,
+          "index": true,
+          "fk": "packagedata.ifno"
+        },
+        "boundname": {
+          "type": "string",
+          "tagged": false
+        }
+      }
+    },
+    "from-mvr": {
+      "type": "union",
+      "tagged": false,
+      "arms": {
+        "ifno": {
+          "type": "integer",
+          "tagged": false,
+          "index": true,
+          "fk": "packagedata.ifno"
+        },
+        "boundname": {
+          "type": "string",
+          "tagged": false
+        }
+      }
+    },
+    "rej-inf": {
+      "type": "union",
+      "tagged": false,
+      "arms": {
+        "ifno": {
+          "type": "integer",
+          "tagged": false,
+          "index": true,
+          "fk": "packagedata.ifno"
+        },
+        "boundname": {
+          "type": "string",
+          "tagged": false
+        }
+      }
+    },
+    "rej-inf-to-mvr": {
+      "type": "union",
+      "tagged": false,
+      "arms": {
+        "ifno": {
+          "type": "integer",
+          "tagged": false,
+          "index": true,
+          "fk": "packagedata.ifno"
+        },
+        "boundname": {
+          "type": "string",
+          "tagged": false
+        }
+      }
+    },
+    "uzet": {
+      "type": "union",
+      "tagged": false,
+      "arms": {
+        "ifno": {
+          "type": "integer",
+          "tagged": false,
+          "index": true,
+          "fk": "packagedata.ifno"
+        },
+        "boundname": {
+          "type": "string",
+          "tagged": false
+        }
+      }
+    },
+    "storage": {
+      "type": "union",
+      "tagged": false,
+      "arms": {
+        "ifno": {
+          "type": "integer",
+          "tagged": false,
+          "index": true,
+          "fk": "packagedata.ifno"
+        },
+        "boundname": {
+          "type": "string",
+          "tagged": false
+        }
+      }
+    },
+    "net-infiltration": {
+      "type": "union",
+      "tagged": false,
+      "arms": {
+        "ifno": {
+          "type": "integer",
+          "tagged": false,
+          "index": true,
+          "fk": "packagedata.ifno"
+        },
+        "boundname": {
+          "type": "string",
+          "tagged": false
+        }
+      }
+    },
+    "water-content": {
+      "type": "record",
+      "tagged": false,
+      "fields": {
+        "ifno": {
+          "type": "union",
+          "tagged": false,
+          "arms": {
+            "ifno": {
+              "type": "integer",
+              "tagged": false,
+              "index": true,
+              "fk": "packagedata.ifno"
+            },
+            "boundname": {
+              "type": "string",
+              "tagged": false
+            }
+          }
+        },
+        "depth": {
+          "type": "double",
+          "tagged": false
+        }
+      }
+    }
   }
 }

@@ -297,3 +297,21 @@ dtype = "string"
 shape = [
     "naux",
 ]
+
+[observations.rch]
+type = "union"
+tagged = false
+
+[observations.rch.arms.cellid]
+type = "array"
+tagged = false
+dtype = "integer"
+index = true
+cellid = true
+shape = [
+    "ncelldim",
+]
+
+[observations.rch.arms.boundname]
+type = "string"
+tagged = false

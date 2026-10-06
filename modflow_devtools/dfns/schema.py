@@ -922,6 +922,12 @@ MemoryVariable = Annotated[
 ]
 
 
+ObservationField = Annotated[
+    Integer | Double | String | Array | Record | Union,
+    PydanticField(discriminator="type"),
+]
+
+
 class ComponentBase(BaseModel):
     schema_version: str | None = None
     name: str
@@ -935,6 +941,9 @@ class ComponentBase(BaseModel):
     runtime_dims: dict[str, RuntimeDim] | None = None
     blocks: dict[str, Block] | None = None
     memory: dict[str, MemoryVariable] | None = None
+    # Observation types this component accepts in its OBS file, keyed by
+    # (lower-case) name. See `ObservationField`.
+    observations: dict[str, ObservationField] | None = None
 
     @model_serializer(mode="wrap")
     def _serialize(self, handler: Any) -> dict[str, Any]:
@@ -1232,9 +1241,9 @@ def _validate_fk_fields(component: "ComponentBase", spec: "Dfns") -> None:
       runtime, so no further structural check is possible statically.
 
     A hierarchical-path fk may not be combined with fk_ref.
+
+    Observation fields (see `ObservationField`) are checked like a list item's.
     """
-    if not component.blocks:
-        return
 
     def _check_fields(fields: dict, dynamic_key: "InputField | None" = None) -> None:
         for field in fields.values():
@@ -1321,8 +1330,9 @@ def _validate_fk_fields(component: "ComponentBase", spec: "Dfns") -> None:
                     else:
                         _check_fields({form.name: form})
 
-    for block in component.blocks.values():
+    for block in (component.blocks or {}).values():
         _check_fields(block.fields)
+    _check_fields(component.observations or {})
 
 
 def _iter_files(fields: "Mapping[str, InputField]"):
@@ -1386,11 +1396,10 @@ def _validate_file_links(component: "ComponentBase", spec: "Dfns") -> None:
 def _validate_cellid_fields(component: "ComponentBase") -> None:
     """
     A cellid array (`cellid=True`, see `Array.cellid`) is only meaningful as a
-    column in a list item, where each row names its cell(s). Its dtype and
-    shape are checked by `Array` itself.
+    column in a list item, where each row names its cell(s), or in an
+    observation field, which reads like one. Its dtype and shape are checked by
+    `Array` itself.
     """
-    if not component.blocks:
-        return
 
     def _check(field: "InputField", in_item: bool) -> None:
         if isinstance(field, Array) and field.cellid and not in_item:
@@ -1406,9 +1415,42 @@ def _validate_cellid_fields(component: "ComponentBase") -> None:
             for arm in field.arms.values():
                 _check(arm, in_item)
 
-    for block in component.blocks.values():
+    for block in (component.blocks or {}).values():
         for field in block.fields.values():
             _check(field, False)
+    for obs_field in (component.observations or {}).values():
+        _check(obs_field, True)
+
+
+def _obs_columns(field: "InputField") -> list[int]:
+    """How many `utl-obs` columns each form of an observation field fills."""
+    if isinstance(field, Union):
+        return [n for arm in field.arms.values() for n in _obs_columns(arm)]
+    return [len(field.fields) if isinstance(field, Record) else 1]
+
+
+def _validate_observations(component: "ComponentBase") -> None:
+    """
+    Each observation field (see `ObservationField`) must be untagged
+    throughout and fill one or two columns, `id` and optionally `id2`.
+    Its fks are checked by `_validate_fk_fields`.
+    """
+    for obstype, field in (component.observations or {}).items():
+        where = f"Observation {obstype!r}"
+        if obstype != obstype.lower():
+            raise ValueError(f"{where}: name must be lower case")
+        tagged = [f.name for f in _iter_subfields(field) if f.tagged]
+        if tagged:
+            raise ValueError(f"{where}: {tagged} must be untagged")
+        if any(n not in (1, 2) for n in _obs_columns(field)):
+            raise ValueError(f"{where}: each form must fill id and at most id2")
+
+
+def _iter_subfields(field: "InputField"):
+    """Yield ``field`` and every field nested in it."""
+    yield field
+    for child in getattr(field, "children", {}).values():
+        yield from _iter_subfields(child)
 
 
 def _validate_array_shapes(
@@ -1573,6 +1615,7 @@ def _inject_names(comp_data: dict) -> None:
     Necessary to compensate for field and block names being absent in
     serialized DFN file data.
     """
+    _inject_field_names(comp_data.get("observations") or {})
     for block_name, block in (comp_data.get("blocks") or {}).items():
         block.setdefault("name", block_name)
         _inject_field_names(block.get("fields") or {})
@@ -1735,6 +1778,8 @@ class Dfns(BaseModel):
             _validate_file_links(component, self)
         for name, component in self.components.items():
             _validate_cellid_fields(component)
+        for name, component in self.components.items():
+            _validate_observations(component)
         for name, component in self.components.items():
             _validate_array_shapes(component, name, self)
         for name, component in self.components.items():

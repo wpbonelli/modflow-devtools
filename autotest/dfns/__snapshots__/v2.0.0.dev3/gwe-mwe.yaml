@@ -375,3 +375,120 @@ memory:
     dtype: double
     shape:
       - ncv
+observations:
+  temperature:
+    type: union
+    tagged: false
+    arms:
+      mawno:
+        type: integer
+        tagged: false
+        index: true
+        fk: packagedata.mawno
+      boundname:
+        type: string
+        tagged: false
+  storage:
+    type: union
+    tagged: false
+    arms:
+      mawno:
+        type: integer
+        tagged: false
+        index: true
+        fk: packagedata.mawno
+      boundname:
+        type: string
+        tagged: false
+  constant:
+    type: union
+    tagged: false
+    arms:
+      mawno:
+        type: integer
+        tagged: false
+        index: true
+        fk: packagedata.mawno
+      boundname:
+        type: string
+        tagged: false
+  from-mvr:
+    type: union
+    tagged: false
+    arms:
+      mawno:
+        type: integer
+        tagged: false
+        index: true
+        fk: packagedata.mawno
+      boundname:
+        type: string
+        tagged: false
+  rate:
+    type: union
+    tagged: false
+    arms:
+      mawno:
+        type: integer
+        tagged: false
+        index: true
+        fk: packagedata.mawno
+      boundname:
+        type: string
+        tagged: false
+  fw-rate:
+    type: union
+    tagged: false
+    arms:
+      mawno:
+        type: integer
+        tagged: false
+        index: true
+        fk: packagedata.mawno
+      boundname:
+        type: string
+        tagged: false
+  rate-to-mvr:
+    type: union
+    tagged: false
+    arms:
+      mawno:
+        type: integer
+        tagged: false
+        index: true
+        fk: packagedata.mawno
+      boundname:
+        type: string
+        tagged: false
+  fw-rate-to-mvr:
+    type: union
+    tagged: false
+    arms:
+      mawno:
+        type: integer
+        tagged: false
+        index: true
+        fk: packagedata.mawno
+      boundname:
+        type: string
+        tagged: false
+  mwe:
+    type: union
+    tagged: false
+    arms:
+      mawno:
+        type: record
+        tagged: false
+        fields:
+          mawno:
+            type: integer
+            tagged: false
+            index: true
+            fk: packagedata.mawno
+          iconn:
+            type: integer
+            tagged: false
+            index: true
+      boundname:
+        type: string
+        tagged: false
