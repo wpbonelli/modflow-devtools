@@ -217,10 +217,102 @@ def test_dfns_validate_cellid_in_list_item(field):
     assert "gwf-gnc" in spec.components
 
 
+def _exchange_ctx(*fields):
+    item = Record(name="item", fields={f.name: f for f in fields})
+    block = Block(name="data", fields={"data": List(name="data", item=item)})
+    exg = Package(name="exg-gwfgwf", subtype="exchange", blocks={"data": block})
+    return {"exg-gwfgwf": exg}
+
+
+def _cellid_col(name, cellid, shape=("ncelldim",)):
+    return Array(name=name, dtype="integer", shape=list(shape), index=True, cellid=cellid)
+
+
 def test_dfns_validate_cellid_in_exchange():
-    field = Array(name="cellidm1", dtype="integer", shape=["ncelldim"], index=True, cellid=True)
-    spec = Dfns(components=_cellid_ctx(field, name="exg-gwfgwf", parent=None))
-    assert "exg-gwfgwf" in spec.components
+    fields = (_cellid_col("cellidm1", "1"), _cellid_col("cellidm2", "2"))
+    spec = Dfns(components=_exchange_ctx(*fields))
+    item = spec.components["exg-gwfgwf"].blocks["data"].fields["data"].item
+    assert {n: f.cellid for n, f in item.fields.items()} == {"cellidm1": "1", "cellidm2": "2"}
+
+
+def test_dfns_validate_exchange_cellid_must_name_model():
+    fields = (_cellid_col("cellidm1", True), _cellid_col("cellidm2", True))
+    with pytest.raises(ValueError, match="exchange's cellid must say which model"):
+        Dfns(components=_exchange_ctx(*fields))
+
+
+def test_dfns_validate_cellid_models_under_a_model():
+    # GNC under a model: both models are that model, so "1"/"2" are valid.
+    fields = (
+        _cellid_col("cellidn", "1"),
+        _cellid_col("cellidm", "2"),
+        _cellid_col("cellidsj", "1", shape=("ncelldim", "n")),
+    )
+    item = Record(name="item", fields={f.name: f for f in fields})
+    block = Block(name="data", fields={"data": List(name="data", item=item)})
+    pkg = Package(
+        name="gwf-gnc",
+        parent="gwf-nam",
+        blocks={"data": block},
+        dims={"n": InputDim(value="2", scope="model")},
+    )
+    spec = Dfns(components={"gwf-nam": Model(name="gwf-nam", blocks=None), "gwf-gnc": pkg})
+    assert "gwf-gnc" in spec.components
+
+
+def test_dfns_validate_cellid_no_mixing():
+    item = Record(name="item", fields={"a": _cellid_col("a", "1"), "b": _cellid_col("b", True)})
+    block = Block(name="data", fields={"data": List(name="data", item=item)})
+    pkg = Package(name="gwf-gnc", parent="gwf-nam", blocks={"data": block})
+    with pytest.raises(ValueError, match="mix cellid=True with '1'/'2'"):
+        Dfns(components={"gwf-nam": Model(name="gwf-nam", blocks=None), "gwf-gnc": pkg})
+
+
+def _union_cellid_pkg(arm_cellid, sibling_cellid):
+    union = Union(
+        name="id",
+        tagged=False,
+        arms={
+            "cellid": _cellid_col("cellid", arm_cellid),
+            "boundname": String(name="boundname", tagged=False),
+        },
+    )
+    item = Record(name="item", fields={"a": _cellid_col("a", sibling_cellid), "id": union})
+    block = Block(name="data", fields={"data": List(name="data", item=item)})
+    pkg = Package(name="gwf-gnc", parent="gwf-nam", blocks={"data": block})
+    return {"gwf-nam": Model(name="gwf-nam", blocks=None), "gwf-gnc": pkg}
+
+
+def test_dfns_validate_cellid_no_mixing_across_union_arm():
+    # A union arm's cellid is read in the same row as its sibling columns.
+    with pytest.raises(ValueError, match="mix cellid=True with '1'/'2'"):
+        Dfns(components=_union_cellid_pkg(True, "1"))
+
+
+@pytest.mark.parametrize("cellid", [True, "1"])
+def test_dfns_validate_cellid_union_arm_consistent(cellid):
+    assert "gwf-gnc" in Dfns(components=_union_cellid_pkg(cellid, cellid)).components
+
+
+def test_dfns_validate_cellid_union_arms_are_alternatives():
+    # Arms are never read together, so arms disagreeing is not mixing; each
+    # is checked against the row's other cellid columns.
+    union = Union(
+        name="id",
+        tagged=False,
+        arms={"x": _cellid_col("x", "1"), "y": _cellid_col("y", "2")},
+    )
+    item = Record(name="item", fields={"a": _cellid_col("a", "1"), "id": union})
+    block = Block(name="data", fields={"data": List(name="data", item=item)})
+    pkg = Package(name="gwf-gnc", parent="gwf-nam", blocks={"data": block})
+    Dfns(components={"gwf-nam": Model(name="gwf-nam", blocks=None), "gwf-gnc": pkg})
+
+
+@pytest.mark.parametrize("value", [1, 2, 0, "true", "3", "a"])
+def test_array_cellid_rejects_non_model_values(value):
+    # `True == 1`: an int must never be read as (or coerced to) a model or `True`.
+    with pytest.raises(ValueError, match="cellid"):
+        _cellid_col("cellid", value)
 
 
 def test_array_cellid_requires_integer_dtype():

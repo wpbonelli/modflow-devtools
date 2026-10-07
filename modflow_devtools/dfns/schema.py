@@ -10,6 +10,7 @@ from boltons.dictutils import OMD
 from pydantic import (
     BaseModel,
     SerializationInfo,
+    StrictBool,
     computed_field,
     model_serializer,
     model_validator,
@@ -97,6 +98,13 @@ class String(InputFieldBase):
 # only the field's description defines (e.g. SFR's `ic`).
 Index = bool | Literal["signed"]
 
+# `True`: a cellid in the grid of the component's own model. `"1"` / `"2"`: a
+# cellid in the grid of the first / second model of the enclosing context, i.e.
+# `EXGMNAMEA` / `EXGMNAMEB` under an exchange; under a single model both are
+# that model. Strings, not ints, since `True == 1`; and `StrictBool`, so an int
+# `1` is rejected rather than coerced to `True`.
+Cellid = StrictBool | Literal["1", "2"]
+
 
 class Integer(InputFieldBase):
     type: Literal["integer"] = PydanticField(default="integer", frozen=True)
@@ -144,7 +152,8 @@ class Array(InputFieldBase):
     # A cellid, or several: a grid cell reference resolved against the grid
     # the column refers to (DIS/DISV/DISU). The first (fastest-varying) axis
     # is `ncelldim`, one cellid's components; any further axes count cellids.
-    cellid: bool = False
+    # See `Cellid` for which grid.
+    cellid: Cellid = False
 
     @model_validator(mode="after")
     def _check_index_dtype(self) -> "Array":
@@ -155,13 +164,14 @@ class Array(InputFieldBase):
             )
         if self.cellid and self.dtype != "integer":
             raise ValueError(
-                f"Array {self.name!r}: cellid=True requires dtype='integer', got {self.dtype!r}"
+                f"Array {self.name!r}: cellid={self.cellid!r} requires dtype='integer', "
+                f"got {self.dtype!r}"
             )
         if self.cellid and not self.index:
-            raise ValueError(f"Array {self.name!r}: cellid=True requires index=True")
+            raise ValueError(f"Array {self.name!r}: cellid={self.cellid!r} requires index=True")
         if self.cellid and self.shape[:1] != ["ncelldim"]:
             raise ValueError(
-                f"Array {self.name!r}: cellid=True requires shape to start with "
+                f"Array {self.name!r}: cellid={self.cellid!r} requires shape to start with "
                 f"'ncelldim', got {self.shape!r}"
             )
         if self.fk is not None and self.dtype != "integer":
@@ -1563,31 +1573,60 @@ def _validate_file_links(component: "ComponentBase", spec: "Dfns") -> None:
 
 def _validate_cellid_fields(component: "ComponentBase") -> None:
     """
-    A cellid array (`cellid=True`, see `Array.cellid`) is only meaningful as a
+    A cellid array (`cellid` set, see `Array.cellid`) is only meaningful as a
     column in a list item, where each row names its cell(s), or in an
     observation field, which reads like one. Its dtype and shape are checked by
     `Array` itself.
-    """
 
-    def _check(field: "InputField", in_item: bool) -> None:
-        if isinstance(field, Array) and field.cellid and not in_item:
-            raise ValueError(
-                f"Array {field.name!r}: cellid=True is only valid on a column in a list item"
-            )
+    Which grid a cellid refers to (see `Cellid`) must be unambiguous: an
+    exchange's cellids refer to one of its two models, never its own, so each
+    must say which (`"1"` / `"2"`); and a list item naming either model on one
+    cellid column must name one on every cellid column (GNC's `cellidn`,
+    `cellidm`, `cellidsj`).
+    """
+    exchange = getattr(component, "subtype", None) == "exchange"
+
+    def _cellids(field: "InputField", in_item: bool) -> list[list[Array]]:
+        """The cellid columns of each way a row may read `field`: one
+        alternative per union arm, combined with the cellids beside it."""
+        if isinstance(field, Array) and field.cellid:
+            if not in_item:
+                raise ValueError(
+                    f"Array {field.name!r}: cellid={field.cellid!r} is only valid on a "
+                    f"column in a list item"
+                )
+            if exchange and field.cellid is True:
+                raise ValueError(
+                    f"Array {field.name!r}: an exchange's cellid must say which model's "
+                    f"grid it refers to (cellid='1' or '2'), got cellid=True"
+                )
+            return [[field]]
         if isinstance(field, List):
-            _check(field.item, True)
+            _check_item(field.item)
         elif isinstance(field, Record):
+            rows: list[list[Array]] = [[]]
             for subfield in field.fields.values():
-                _check(subfield, in_item)
+                rows = [row + alt for row in rows for alt in _cellids(subfield, in_item)]
+            return rows
         elif isinstance(field, Union):
-            for arm in field.arms.values():
-                _check(arm, in_item)
+            # Arms are alternatives, never read together in one row.
+            return [alt for arm in field.arms.values() for alt in _cellids(arm, in_item)]
+        return [[]]
+
+    def _check_item(item: "InputField") -> None:
+        for cellids in _cellids(item, True):
+            if len({c.cellid is True for c in cellids}) > 1:
+                names = {c.name: c.cellid for c in cellids}
+                raise ValueError(
+                    f"Cellid columns {names!r} mix cellid=True with '1'/'2': if one names "
+                    f"a model, every cellid column in the item must"
+                )
 
     for block in (component.blocks or {}).values():
         for field in block.fields.values():
-            _check(field, False)
+            _cellids(field, False)
     for obs_field in (component.observations or {}).values():
-        _check(obs_field, True)
+        _check_item(obs_field)
 
 
 def _obs_columns(field: "InputField") -> list[int]:

@@ -154,7 +154,7 @@
                 "tagged": false,
                 "dtype": "integer",
                 "index": true,
-                "cellid": true,
+                "cellid": "1",
                 "shape": [
                   "ncelldim"
                 ]
@@ -166,7 +166,7 @@
                 "tagged": false,
                 "dtype": "integer",
                 "index": true,
-                "cellid": true,
+                "cellid": "2",
                 "shape": [
                   "ncelldim"
                 ]

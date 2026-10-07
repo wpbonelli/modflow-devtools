@@ -165,7 +165,7 @@ description = "is the cellid of the cell in model 1 as specified in the simulati
 tagged = false
 dtype = "integer"
 index = true
-cellid = true
+cellid = "1"
 shape = [
     "ncelldim",
 ]
@@ -177,7 +177,7 @@ description = "is the cellid of the cell in model 2 as specified in the simulati
 tagged = false
 dtype = "integer"
 index = true
-cellid = true
+cellid = "2"
 shape = [
     "ncelldim",
 ]

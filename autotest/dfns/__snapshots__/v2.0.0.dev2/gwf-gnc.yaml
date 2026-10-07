@@ -66,7 +66,7 @@ blocks:
               tagged: false
               dtype: integer
               index: true
-              cellid: true
+              cellid: '1'
               shape:
                 - ncelldim
             cellidm:
@@ -80,7 +80,7 @@ blocks:
               tagged: false
               dtype: integer
               index: true
-              cellid: true
+              cellid: '2'
               shape:
                 - ncelldim
             cellidsj:
@@ -98,7 +98,7 @@ blocks:
               tagged: false
               dtype: integer
               index: true
-              cellid: true
+              cellid: '1'
               shape:
                 - ncelldim
                 - numalphaj
