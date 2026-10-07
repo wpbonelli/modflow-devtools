@@ -583,27 +583,32 @@ def _mark_lonely_pk(blocks: dict[str, v2.Block]) -> dict[str, v2.Block]:
 # per-field allowlist, since v1 has no attribute that signals a cellid
 # (`numeric_index` only means "needs 1-based/0-based conversion"). In every
 # entry here the list field's own name matches its enclosing block's name.
-_CELLID_FIELDS: dict[str, tuple[str, tuple[str, ...]]] = {
-    "exg-chfgwf": ("exchangedata", ("cellidm1", "cellidm2")),
-    "exg-gwegwe": ("exchangedata", ("cellidm1", "cellidm2")),
-    "exg-gwfgwf": ("exchangedata", ("cellidm1", "cellidm2")),
-    "exg-gwtgwt": ("exchangedata", ("cellidm1", "cellidm2")),
-    "exg-olfgwf": ("exchangedata", ("cellidm1", "cellidm2")),
-    "gwf-gnc": ("gncdata", ("cellidm", "cellidn", "cellidsj")),
+#
+# Each column also refers to one of two models' grids (see `v2.Cellid`), which
+# v1 only says in prose and MF6 hard-codes (IDM's `StructArray.f90` maps
+# `CELLIDM1`/`CELLIDM2` to `EXGMNAMEA`/`EXGMNAMEB`; `GhostNode.f90` reads
+# `cellidn` and `cellidsj` in model 1's grid, `cellidm` in model 2's).
+_CELLID_FIELDS: dict[str, tuple[str, dict[str, Literal["1", "2"]]]] = {
+    "exg-chfgwf": ("exchangedata", {"cellidm1": "1", "cellidm2": "2"}),
+    "exg-gwegwe": ("exchangedata", {"cellidm1": "1", "cellidm2": "2"}),
+    "exg-gwfgwf": ("exchangedata", {"cellidm1": "1", "cellidm2": "2"}),
+    "exg-gwtgwt": ("exchangedata", {"cellidm1": "1", "cellidm2": "2"}),
+    "exg-olfgwf": ("exchangedata", {"cellidm1": "1", "cellidm2": "2"}),
+    "gwf-gnc": ("gncdata", {"cellidn": "1", "cellidm": "2", "cellidsj": "1"}),
 }
 
 
-def _as_cellid(field: v2.InputField) -> v2.InputField:
+def _as_cellid(field: v2.InputField, model: Literal["1", "2"]) -> v2.InputField:
     """Rewrite an integer column as an `ncelldim`-led integer array, the axis
-    `ncelldim` varying fastest (each cellid's components are contiguous)."""
+    `ncelldim` varying fastest (each cellid's components are contiguous),
+    referring to the given model's grid. `_mark_cellids` sets `index`."""
     if isinstance(field, v2.Integer):
         base = field.model_dump(include=set(v2.InputFieldBase.model_fields))
         base.pop("type", None)  # the serializer restores it
-        return v2.Array(**base, dtype="integer", shape=["ncelldim"])
+        return v2.Array(**base, dtype="integer", shape=["ncelldim"], cellid=model, index=True)
     if isinstance(field, v2.Array) and field.dtype == "integer":
-        if field.shape[:1] == ["ncelldim"]:
-            return field
-        return field.model_copy(update={"shape": ["ncelldim", *field.shape]})
+        shape = field.shape if field.shape[:1] == ["ncelldim"] else ["ncelldim", *field.shape]
+        return field.model_copy(update={"shape": shape, "cellid": model})
     return field
 
 
@@ -613,7 +618,7 @@ def _fix_cellid_fields(name: str, blocks: dict[str, v2.Block]) -> dict[str, v2.B
     entry = _CELLID_FIELDS.get(name)
     if entry is None:
         return blocks
-    block_name, field_names = entry
+    block_name, models = entry
     block = blocks.get(block_name)
     if block is None:
         return blocks
@@ -622,7 +627,9 @@ def _fix_cellid_fields(name: str, blocks: dict[str, v2.Block]) -> dict[str, v2.B
         return blocks
     item = list_field.item
     updates = {
-        fname: _as_cellid(item.fields[fname]) for fname in field_names if fname in item.fields
+        fname: _as_cellid(item.fields[fname], model)
+        for fname, model in models.items()
+        if fname in item.fields
     }
     new_item = item.model_copy(update={"fields": {**item.fields, **updates}})
     new_list = list_field.model_copy(update={"item": new_item})
@@ -670,12 +677,13 @@ def _link_namefile_fields(name: str, blocks: dict[str, v2.Block]) -> dict[str, v
 def _mark_cellids(blocks: dict[str, v2.Block]) -> dict[str, v2.Block]:
     """Mark every cellid column `index=True, cellid=True`: an integer array in a
     list item whose first (fastest-varying) axis is `ncelldim`. Every v1 field
-    shaped by `ncelldim` is a cellid, so this needs no allowlist."""
+    shaped by `ncelldim` is a cellid, so this needs no allowlist. A column
+    `_fix_cellid_fields` already gave a model (`"1"`/`"2"`) keeps it."""
 
     def _mark(field: Any) -> Any:
         if isinstance(field, v2.Array):
             if field.dtype == "integer" and field.shape[:1] == ["ncelldim"]:
-                return field.model_copy(update={"index": True, "cellid": True})
+                return field.model_copy(update={"index": True, "cellid": field.cellid or True})
             return field
         if isinstance(field, v2.Record):
             fields = {n: _mark(f) for n, f in field.fields.items()}

@@ -507,9 +507,13 @@ Dimensions are listed fastest-varying first, i.e. in the order elements are read
 
 ###### `cellid`
 
-`boolean (default: false)`. Marks the array as a **cellid**, or several: a grid cell reference, resolved against the grid (DIS/DISV/DISU) the column refers to. The first axis must be `ncelldim`, the cell's components (layer, row, column for DIS; layer, cell2d for DISV; node for DISU). Any further axes count cellids. A single cellid has shape `["ncelldim"]`; `gwf-gnc`'s `cellidsj` has shape `["ncelldim", "numalphaj"]`, `numalphaj` cellids written one after another. Only valid when `dtype` is `"integer"`, `index` is set (cellids are 1-based), and the array is a column in a list item.
+`boolean | "1" | "2" (default: false)`. Marks the array as a **cellid**, or several: a grid cell reference, resolved against the grid (DIS/DISV/DISU) the column refers to. The first axis must be `ncelldim`, the cell's components (layer, row, column for DIS; layer, cell2d for DISV; node for DISU). Any further axes count cellids. A single cellid has shape `["ncelldim"]`; `gwf-gnc`'s `cellidsj` has shape `["ncelldim", "numalphaj"]`, `numalphaj` cellids written one after another. Only valid when `dtype` is `"integer"`, `index` is set (cellids are 1-based), and the array is a column in a list item.
 
-The leading `ncelldim` is not resolved as a dim in the component's own scope: its value depends on the grid the column refers to, which in an exchange is one of two models' grids, neither of them the exchange's parent. Which model a column refers to is not yet expressed in the schema: in an exchange, `cellidm1` refers to model 1 and `cellidm2` to model 2; in `gwf-gnc` under an exchange, `cellidn` and `cellidsj` refer to model 1 and `cellidm` to model 2.
+The value says which grid: `true` for the grid of the component's own model; `"1"` or `"2"` for the grid of the first or second model of the enclosing context, i.e. `EXGMNAMEA` or `EXGMNAMEB` under an exchange. Under a single model, both are that model, so a component read in either context (e.g. `gwf-gnc`) gives the value unconditionally. A cellid column in an exchange ([`subtype`](#subtype) `"exchange"`) must be `"1"` or `"2"`, since an exchange has no grid of its own, and a list item giving `"1"` or `"2"` on one cellid column must give one on every cellid column. For example, in an exchange `cellidm1` is `"1"` and `cellidm2` is `"2"`; in `gwf-gnc`, `cellidn` and `cellidsj` are `"1"` and `cellidm` is `"2"`. The position of a column says nothing about its model: GNC's columns, in order, refer to models 1, 2 and 1.
+
+The leading `ncelldim` is not resolved as a dim in the component's own scope: its value is the `ncelldim` of the grid the column refers to, by the above.
+
+**Note:** The model values are strings, not integers, as `true == 1` in many languages (e.g. Python). A consumer should test for the strings (`cellid in ("1", "2")`), never compare `cellid` to an integer; and a reader rejects an integer `cellid`.
 
 #### Record
 

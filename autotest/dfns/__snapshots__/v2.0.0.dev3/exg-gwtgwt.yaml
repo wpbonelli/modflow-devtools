@@ -152,7 +152,7 @@ blocks:
               tagged: false
               dtype: integer
               index: true
-              cellid: true
+              cellid: '1'
               shape:
                 - ncelldim
             cellidm2:
@@ -166,7 +166,7 @@ blocks:
               tagged: false
               dtype: integer
               index: true
-              cellid: true
+              cellid: '2'
               shape:
                 - ncelldim
             ihc:

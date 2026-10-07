@@ -327,10 +327,12 @@ def test_migrate_auxiliary_stays_self_sizing(dfn_dir):
 def test_migrate_gnc_cellids(dfn_dir):
     component = _migrate_dev3(dfn_dir, "gwf-gnc")
     item = component.blocks["gncdata"].fields["gncdata"].item
-    for name, shape in [
-        ("cellidn", ["ncelldim"]),
-        ("cellidm", ["ncelldim"]),
-        ("cellidsj", ["ncelldim", "numalphaj"]),
+    # Under an exchange, `cellidn` and `cellidsj` are in model 1's grid and
+    # `cellidm` in model 2's (MF6's GhostNode.f90).
+    for name, shape, model in [
+        ("cellidn", ["ncelldim"], "1"),
+        ("cellidm", ["ncelldim"], "2"),
+        ("cellidsj", ["ncelldim", "numalphaj"], "1"),
     ]:
         field = item.fields[name]
         assert isinstance(field, v2.Array)
@@ -338,19 +340,55 @@ def test_migrate_gnc_cellids(dfn_dir):
             "integer",
             shape,
             True,
-            True,
+            model,
         )
     assert not item.fields["alphasj"].cellid
 
 
-@pytest.mark.parametrize("name", ["exg-gwfgwf", "exg-gwtgwt"])
+@pytest.mark.parametrize(
+    "name", ["exg-chfgwf", "exg-gwegwe", "exg-gwfgwf", "exg-gwtgwt", "exg-olfgwf"]
+)
 def test_migrate_exchange_cellids(dfn_dir, name):
     component = _migrate_dev3(dfn_dir, name)
+    assert component.subtype == "exchange"
     item = component.blocks["exchangedata"].fields["exchangedata"].item
-    for col in ("cellidm1", "cellidm2"):
+    for col, model in (("cellidm1", "1"), ("cellidm2", "2")):
         field = item.fields[col]
         assert isinstance(field, v2.Array)
-        assert (field.shape, field.index, field.cellid) == (["ncelldim"], True, True)
+        assert (field.shape, field.index, field.cellid) == (["ncelldim"], True, model)
+
+
+def test_migrate_cellid_models_round_trip(dev3):
+    # "1"/"2" stay strings on disk in every format, and load back as such.
+    out, fmt = dev3
+    raw = _load(out / f"exg-gwfgwf.{fmt}", fmt)
+    cols = raw["blocks"]["exchangedata"]["fields"]["exchangedata"]["item"]["fields"]
+    assert (cols["cellidm1"]["cellid"], cols["cellidm2"]["cellid"]) == ("1", "2")
+    dfns = v2.Dfns.load(out)
+    gnc = dfns.components["gwf-gnc"].blocks["gncdata"].fields["gncdata"].item.fields
+    assert [gnc[c].cellid for c in ("cellidn", "cellidm", "cellidsj")] == ["1", "2", "1"]
+
+
+@pytest.mark.parametrize("name", ["gwf-chd", "gwf-wel", "gwf-hfb", "gwt-cnc"])
+def test_migrate_own_grid_cellids_stay_true(dfn_dir, name):
+    # Only the `_CELLID_FIELDS` columns name a model; every other cellid is in
+    # the component's own model's grid.
+    def _cellids(field):
+        if isinstance(field, v2.Array) and field.cellid:
+            yield field
+        elif isinstance(field, v2.List):
+            yield from _cellids(field.item)
+        elif isinstance(field, v2.Record):
+            for f in field.fields.values():
+                yield from _cellids(f)
+        elif isinstance(field, v2.Union):
+            for f in field.arms.values():
+                yield from _cellids(f)
+
+    component = _migrate_dev3(dfn_dir, name)
+    cellids = [c for b in component.blocks.values() for f in b.fields.values() for c in _cellids(f)]
+    assert cellids
+    assert all(c.cellid is True for c in cellids)
 
 
 @pytest.mark.parametrize(

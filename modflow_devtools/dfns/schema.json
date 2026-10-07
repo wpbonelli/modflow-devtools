@@ -148,9 +148,20 @@
           "title": "Fk"
         },
         "cellid": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "enum": [
+                "1",
+                "2"
+              ],
+              "type": "string"
+            }
+          ],
           "default": false,
-          "title": "Cellid",
-          "type": "boolean"
+          "title": "Cellid"
         }
       },
       "required": [
