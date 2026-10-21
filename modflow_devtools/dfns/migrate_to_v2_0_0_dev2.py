@@ -1579,6 +1579,90 @@ def _fix_mvr_relations(name: str, blocks: dict[str, v2.Block]) -> dict[str, v2.B
     return {**blocks, "packages": new_packages, "period": new_period}
 
 
+def _list_item_field(blocks: dict[str, v2.Block], block_name: str, field_name: str):
+    """The field `field_name` of the item record of the list sharing
+    `block_name`'s name, or None if there's no such field."""
+    block = blocks.get(block_name)
+    lst = block.fields.get(block_name) if block else None
+    item = lst.item if isinstance(lst, v2.List) else None
+    return item.fields.get(field_name) if isinstance(item, v2.Record) else None
+
+
+def _set_list_item_attrs(
+    blocks: dict[str, v2.Block], block_name: str, attrs: dict[str, dict[str, Any]]
+) -> dict[str, v2.Block]:
+    """
+    Set attributes on fields of the item record of the list sharing
+    `block_name`'s name, e.g. `{"mname": {"pk": True}}`, leaving any that's
+    already set. The fields must exist (see `_list_item_field`).
+    """
+    block = blocks[block_name]
+    lst = block.fields[block_name]
+    item_fields = dict(lst.item.fields)  # type: ignore[union-attr]
+    for field_name, field_attrs in attrs.items():
+        field = item_fields[field_name]
+        update = {k: v for k, v in field_attrs.items() if not getattr(field, k)}
+        if update:
+            item_fields[field_name] = field.model_copy(update=update)
+    new_item = lst.item.model_copy(update={"fields": item_fields})  # type: ignore[union-attr]
+    new_list = lst.model_copy(update={"item": new_item})
+    new_block = block.model_copy(update={"fields": {**block.fields, block_name: new_list}})
+    return {**blocks, block_name: new_block}
+
+
+def _fix_model_name_relations(name: str, blocks: dict[str, v2.Block]) -> dict[str, v2.Block]:
+    """
+    Patch the model-name pk/fk relations of `sim-nam` and `utl-hpc`, which
+    the general passes can't reach on their own.
+
+    - Marks `models.mname` as `pk`. MF6 rejects a duplicate model name
+      (`check_model_name` in `SimulationCreate.f90`), comparing names
+      upcased, i.e. case-insensitively like a `String` by default. It isn't
+      the leading column (`mtype` is), and nothing else repeats the name
+      `mname`, so neither `_resolve_relations` nor `_mark_lonely_pk` finds it.
+    - Marks `exchanges`' `exgmnamea`/`exgmnameb` and `solutiongroup`'s
+      `slnmnames` (a string array, each entry a model name) as
+      `fk: "models.mname"`, since MF6 looks each up among the model names
+      and fails on one not found.
+    - Marks `utl-hpc`'s `partitions.mname` as `fk: "sim-nam.models.mname"`:
+      MF6 rejects an undefined model name (`DistributedSim.f90`). Not a `pk`,
+      since MF6 doesn't reject a repeat (the last rank given wins). It leads
+      its row, but as data, not a dynamic keyword, so `partitions` stays
+      untagged.
+
+    Doesn't express which model *types* are valid where (a GWF-GWT
+    exchange's model A must be a GWF model; IMS can't solve an explicit
+    model): those are constraints on the referenced row, not keys.
+    """
+    if name == "utl-hpc":
+        if not isinstance(_list_item_field(blocks, "partitions", "mname"), v2.String):
+            return blocks
+        return _set_list_item_attrs(blocks, "partitions", {"mname": {"fk": "sim-nam.models.mname"}})
+    if name != "sim-nam":
+        return blocks
+
+    refs = {
+        "models": ("mname",),
+        "exchanges": ("exgmnamea", "exgmnameb"),
+        "solutiongroup": ("slnmnames",),
+    }
+    for block_name, field_names in refs.items():
+        for field_name in field_names:
+            field = _list_item_field(blocks, block_name, field_name)
+            if not (
+                isinstance(field, v2.String)
+                or (isinstance(field, v2.Array) and field.dtype == "string")
+            ):
+                return blocks
+
+    blocks = _set_list_item_attrs(blocks, "models", {"mname": {"pk": True}})
+    for block_name in ("exchanges", "solutiongroup"):
+        blocks = _set_list_item_attrs(
+            blocks, block_name, {n: {"fk": "models.mname"} for n in refs[block_name]}
+        )
+    return blocks
+
+
 def _fix_ssm_sources_write_if_empty(name: str, blocks: dict[str, v2.Block]) -> dict[str, v2.Block]:
     """
     Mark SSM's SOURCES block write_if_empty: MF6 requires the block's header
@@ -1705,8 +1789,8 @@ def _wrap_grid_aux(blocks: dict[str, v2.Block], fields: OMD) -> dict[str, v2.Blo
     ``AUX``, but the input file has zero or more grid arrays, each introduced
     by one of the ``auxiliary`` names (MF6 treats any period tag matching one
     as ``AUX``). The leading ``auxname`` is a dynamic keyword (an untagged
-    String with an ``fk`` to ``options.auxiliary``), which makes the list
-    tagged, so it mixes freely with the block's other arrays. Each auxiliary
+    String marked ``dynamic``, with an ``fk`` to ``options.auxiliary``), which
+    makes the list tagged, so it mixes freely with the block's other arrays. Each auxiliary
     variable is set at most once per period, so the list is bounded by the
     ``auxiliary`` count, and is always optional (v1's ``gwf-evta`` says
     otherwise). The outer name stays ``aux`` so memory variables sourced from
@@ -1738,6 +1822,7 @@ def _wrap_grid_aux(blocks: dict[str, v2.Block], fields: OMD) -> dict[str, v2.Blo
             "one of the auxiliary variables.",
             tagged=False,
             fk="options.auxiliary",
+            dynamic=True,
         )
         array = field.model_copy(update={"tagged": False, "optional": False, "description": None})
         updates[fname] = v2.List(
@@ -2326,6 +2411,7 @@ def to_v2_0_0_dev2(
     blocks = _patch_oc_rtype(name, blocks)
     blocks = _fix_lak_relations(name, blocks)
     blocks = _fix_mvr_relations(name, blocks)
+    blocks = _fix_model_name_relations(name, blocks)
     blocks = _fix_ssm_sources_write_if_empty(name, blocks)
     blocks = _fix_optional_blocks(name, blocks)
     blocks = _wrap_grid_aux(blocks, fields)

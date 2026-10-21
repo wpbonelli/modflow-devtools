@@ -136,7 +136,7 @@ def _aux_ctx(fk="options.auxiliary", auxiliary_dtype="string", tagged=False):
     """A grid-array package whose period `aux` list is keyed by an auxiliary name."""
     auxiliary = Array(name="auxiliary", dtype=auxiliary_dtype, optional=True)
     options = Block(name="options", fields={"auxiliary": auxiliary})
-    auxname = String(name="auxname", tagged=tagged, fk=fk)
+    auxname = String(name="auxname", tagged=tagged, fk=fk, dynamic=not tagged)
     array = Array(name="aux", dtype="double", tagged=False)
     item = Record(name="aux", fields={"auxname": auxname, "aux": array})
     period = Block(name="period", fields={"aux": List(name="aux", optional=True, item=item)})
@@ -156,12 +156,12 @@ def test_dfns_validate_fk_to_string_array_tagged_string():
 
 
 def test_dfns_validate_fk_to_non_string_array_rejected():
-    with pytest.raises(ValueError, match="must name a string array"):
+    with pytest.raises(ValueError, match="is not a list block"):
         Dfns(components=_aux_ctx(auxiliary_dtype="double"))
 
 
 def test_dfns_validate_fk_to_missing_field_rejected():
-    with pytest.raises(ValueError, match="must name a string array"):
+    with pytest.raises(ValueError, match="is not a list block"):
         Dfns(components=_aux_ctx(fk="options.nosuchfield"))
 
 
@@ -177,14 +177,14 @@ def _union_ctx(arm):
 
 
 def _keyed_arm(fk):
-    auxname = String(name="auxname", tagged=False, fk=fk)
+    auxname = String(name="auxname", tagged=False, fk=fk, dynamic=True)
     array = Array(name="aux", dtype="double", tagged=False)
     return Record(name="aux", fields={"auxname": auxname, "aux": array})
 
 
 def test_dfns_validate_fk_in_union_item_record_arm():
     assert "gwf-test" in Dfns(components=_union_ctx(_keyed_arm("options.auxiliary"))).components
-    with pytest.raises(ValueError, match="must name a string array"):
+    with pytest.raises(ValueError, match="is not a list block"):
         Dfns(components=_union_ctx(_keyed_arm("options.nosuchfield")))
 
 
@@ -192,6 +192,86 @@ def test_dfns_validate_fk_in_union_item_scalar_arm():
     arm = Integer(name="lakeno", fk="nosuchblock.lakeno")
     with pytest.raises(ValueError, match="is not a list block"):
         Dfns(components=_union_ctx(arm))
+
+
+def _model_names_ctx(fk="models.mname", pk=True):
+    """A simulation whose solution rows each name several models, by key."""
+    mname = String(name="mname", tagged=False, pk=pk)
+    models_item = Record(name="models", fields={"mtype": String(name="mtype"), "mname": mname})
+    models = Block(name="models", fields={"models": List(name="models", item=models_item)})
+    slnmnames = Array(name="slnmnames", dtype="string", tagged=False, fk=fk)
+    sln_item = Record(
+        name="sln", fields={"slntype": String(name="slntype"), "slnmnames": slnmnames}
+    )
+    sln = Block(name="sln", fields={"sln": List(name="sln", item=sln_item)})
+    return {"sim-nam": Simulation(name="sim-nam", blocks={"models": models, "sln": sln})}
+
+
+def test_dfns_validate_string_array_fk():
+    assert "sim-nam" in Dfns(components=_model_names_ctx()).components
+
+
+def test_dfns_validate_string_array_fk_no_pk_rejected():
+    with pytest.raises(ValueError, match="has no pk=True field"):
+        Dfns(components=_model_names_ctx(pk=False))
+
+
+def test_dfns_validate_string_array_fk_unknown_block_rejected():
+    with pytest.raises(ValueError, match="is not a list block"):
+        Dfns(components=_model_names_ctx(fk="nosuchblock.mname"))
+
+
+def _hpc_ctx(dynamic=False):
+    """A simulation plus an HPC-like package whose rows lead with a model name."""
+    mname = String(name="mname", tagged=False, fk="sim-nam.models.mname", dynamic=dynamic)
+    mrank = Integer(name="mrank", tagged=False)
+    item = Record(name="partitions", fields={"mname": mname, "mrank": mrank})
+    partitions = Block(name="partitions", fields={"partitions": List(name="partitions", item=item)})
+    hpc = Package(name="utl-hpc", parent="sim-nam", blocks={"partitions": partitions})
+    return {**_model_names_ctx(), "utl-hpc": hpc}
+
+
+def test_dfns_validate_leading_fk_to_list_pk_is_data():
+    """A leading untagged String keying another component's list is data
+    unless marked dynamic: its list stays untagged."""
+    spec = Dfns(components=_hpc_ctx())
+    assert spec.components["utl-hpc"].blocks["partitions"].fields["partitions"].tagged is False
+
+
+def test_dfns_validate_dynamic_key_to_list_pk():
+    """A dynamic key's keywords may come from a list's pk as well as a string array."""
+    spec = Dfns(components=_hpc_ctx(dynamic=True))
+    assert spec.components["utl-hpc"].blocks["partitions"].fields["partitions"].tagged is True
+
+
+def test_dfns_validate_dynamic_key_bare_block_fk():
+    """A bare block name without fk_ref is as static as a path, so a dynamic
+    key may use it: the keywords are that block's pk values."""
+    pname = String(name="pname", tagged=False, pk=True)
+    packages_item = Record(name="packages", fields={"pname": pname})
+    packages = Block(
+        name="packages", fields={"packages": List(name="packages", item=packages_item)}
+    )
+    key = String(name="pname", tagged=False, fk="packages", dynamic=True)
+    item = Record(name="rate", fields={"pname": key, "rate": Double(name="rate", tagged=False)})
+    period = Block(name="period", fields={"rate": List(name="rate", item=item)})
+    pkg = Package(
+        name="gwf-test", parent="gwf-nam", blocks={"packages": packages, "period": period}
+    )
+    spec = Dfns(components={"gwf-nam": Model(name="gwf-nam", blocks=None), "gwf-test": pkg})
+    assert spec.components["gwf-test"].blocks["period"].fields["rate"].tagged is True
+
+
+@pytest.mark.parametrize("dtype", ["integer", "string"])
+def test_array_fk_bare_block_rejected(dtype):
+    with pytest.raises(ValueError, match="must be a hierarchical path"):
+        Array(name="slnmnames", dtype=dtype, fk="models")
+
+
+@pytest.mark.parametrize("dtype", ["double", "keyword"])
+def test_array_fk_requires_integer_or_string_dtype(dtype):
+    with pytest.raises(ValueError, match="fk requires dtype='integer' or 'string'"):
+        Array(name="slnmnames", dtype=dtype, fk="models.mname")
 
 
 def _cellid_ctx(field, name="gwf-gnc", parent="gwf-nam", dims=None):
