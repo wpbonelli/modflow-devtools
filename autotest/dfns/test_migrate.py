@@ -701,6 +701,30 @@ def test_migrate_obs_id_boundname_arm_has_no_when(dfn_dir):
     assert item.fields["id"].arms["boundname"].when is None
 
 
+@pytest.mark.parametrize(
+    "name,record",
+    [
+        ("chf-oc", "qoutflowprintrecord"),
+        ("gwe-oc", "temperatureprintrecord"),
+        ("gwf-oc", "headprintrecord"),
+        ("gwt-ist", "cimprintrecord"),
+        ("gwt-oc", "concentrationprintrecord"),
+        ("olf-oc", "qoutflowprintrecord"),
+    ],
+)
+def test_migrate_format_record_optional(dfn_dir, name, record):
+    # MF6 uses a format only with COLUMNS, WIDTH and DIGITS, and has a default
+    # edit descriptor.
+    options = _migrate_dev3(dfn_dir, name).blocks["options"]
+    fields = options.fields[record].fields["formatrecord"].fields
+    assert {n: f.optional for n, f in fields.items()} == {
+        "columns": False,
+        "width": False,
+        "digits": False,
+        "format": True,
+    }
+
+
 def test_migrate_option_columns_fails_when_stale(dfn_dir, monkeypatch):
     from modflow_devtools.dfns import migrate_to_v2_0_0_dev2 as dev2
 

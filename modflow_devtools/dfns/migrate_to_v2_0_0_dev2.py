@@ -2087,6 +2087,39 @@ _OPTIONAL_BLOCKS: dict[str, tuple[str, ...]] = {
 }
 
 
+# Whether each field of a `formatrecord` may be left out. v1 has this the wrong
+# way round, with `format` required and the rest optional. MF6 reads the record
+# up to wherever it ends, but `format` is the only one it can do without: OC and
+# IST use the format only with `columns`, `width` and `digits` all given, and
+# otherwise silently print with the default (`OutputControl.f90`'s `found_format`,
+# `gwt-ist.f90`'s `found%digits`). `COLUMNS 2 WIDTH 16` runs, and is ignored.
+_FORMAT_RECORD_OPTIONAL = {"columns": False, "width": False, "digits": False, "format": True}
+
+
+def _fix_format_records(name: str, blocks: dict[str, v2.Block]) -> dict[str, v2.Block]:
+    """Correct which fields of each `formatrecord` in the options block are
+    optional. See `_FORMAT_RECORD_OPTIONAL`."""
+
+    def _fix(field: Any) -> Any:
+        if not isinstance(field, v2.Record):
+            return field
+        if field.name != "formatrecord":
+            fields = {n: _fix(f) for n, f in field.fields.items()}
+            return field.model_copy(update={"fields": fields})
+        if set(field.fields) != set(_FORMAT_RECORD_OPTIONAL):
+            raise ValueError(f"{name}: unexpected formatrecord fields {sorted(field.fields)}")
+        fields = {
+            n: f.model_copy(update={"optional": _FORMAT_RECORD_OPTIONAL[n]})
+            for n, f in field.fields.items()
+        }
+        return field.model_copy(update={"fields": fields})
+
+    if (options := blocks.get("options")) is None:
+        return blocks
+    fields = {n: _fix(f) for n, f in options.fields.items()}
+    return {**blocks, "options": options.model_copy(update={"fields": fields})}
+
+
 def _fix_optional_blocks(name: str, blocks: dict[str, v2.Block]) -> dict[str, v2.Block]:
     """
     Mark every field in each of `_OPTIONAL_BLOCKS` optional, making the block
@@ -2835,6 +2868,7 @@ def to_v2_0_0_dev2(
     blocks = _wrap_repeating_records(blocks)
     blocks = _collapse_sto_keywords(blocks)
     blocks = _patch_oc_rtype(name, blocks)
+    blocks = _fix_format_records(name, blocks)
     blocks = _fix_lak_relations(name, blocks)
     blocks = _fix_mvr_relations(name, blocks)
     blocks = _fix_model_name_relations(name, blocks)
